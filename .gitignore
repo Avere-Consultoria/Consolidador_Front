@@ -8,3 +8,7 @@ public/mocks/
 *.crt
 *.pfx
 .DS_Store
+
+eslint_report.json
+eslint_results.json
+lint_output.txt

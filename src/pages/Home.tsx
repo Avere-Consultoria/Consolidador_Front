@@ -1,8 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Typography, Card, CardContent, Badge, Spinner, Button, Select, } from 'avere-ui';
+import { Typography, Card, CardContent, Badge, Spinner, Button, Select } from 'avere-ui';
 import {
   Drawer, DrawerContent, DrawerHeader, DrawerBody,
   DrawerTitle, DrawerDescription, DrawerSeparator,
+} from 'avere-ui';
+import {
+  Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter,
 } from 'avere-ui';
 import { Briefcase, AlertCircle, PieChart as PieIcon, Building2, LayoutGrid } from 'lucide-react';
 import {
@@ -24,6 +27,13 @@ interface ConsolidatedAtivo {
   valorLiquido: number;
   vencimento?: string | null;
   instituicao: 'BTG Pactual' | 'XP Investimentos';
+}
+
+interface CarteiraPersonalizada {
+  id: string;
+  nome: string;
+  instituicoes: string[];
+  criada_em: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -60,7 +70,7 @@ const CORES = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Tooltip customizado
+// Tooltips
 // ─────────────────────────────────────────────────────────────────────────────
 
 const TooltipCustom = ({ active, payload }: any) => {
@@ -117,6 +127,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [snapshotData, setSnapshotData] = useState<{ btg: any; xp: any }>({ btg: null, xp: null });
   const [diasVencimento, setDiasVencimento] = useState(30);
+  const [drawerCarteirasAberto, setDrawerCarteirasAberto] = useState(false);
 
   const PERIODOS = [
     { label: '7 dias', dias: 7 },
@@ -202,7 +213,6 @@ export default function Home() {
 
     const totalAtivos = [...btgAtivos, ...xpAtivos];
 
-    // Vencimentos — filtrado pelo período selecionado
     const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
     const limiteData = new Date(); limiteData.setDate(hoje.getDate() + diasVencimento);
     const vencimentosProx = totalAtivos.filter(a => {
@@ -211,10 +221,8 @@ export default function Home() {
       return d > hoje && (diasVencimento === 9999 || d <= limiteData);
     });
 
-    // Todos os ativos ordenados por valor
     const todosAtivos = [...totalAtivos].sort((a, b) => b.valorLiquido - a.valorLiquido);
 
-    // Alocação consolidada (BTG + XP)
     const alocacao = {
       rendaFixa: (snapshotData.btg?.saldo_rf || 0) + (snapshotData.xp?.saldo_renda_fixa || 0) + (snapshotData.xp?.saldo_tesouro_direto || 0),
       fundos: (snapshotData.btg?.saldo_fundos || 0) + (snapshotData.xp?.saldo_fundos || 0),
@@ -223,15 +231,11 @@ export default function Home() {
       outros: (snapshotData.btg?.saldo_cc || 0) + (snapshotData.btg?.saldo_cripto || 0) + (snapshotData.xp?.saldo_coe || 0),
     };
 
-    // ── Dados para gráficos Recharts ─────────────────────────────────────
-
-    // 1. Rosca — BTG vs XP
     const donutData = [
       { name: 'BTG Pactual', value: btgTotal, pct: pct(btgTotal, patrimonioTotal), fill: CORES.btg },
       ...(xpTotal > 0 ? [{ name: 'XP Investimentos', value: xpTotal, pct: pct(xpTotal, patrimonioTotal), fill: CORES.xp }] : []),
     ];
 
-    // 2. Barras horizontais — alocação por classe
     const alocacaoData = [
       { name: 'Renda Fixa', value: alocacao.rendaFixa, pct: pct(alocacao.rendaFixa, patrimonioTotal), fill: CORES.rendaFixa },
       { name: 'Fundos', value: alocacao.fundos, pct: pct(alocacao.fundos, patrimonioTotal), fill: CORES.fundos },
@@ -240,7 +244,6 @@ export default function Home() {
       { name: 'Outros / CC', value: alocacao.outros, pct: pct(alocacao.outros, patrimonioTotal), fill: CORES.outros },
     ].filter(d => d.value > 0).sort((a, b) => b.value - a.value);
 
-    // 3. Barras agrupadas — BTG vs XP por classe
     const comparativoData = [
       {
         name: 'Renda Fixa',
@@ -303,8 +306,9 @@ export default function Home() {
       <header>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Typography variant="h1">Carteira XXXXXX</Typography>
-
+            <Typography variant="h1">
+              Carteira {selectedClient?.codigoAvere ?? '—'}
+            </Typography>
             <Select
               label="Carteiras"
               placeholder="Selecione uma carteira..."
@@ -317,7 +321,9 @@ export default function Home() {
             />
           </div>
           <div>
-            <Button variant="solid"> + Adicionar nova Carteira</Button>
+            <Button variant="solid" onClick={() => setDrawerCarteirasAberto(true)}>
+              + Gerenciar Carteiras
+            </Button>
           </div>
         </div>
         <Typography variant="p" style={{ opacity: 0.6 }}>
@@ -325,14 +331,20 @@ export default function Home() {
           {metrics.dataRefBtg && ` · BTG: ${fmtDate(metrics.dataRefBtg + 'T12:00:00Z')}`}
           {metrics.dataRefXp && ` · XP: ${fmtDate(metrics.dataRefXp + 'T12:00:00Z')}`}
         </Typography>
-      </header >
+
+        <DrawerGerenciarCarteiras
+          aberto={drawerCarteirasAberto}
+          onClose={() => setDrawerCarteirasAberto(false)}
+          temBtg={!!snapshotData.btg}
+          temXp={!!snapshotData.xp}
+          clienteId={selectedClient?.id ?? null}
+        />
+      </header>
 
       {/* CARDS RESUMO */}
-      < div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }
-      }>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
 
-        {/* Patrimônio total — ocupa linha inteira */}
-        < Card style={{ borderLeft: '4px solid var(--color-primaria)', gridColumn: '1 / -1' }}>
+        <Card style={{ borderLeft: '4px solid var(--color-primaria)', gridColumn: '1 / -1' }}>
           <CardContent style={{ padding: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-primaria)', marginBottom: '8px' }}>
               <Briefcase size={18} />
@@ -344,10 +356,9 @@ export default function Home() {
               {fmt(metrics.patrimonioTotal)}
             </Typography>
           </CardContent>
-        </Card >
+        </Card>
 
-        {/* BTG */}
-        < Card >
+        <Card>
           <CardContent style={{ padding: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', opacity: 0.6 }}>
               <Building2 size={16} />
@@ -365,10 +376,9 @@ export default function Home() {
               </Typography>
             )}
           </CardContent>
-        </Card >
+        </Card>
 
-        {/* XP */}
-        < Card >
+        <Card>
           <CardContent style={{ padding: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', opacity: 0.6 }}>
               <Building2 size={16} />
@@ -387,32 +397,24 @@ export default function Home() {
               : <Typography variant="p" style={{ fontSize: '11px', opacity: 0.4, marginTop: '4px' }}>Integração pendente</Typography>
             }
           </CardContent>
-        </Card >
+        </Card>
 
-        {/* Vencimentos */}
-        < Card style={{ borderLeft: '4px solid #f59e0b' }}>
+        <Card style={{ borderLeft: '4px solid #f59e0b' }}>
           <CardContent style={{ padding: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               <AlertCircle size={16} style={{ color: '#f59e0b', flexShrink: 0 }} />
               <Typography variant="p" style={{ fontWeight: 600, fontSize: '12px', textTransform: 'uppercase', color: '#f59e0b' }}>
                 Vencimentos
               </Typography>
-              {/* Seletor de período */}
               <select
                 value={diasVencimento}
                 onChange={e => setDiasVencimento(Number(e.target.value))}
                 style={{
-                  marginLeft: 'auto',
-                  fontSize: '11px',
-                  fontWeight: 600,
+                  marginLeft: 'auto', fontSize: '11px', fontWeight: 600,
                   fontFamily: 'Montserrat, sans-serif',
-                  border: '1px solid rgba(245,158,11,0.3)',
-                  borderRadius: '6px',
-                  padding: '3px 6px',
-                  background: 'rgba(245,158,11,0.06)',
-                  color: '#f59e0b',
-                  cursor: 'pointer',
-                  outline: 'none',
+                  border: '1px solid rgba(245,158,11,0.3)', borderRadius: '6px',
+                  padding: '3px 6px', background: 'rgba(245,158,11,0.06)',
+                  color: '#f59e0b', cursor: 'pointer', outline: 'none',
                 }}
               >
                 {PERIODOS.map(p => (
@@ -430,142 +432,79 @@ export default function Home() {
               </Typography>
             )}
           </CardContent>
-        </Card >
+        </Card>
 
-      </div >
+      </div>
 
       {/* ── GRÁFICOS ── */}
-      < div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '24px' }}>
 
-        {/* ROSCA — BTG vs XP */}
-        < Card >
+        <Card>
           <CardContent style={{ padding: '24px' }}>
             <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '16px', letterSpacing: '0.05em' }}>
               Proporção por Instituição
             </Typography>
             <ResponsiveContainer width="100%" height={240}>
               <PieChart>
-                <Pie
-                  data={metrics.donutData}
-                  cx="50%" cy="50%"
-                  innerRadius={65} outerRadius={95}
-                  paddingAngle={3}
-                  dataKey="value"
-                  animationBegin={0}
-                  animationDuration={800}
-                >
-                  {metrics.donutData.map((entry, i) => (
-                    <Cell key={i} fill={entry.fill} stroke="none" />
-                  ))}
+                <Pie data={metrics.donutData} cx="50%" cy="50%" innerRadius={65} outerRadius={95} paddingAngle={3} dataKey="value" animationBegin={0} animationDuration={800}>
+                  {metrics.donutData.map((entry, i) => <Cell key={i} fill={entry.fill} stroke="none" />)}
                 </Pie>
                 <Tooltip content={<TooltipCustom />} />
-                <Legend
-                  iconType="circle"
-                  iconSize={10}
-                  formatter={(value, entry: any) => (
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#081F28' }}>
-                      {value} — {entry.payload.pct.toFixed(1)}%
-                    </span>
-                  )}
-                />
+                <Legend iconType="circle" iconSize={10} formatter={(value, entry: any) => (
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#081F28' }}>
+                    {value} — {entry.payload.pct.toFixed(1)}%
+                  </span>
+                )} />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
-        </Card >
+        </Card>
 
-        {/* BARRAS HORIZONTAIS — Alocação por classe */}
-        < Card >
+        <Card>
           <CardContent style={{ padding: '24px' }}>
             <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '16px', letterSpacing: '0.05em' }}>
               Alocação por Classe
             </Typography>
             <ResponsiveContainer width="100%" height={240}>
-              <BarChart
-                data={metrics.alocacaoData}
-                layout="vertical"
-                margin={{ top: 0, right: 60, left: 0, bottom: 0 }}
-                barSize={14}
-              >
+              <BarChart data={metrics.alocacaoData} layout="vertical" margin={{ top: 0, right: 60, left: 0, bottom: 0 }} barSize={14}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.06)" />
                 <XAxis type="number" hide />
-                <YAxis
-                  type="category" dataKey="name" width={95}
-                  tick={{ fontSize: 12, fontFamily: 'Montserrat, sans-serif', fill: '#081F28', opacity: 0.6 }}
-                  axisLine={false} tickLine={false}
-                />
+                <YAxis type="category" dataKey="name" width={95} tick={{ fontSize: 12, fontFamily: 'Montserrat, sans-serif', fill: '#081F28', opacity: 0.6 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<TooltipCustom />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]} animationDuration={800}>
-                  {metrics.alocacaoData.map((entry, i) => (
-                    <Cell key={i} fill={entry.fill} />
-                  ))}
-                  <LabelList
-                    dataKey="value"
-                    position="right"
-                    formatter={(v: any) => fmtK(Number(v))}
-                    style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif', fill: '#081F28', opacity: 0.7 }}
-                  />
+                  {metrics.alocacaoData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+                  <LabelList dataKey="value" position="right" formatter={(v: any) => fmtK(Number(v))} style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif', fill: '#081F28', opacity: 0.7 }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
-        </Card >
+        </Card>
 
-        {/* BARRAS AGRUPADAS — BTG vs XP por classe */}
-        < Card style={{ gridColumn: '1 / -1' }}>
+        <Card style={{ gridColumn: '1 / -1' }}>
           <CardContent style={{ padding: '24px' }}>
             <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '16px', letterSpacing: '0.05em' }}>
               Comparativo por Classe — BTG vs XP
             </Typography>
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart
-                data={metrics.comparativoData}
-                margin={{ top: 8, right: 16, left: 0, bottom: 0 }}
-                barSize={28}
-                barCategoryGap="35%"
-              >
+              <BarChart data={metrics.comparativoData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }} barSize={28} barCategoryGap="35%">
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 12, fontFamily: 'Montserrat, sans-serif', fill: '#081F28', opacity: 0.6 }}
-                  axisLine={false} tickLine={false}
-                />
-                <YAxis
-                  tickFormatter={fmtK}
-                  tick={{ fontSize: 11, fontFamily: 'Montserrat, sans-serif', fill: '#081F28', opacity: 0.4 }}
-                  axisLine={false} tickLine={false} width={70}
-                />
+                <XAxis dataKey="name" tick={{ fontSize: 12, fontFamily: 'Montserrat, sans-serif', fill: '#081F28', opacity: 0.6 }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={fmtK} tick={{ fontSize: 11, fontFamily: 'Montserrat, sans-serif', fill: '#081F28', opacity: 0.4 }} axisLine={false} tickLine={false} width={70} />
                 <Tooltip content={<TooltipBarras />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
-                <Legend
-                  iconType="circle" iconSize={10}
-                  formatter={(value) => (
-                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#081F28' }}>{value}</span>
-                  )}
-                />
-                <Bar
-                  dataKey="BTG"
-                  name="BTG Pactual"
-                  fill={CORES.btg}
-                  stackId="a" // O ID deve ser igual para ambas
-                  radius={[0, 0, 0, 0]} // Remova o arredondamento da barra de baixo
-                  animationDuration={800}
-                />
-                <Bar
-                  dataKey="XP"
-                  name="XP Investimentos"
-                  fill={CORES.xp}
-                  stackId="a" // O ID deve ser igual para ambas
-                  radius={[4, 4, 0, 0]} // Mantenha o arredondamento apenas no topo da pilha
-                  animationDuration={900}
-                />
+                <Legend iconType="circle" iconSize={10} formatter={(value) => (
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: '#081F28' }}>{value}</span>
+                )} />
+                <Bar dataKey="BTG" name="BTG Pactual" fill={CORES.btg} stackId="a" radius={[0, 0, 0, 0]} animationDuration={800} />
+                <Bar dataKey="XP" name="XP Investimentos" fill={CORES.xp} stackId="a" radius={[4, 4, 0, 0]} animationDuration={900} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
-        </Card >
+        </Card>
 
-      </div >
+      </div>
 
-      {/* ALOCAÇÃO — mini cards com barra de progresso */}
-      < section >
+      {/* ALOCAÇÃO — mini cards */}
+      <section>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
           <PieIcon size={16} style={{ opacity: 0.4 }} />
           <Typography variant="h2" style={{ fontWeight: 700, fontSize: '14px', textTransform: 'uppercase', opacity: 0.7 }}>
@@ -584,20 +523,11 @@ export default function Home() {
               <CardContent style={{ padding: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                   <div style={{ width: 8, height: 8, borderRadius: '2px', background: cor, flexShrink: 0 }} />
-                  <Typography variant="p" style={{ fontSize: '11px', opacity: 0.5, fontWeight: 600, textTransform: 'uppercase' }}>
-                    {label}
-                  </Typography>
+                  <Typography variant="p" style={{ fontSize: '11px', opacity: 0.5, fontWeight: 600, textTransform: 'uppercase' }}>{label}</Typography>
                 </div>
-                <Typography variant="h2" style={{ fontSize: '16px', fontWeight: 700, marginBottom: '8px' }}>
-                  {fmt(valor)}
-                </Typography>
+                <Typography variant="h2" style={{ fontSize: '16px', fontWeight: 700, marginBottom: '8px' }}>{fmt(valor)}</Typography>
                 <div style={{ height: '4px', borderRadius: '2px', background: 'rgba(0,0,0,0.07)' }}>
-                  <div style={{
-                    height: '100%', borderRadius: '2px',
-                    width: `${Math.min(pct(valor, metrics.patrimonioTotal), 100)}%`,
-                    background: cor,
-                    transition: 'width 0.6s ease',
-                  }} />
+                  <div style={{ height: '100%', borderRadius: '2px', width: `${Math.min(pct(valor, metrics.patrimonioTotal), 100)}%`, background: cor, transition: 'width 0.6s ease' }} />
                 </div>
                 <Typography variant="p" style={{ fontSize: '11px', opacity: 0.4, marginTop: '4px' }}>
                   {pct(valor, metrics.patrimonioTotal).toFixed(1)}%
@@ -606,34 +536,349 @@ export default function Home() {
             </Card>
           ))}
         </div>
-      </section >
+      </section>
 
-      {/* TABELA CONSOLIDADA — todos os ativos agrupados por tipo */}
-      < TabelaConsolidada
-        ativos={metrics.todosAtivos}
-        patrimonioTotal={metrics.patrimonioTotal}
-      />
+      <TabelaConsolidada ativos={metrics.todosAtivos} patrimonioTotal={metrics.patrimonioTotal} />
 
-    </div >
+    </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TabelaConsolidada — grupos colapsáveis + Drawer de detalhes
+// Drawer de gerenciamento de carteiras
 // ─────────────────────────────────────────────────────────────────────────────
 
-function TabelaConsolidada({
-  ativos,
-  patrimonioTotal,
+function DrawerGerenciarCarteiras({
+  aberto, onClose, temBtg, temXp, clienteId,
 }: {
-  ativos: ConsolidatedAtivo[];
-  patrimonioTotal: number;
+  aberto: boolean;
+  onClose: () => void;
+  temBtg: boolean;
+  temXp: boolean;
+  clienteId: string | null;
 }) {
+  const temAlguma = temBtg || temXp;
+  const [carteiras, setCarteiras] = useState<CarteiraPersonalizada[]>([]);
+  const [modalCriarAberto, setModalCriarAberto] = useState(false);
+
+  useEffect(() => {
+    async function fetchCarteiras() {
+      if (!clienteId) return;
+      const { data } = await supabase
+        .from('carteiras_personalizadas')
+        .select('id, nome, instituicoes, criada_em')
+        .eq('cliente_id', clienteId)
+        .order('criada_em', { ascending: true });
+      if (data) setCarteiras(data);
+    }
+    if (aberto) fetchCarteiras();
+  }, [aberto, clienteId]);
+
+  function handleCarteiraCriada(nova: CarteiraPersonalizada) {
+    setCarteiras(prev => [...prev, nova]);
+    setModalCriarAberto(false);
+  }
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: '11px', fontWeight: 700, textTransform: 'uppercase',
+    letterSpacing: '0.06em', opacity: 0.4, marginBottom: '8px',
+  };
+
+  const itemStyle: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    padding: '12px 14px', borderRadius: '10px',
+    background: 'rgba(0,0,0,0.03)', marginBottom: '6px',
+  };
+
+  const dotStyle = (cor: string): React.CSSProperties => ({
+    width: 8, height: 8, borderRadius: '50%', background: cor, flexShrink: 0,
+  });
+
+  const corInstituicao: Record<string, string> = { BTG: CORES.btg, XP: CORES.xp };
+
+  return (
+    <>
+      <Drawer open={aberto} onOpenChange={onClose}>
+        <DrawerContent side="right">
+          <DrawerHeader>
+            <DrawerTitle>Carteiras</DrawerTitle>
+            <DrawerDescription>Gerencie as carteiras vinculadas a este cliente.</DrawerDescription>
+          </DrawerHeader>
+
+          <DrawerBody>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+              {/* ── Padrão ── */}
+              <section>
+                <Typography variant="p" style={labelStyle}>Carteiras padrão</Typography>
+
+                {temAlguma && (
+                  <div style={itemStyle}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={dotStyle('var(--color-primaria, #0083CB)')} />
+                      <div>
+                        <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>Consolidada</Typography>
+                        <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>Visão unificada de todas as corretoras</Typography>
+                      </div>
+                    </div>
+                    <Badge variant="ghost" style={{ fontSize: '10px', opacity: 0.5 }}>Padrão</Badge>
+                  </div>
+                )}
+
+                {temBtg && (
+                  <div style={itemStyle}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={dotStyle(CORES.btg)} />
+                      <div>
+                        <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>BTG Pactual</Typography>
+                        <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>Posição BTG sincronizada</Typography>
+                      </div>
+                    </div>
+                    <Badge variant="ghost" style={{ fontSize: '10px', opacity: 0.5 }}>Padrão</Badge>
+                  </div>
+                )}
+
+                {temXp && (
+                  <div style={itemStyle}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={dotStyle(CORES.xp)} />
+                      <div>
+                        <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>XP Investimentos</Typography>
+                        <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>Posição XP sincronizada</Typography>
+                      </div>
+                    </div>
+                    <Badge variant="ghost" style={{ fontSize: '10px', opacity: 0.5 }}>Padrão</Badge>
+                  </div>
+                )}
+              </section>
+
+              <DrawerSeparator />
+
+              {/* ── Personalizadas ── */}
+              <section>
+                <Typography variant="p" style={labelStyle}>Carteiras personalizadas</Typography>
+
+                {carteiras.length === 0 ? (
+                  <div style={{ padding: '24px 16px', textAlign: 'center', borderRadius: '10px', border: '1.5px dashed rgba(0,0,0,0.12)', marginBottom: '12px' }}>
+                    <Typography variant="p" style={{ fontSize: '13px', opacity: 0.4 }}>
+                      Nenhuma carteira personalizada criada ainda.
+                    </Typography>
+                  </div>
+                ) : (
+                  <div style={{ marginBottom: '12px' }}>
+                    {carteiras.map(c => (
+                      <div key={c.id} style={itemStyle}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ display: 'flex', gap: '3px' }}>
+                            {c.instituicoes.map(inst => (
+                              <div key={inst} style={dotStyle(corInstituicao[inst] ?? '#6B7280')} />
+                            ))}
+                          </div>
+                          <div>
+                            <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>{c.nome}</Typography>
+                            <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>{c.instituicoes.join(' + ')}</Typography>
+                          </div>
+                        </div>
+                        <Badge variant="ghost" style={{ fontSize: '10px' }}>Personalizada</Badge>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <Button variant="outline" style={{ width: '100%' }} onClick={() => setModalCriarAberto(true)}>
+                  + Criar nova carteira
+                </Button>
+              </section>
+
+            </div>
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
+
+      {/* Modal fora do Drawer para não herdar z-index */}
+      {clienteId && (
+        <ModalCriarCarteira
+          aberto={modalCriarAberto}
+          onClose={() => setModalCriarAberto(false)}
+          temBtg={temBtg}
+          temXp={temXp}
+          clienteId={clienteId}
+          onCriada={handleCarteiraCriada}
+        />
+      )}
+    </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Modal de criação de carteira personalizada
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ModalCriarCarteira({
+  aberto, onClose, temBtg, temXp, clienteId, onCriada,
+}: {
+  aberto: boolean;
+  onClose: () => void;
+  temBtg: boolean;
+  temXp: boolean;
+  clienteId: string;
+  onCriada: (nova: CarteiraPersonalizada) => void;
+}) {
+  const [nome, setNome] = useState('');
+  const [selecionadas, setSelecionadas] = useState<string[]>([]);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+
+  useEffect(() => {
+    if (aberto) { setNome(''); setSelecionadas([]); setErro(''); }
+  }, [aberto]);
+
+  const instituicoesDisponiveis = [
+    temBtg && { key: 'BTG', label: 'BTG Pactual', cor: CORES.btg, desc: 'Posição sincronizada via API' },
+    temXp && { key: 'XP', label: 'XP Investimentos', cor: CORES.xp, desc: 'Posição sincronizada via API' },
+  ].filter(Boolean) as { key: string; label: string; cor: string; desc: string }[];
+
+  function toggleInstituicao(key: string) {
+    setSelecionadas(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+  }
+
+  async function handleCriar() {
+    if (!nome.trim()) { setErro('Dê um nome para a carteira.'); return; }
+    if (selecionadas.length === 0) { setErro('Selecione ao menos uma instituição.'); return; }
+
+    setSalvando(true);
+    setErro('');
+    try {
+      const { data, error } = await supabase
+        .from('carteiras_personalizadas')
+        .insert({ cliente_id: clienteId, nome: nome.trim(), instituicoes: selecionadas })
+        .select('id, nome, instituicoes, criada_em')
+        .single();
+
+      if (error) throw error;
+      onCriada(data);
+    } catch (e: any) {
+      setErro('Erro ao salvar. Tente novamente.');
+      console.error(e);
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  const podeCriar = nome.trim().length > 0 && selecionadas.length > 0 && !salvando;
+
+  return (
+    <Modal open={aberto} onOpenChange={onClose}>
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>Nova carteira personalizada</ModalTitle>
+          <ModalDescription>
+            Escolha um nome e selecione as instituições que farão parte desta carteira.
+          </ModalDescription>
+        </ModalHeader>
+
+        <div style={{ padding: '0 24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+          {/* Nome */}
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.5, letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
+              Nome da carteira
+            </label>
+            <input
+              type="text"
+              value={nome}
+              onChange={e => setNome(e.target.value)}
+              placeholder="Ex: BTG + Itaú"
+              maxLength={60}
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                padding: '10px 14px', fontSize: '14px',
+                fontFamily: 'Montserrat, sans-serif',
+                border: '1.5px solid rgba(0,0,0,0.15)', borderRadius: '8px',
+                outline: 'none', background: 'transparent',
+                transition: 'border-color 0.15s',
+              }}
+              onFocus={e => (e.target.style.borderColor = 'var(--color-primaria, #0083CB)')}
+              onBlur={e => (e.target.style.borderColor = 'rgba(0,0,0,0.15)')}
+            />
+          </div>
+
+          {/* Seleção de instituições */}
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.5, letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
+              Instituições
+            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {instituicoesDisponiveis.map(inst => {
+                const ativa = selecionadas.includes(inst.key);
+                return (
+                  <div
+                    key={inst.key}
+                    onClick={() => toggleInstituicao(inst.key)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '12px',
+                      padding: '14px 16px', borderRadius: '10px', cursor: 'pointer',
+                      border: `1.5px solid ${ativa ? inst.cor : 'rgba(0,0,0,0.1)'}`,
+                      background: ativa ? `${inst.cor}0D` : 'transparent',
+                      transition: 'all 0.15s', userSelect: 'none',
+                    }}
+                  >
+                    {/* Checkbox visual */}
+                    <div style={{
+                      width: 18, height: 18, borderRadius: '5px', flexShrink: 0,
+                      border: `2px solid ${ativa ? inst.cor : 'rgba(0,0,0,0.2)'}`,
+                      background: ativa ? inst.cor : 'transparent',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: 'all 0.15s',
+                    }}>
+                      {ativa && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                          <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: inst.cor, flexShrink: 0 }} />
+
+                    <div>
+                      <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>{inst.label}</Typography>
+                      <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>{inst.desc}</Typography>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Erro */}
+          {erro && (
+            <Typography variant="p" style={{ fontSize: '12px', color: '#EF4444' }}>
+              {erro}
+            </Typography>
+          )}
+
+        </div>
+
+        <ModalFooter>
+          <Button variant="ghost" onClick={onClose} disabled={salvando}>Cancelar</Button>
+          <Button variant="solid" onClick={handleCriar} disabled={!podeCriar}>
+            {salvando ? 'Salvando...' : 'Criar carteira'}
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TabelaConsolidada
+// ─────────────────────────────────────────────────────────────────────────────
+
+function TabelaConsolidada({ ativos, patrimonioTotal }: { ativos: ConsolidatedAtivo[]; patrimonioTotal: number }) {
   const [gruposAbertos, setGruposAbertos] = useState<Record<string, boolean>>({});
   const [ativoSelecionado, setAtivoSelecionado] = useState<ConsolidatedAtivo | null>(null);
   const [drawerAberto, setDrawerAberto] = useState(false);
 
-  // Agrupar por tipo, ordenado por valor total decrescente
   const grupos = useMemo(() => {
     const map: Record<string, ConsolidatedAtivo[]> = {};
     for (const a of ativos) {
@@ -642,29 +887,14 @@ function TabelaConsolidada({
       map[key].push(a);
     }
     return Object.entries(map)
-      .map(([tipo, itens]) => ({
-        tipo,
-        itens: [...itens].sort((a, b) => b.valorLiquido - a.valorLiquido),
-        total: itens.reduce((s, a) => s + a.valorLiquido, 0),
-      }))
+      .map(([tipo, itens]) => ({ tipo, itens: [...itens].sort((a, b) => b.valorLiquido - a.valorLiquido), total: itens.reduce((s, a) => s + a.valorLiquido, 0) }))
       .sort((a, b) => b.total - a.total);
   }, [ativos]);
 
-  function toggleGrupo(tipo: string) {
-    setGruposAbertos(prev => ({ ...prev, [tipo]: !prev[tipo] }));
-  }
-
-  function abrirDrawer(ativo: ConsolidatedAtivo) {
-    setAtivoSelecionado(ativo);
-    setDrawerAberto(true);
-  }
-
-  const corInstituicao = (inst: string) =>
-    inst === 'BTG Pactual' ? CORES.btg : CORES.xp;
+  const corInstituicao = (inst: string) => inst === 'BTG Pactual' ? CORES.btg : CORES.xp;
 
   return (
     <section>
-      {/* Cabeçalho da seção */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
         <LayoutGrid size={16} style={{ opacity: 0.4 }} />
         <Typography variant="h2" style={{ fontWeight: 700, fontSize: '14px', textTransform: 'uppercase', opacity: 0.7 }}>
@@ -673,255 +903,121 @@ function TabelaConsolidada({
         <Badge variant="ghost" style={{ fontSize: '11px' }}>{ativos.length} ativos</Badge>
       </div>
 
-      {/* Tabela contínua */}
       <Card style={{ padding: 0, overflow: 'hidden' }}>
-
-        {/* Cabeçalho fixo das colunas */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '32px 1fr 80px 100px 110px 36px',
-          padding: '10px 16px',
-          borderBottom: '1px solid rgba(0,0,0,0.07)',
-          background: 'rgba(0,0,0,0.02)',
-        }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 80px 100px 110px 36px', padding: '10px 16px', borderBottom: '1px solid rgba(0,0,0,0.07)', background: 'rgba(0,0,0,0.02)' }}>
           {['', 'Ativo', 'Inst.', 'Vencimento', 'Valor Líquido', ''].map((h, i) => (
-            <span key={i} style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4 }}>
-              {h}
-            </span>
+            <span key={i} style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4 }}>{h}</span>
           ))}
         </div>
 
-        {/* Grupos */}
         {grupos.map(({ tipo, itens, total }) => {
           const aberto = gruposAbertos[tipo] ?? false;
           return (
             <div key={tipo}>
-
-              {/* Linha do grupo — clicável para expandir */}
               <div
-                onClick={() => toggleGrupo(tipo)}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '32px 1fr 80px 100px 110px 36px',
-                  padding: '12px 16px',
-                  cursor: 'pointer',
-                  background: aberto ? 'rgba(0,131,203,0.04)' : 'transparent',
-                  borderBottom: '1px solid rgba(0,0,0,0.06)',
-                  alignItems: 'center',
-                  transition: 'background 0.15s',
-                  userSelect: 'none',
-                }}
+                onClick={() => setGruposAbertos(prev => ({ ...prev, [tipo]: !prev[tipo] }))}
+                style={{ display: 'grid', gridTemplateColumns: '32px 1fr 80px 100px 110px 36px', padding: '12px 16px', cursor: 'pointer', background: aberto ? 'rgba(0,131,203,0.04)' : 'transparent', borderBottom: '1px solid rgba(0,0,0,0.06)', alignItems: 'center', transition: 'background 0.15s', userSelect: 'none' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,131,203,0.06)')}
                 onMouseLeave={e => (e.currentTarget.style.background = aberto ? 'rgba(0,131,203,0.04)' : 'transparent')}
               >
-                {/* Ícone chevron */}
-                <span style={{
-                  fontSize: '14px', opacity: 0.5,
-                  transition: 'transform 0.2s',
-                  display: 'inline-block',
-                  transform: aberto ? 'rotate(90deg)' : 'rotate(0deg)',
-                }}>
-                  ›
-                </span>
-
-                {/* Nome do grupo + contagem */}
+                <span style={{ fontSize: '14px', opacity: 0.5, transition: 'transform 0.2s', display: 'inline-block', transform: aberto ? 'rotate(90deg)' : 'rotate(0deg)' }}>›</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '13px', fontWeight: 700 }}>{tipo}</span>
                   <Badge variant="ghost" style={{ fontSize: '10px' }}>{itens.length}</Badge>
                 </div>
-
-                <span />
-                <span />
-
-                {/* Total do grupo */}
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-primaria, #0083CB)' }}>
-                  {fmt(total)}
-                </span>
-
-                {/* % do portfólio */}
-                <span style={{ fontSize: '11px', opacity: 0.4 }}>
-                  {pct(total, patrimonioTotal).toFixed(1)}%
-                </span>
+                <span /><span />
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-primaria, #0083CB)' }}>{fmt(total)}</span>
+                <span style={{ fontSize: '11px', opacity: 0.4 }}>{pct(total, patrimonioTotal).toFixed(1)}%</span>
               </div>
 
-              {/* Linhas dos ativos — visíveis só quando aberto */}
               {aberto && itens.map((ativo, i) => (
                 <div
                   key={ativo.rowId}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '32px 1fr 80px 100px 110px 36px',
-                    padding: '10px 16px',
-                    borderBottom: i < itens.length - 1
-                      ? '1px solid rgba(0,0,0,0.04)'
-                      : '1px solid rgba(0,0,0,0.06)',
-                    alignItems: 'center',
-                    background: 'rgba(0,0,0,0.008)',
-                    cursor: 'pointer',
-                    transition: 'background 0.12s',
-                  }}
+                  style={{ display: 'grid', gridTemplateColumns: '32px 1fr 80px 100px 110px 36px', padding: '10px 16px', borderBottom: i < itens.length - 1 ? '1px solid rgba(0,0,0,0.04)' : '1px solid rgba(0,0,0,0.06)', alignItems: 'center', background: 'rgba(0,0,0,0.008)', cursor: 'pointer', transition: 'background 0.12s' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,131,203,0.04)')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0,0,0,0.008)')}
-                  onClick={() => abrirDrawer(ativo)}
+                  onClick={() => { setAtivoSelecionado(ativo); setDrawerAberto(true); }}
                 >
-                  <span /> {/* espaçador */}
-
-                  {/* Nome + subTipo */}
+                  <span />
                   <div>
-                    <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>
-                      {ativo.nome}
-                    </Typography>
-                    {ativo.subTipo && (
-                      <Badge
-                        intent="primaria" variant="ghost"
-                        style={{ fontSize: '10px', marginTop: '2px' }}
-                      >
-                        {ativo.subTipo}
-                      </Badge>
-                    )}
+                    <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>{ativo.nome}</Typography>
+                    {ativo.subTipo && <Badge intent="primaria" variant="ghost" style={{ fontSize: '10px', marginTop: '2px' }}>{ativo.subTipo}</Badge>}
                   </div>
-
-                  {/* Instituição */}
-                  <Badge
-                    variant="ghost"
-                    style={{
-                      fontSize: '10px',
-                      color: corInstituicao(ativo.instituicao),
-                      borderColor: corInstituicao(ativo.instituicao),
-                    }}
-                  >
+                  <Badge variant="ghost" style={{ fontSize: '10px', color: corInstituicao(ativo.instituicao), borderColor: corInstituicao(ativo.instituicao) }}>
                     {ativo.instituicao === 'BTG Pactual' ? 'BTG' : 'XP'}
                   </Badge>
-
-                  {/* Vencimento */}
-                  <Typography variant="p" style={{ fontSize: '12px', opacity: 0.55 }}>
-                    {ativo.vencimento ? fmtDate(ativo.vencimento) : '—'}
-                  </Typography>
-
-                  {/* Valor líquido */}
+                  <Typography variant="p" style={{ fontSize: '12px', opacity: 0.55 }}>{ativo.vencimento ? fmtDate(ativo.vencimento) : '—'}</Typography>
                   <div>
                     <strong style={{ fontSize: '13px' }}>{fmt(ativo.valorLiquido)}</strong>
-                    <div style={{ fontSize: '10px', opacity: 0.35 }}>
-                      {pct(ativo.valorLiquido, patrimonioTotal).toFixed(1)}%
-                    </div>
+                    <div style={{ fontSize: '10px', opacity: 0.35 }}>{pct(ativo.valorLiquido, patrimonioTotal).toFixed(1)}%</div>
                   </div>
-
-                  {/* Seta de detalhes */}
                   <span style={{ opacity: 0.35, fontSize: '16px' }}>›</span>
                 </div>
               ))}
-
             </div>
           );
         })}
-
       </Card>
 
-      {/* Drawer de detalhes */}
       {ativoSelecionado && (
-        <DrawerDetalheConsolidado
-          ativo={ativoSelecionado}
-          aberto={drawerAberto}
-          onClose={setDrawerAberto}
-          patrimonioTotal={patrimonioTotal}
-        />
+        <DrawerDetalheConsolidado ativo={ativoSelecionado} aberto={drawerAberto} onClose={setDrawerAberto} patrimonioTotal={patrimonioTotal} />
       )}
     </section>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Drawer de detalhes do ativo consolidado
+// Drawer de detalhes do ativo
 // ─────────────────────────────────────────────────────────────────────────────
 
-function DrawerDetalheConsolidado({
-  ativo, aberto, onClose, patrimonioTotal,
-}: {
-  ativo: ConsolidatedAtivo;
-  aberto: boolean;
-  onClose: (v: boolean) => void;
-  patrimonioTotal: number;
-}) {
+function DrawerDetalheConsolidado({ ativo, aberto, onClose, patrimonioTotal }: { ativo: ConsolidatedAtivo; aberto: boolean; onClose: (v: boolean) => void; patrimonioTotal: number }) {
   const corInst = ativo.instituicao === 'BTG Pactual' ? CORES.btg : CORES.xp;
-
   return (
     <Drawer open={aberto} onOpenChange={onClose}>
       <DrawerContent side="right">
         <DrawerHeader>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-            {ativo.subTipo && (
-              <Badge intent="primaria" variant="solid" style={{ fontSize: '12px' }}>
-                {ativo.subTipo}
-              </Badge>
-            )}
-            <Badge
-              variant="ghost"
-              style={{ fontSize: '12px', color: corInst, borderColor: corInst }}
-            >
+            {ativo.subTipo && <Badge intent="primaria" variant="solid" style={{ fontSize: '12px' }}>{ativo.subTipo}</Badge>}
+            <Badge variant="ghost" style={{ fontSize: '12px', color: corInst, borderColor: corInst }}>
               {ativo.instituicao === 'BTG Pactual' ? 'BTG Pactual' : 'XP Investimentos'}
             </Badge>
           </div>
           <DrawerTitle>{ativo.nome}</DrawerTitle>
           <DrawerDescription>{ativo.tipo}</DrawerDescription>
         </DrawerHeader>
-
         <DrawerBody>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-            {/* Valores */}
             <section>
-              <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '10px', letterSpacing: '0.05em' }}>
-                Valores
-              </Typography>
+              <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '10px', letterSpacing: '0.05em' }}>Valores</Typography>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <InfoItem label="Valor Líquido" value={fmt(ativo.valorLiquido)} highlight />
                 <InfoItem label="% do Portfólio" value={`${pct(ativo.valorLiquido, patrimonioTotal).toFixed(2)}%`} />
               </div>
             </section>
-
             <DrawerSeparator />
-
-            {/* Classificação */}
             <section>
-              <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '10px', letterSpacing: '0.05em' }}>
-                Classificação
-              </Typography>
+              <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '10px', letterSpacing: '0.05em' }}>Classificação</Typography>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <InfoItem label="Tipo" value={ativo.tipo} />
                 {ativo.subTipo && <InfoItem label="Subtipo" value={ativo.subTipo} />}
                 <InfoItem label="Instituição" value={ativo.instituicao} />
               </div>
             </section>
-
-            {/* Vencimento */}
             {ativo.vencimento && (
               <>
                 <DrawerSeparator />
                 <section>
-                  <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '10px', letterSpacing: '0.05em' }}>
-                    Datas
-                  </Typography>
+                  <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '10px', letterSpacing: '0.05em' }}>Datas</Typography>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                     <InfoItem label="Vencimento" value={fmtDate(ativo.vencimento)} />
                   </div>
                 </section>
               </>
             )}
-
-            {/* Nota */}
-            <div style={{
-              marginTop: '8px',
-              padding: '12px',
-              background: 'rgba(0,131,203,0.05)',
-              borderRadius: '8px',
-              fontSize: '12px',
-              opacity: 0.6,
-              lineHeight: 1.5,
-            }}>
+            <div style={{ marginTop: '8px', padding: '12px', background: 'rgba(0,131,203,0.05)', borderRadius: '8px', fontSize: '12px', opacity: 0.6, lineHeight: 1.5 }}>
               Para ver todos os detalhes deste ativo (aquisições, taxas, identificação), acesse a página{' '}
               <strong>{ativo.instituicao === 'BTG Pactual' ? 'BTG API' : 'XP API'}</strong>.
             </div>
-
           </div>
         </DrawerBody>
       </DrawerContent>
@@ -929,20 +1025,15 @@ function DrawerDetalheConsolidado({
   );
 }
 
-function InfoItem({ label, value, highlight = false }: {
-  label: string; value: string; highlight?: boolean;
-}) {
+// ─────────────────────────────────────────────────────────────────────────────
+// InfoItem
+// ─────────────────────────────────────────────────────────────────────────────
+
+function InfoItem({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div style={{ background: 'rgba(0,131,203,0.05)', borderRadius: '8px', padding: '10px 12px' }}>
-      <div style={{ fontSize: '11px', opacity: 0.45, marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase' }}>
-        {label}
-      </div>
-      <div style={{
-        fontSize: '14px', fontWeight: highlight ? 700 : 500,
-        color: highlight ? 'var(--color-primaria, #0083CB)' : 'inherit',
-      }}>
-        {value}
-      </div>
+      <div style={{ fontSize: '11px', opacity: 0.45, marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontSize: '14px', fontWeight: highlight ? 700 : 500, color: highlight ? 'var(--color-primaria, #0083CB)' : 'inherit' }}>{value}</div>
     </div>
   );
 }
