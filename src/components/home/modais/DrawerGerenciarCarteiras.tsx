@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerTitle, DrawerDescription, DrawerSeparator, Typography, Badge, Button } from 'avere-ui';
+import {
+    Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerTitle, DrawerDescription, DrawerSeparator,
+    Typography, Badge, Button,
+    Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter // <-- Adicionados imports do Modal
+} from 'avere-ui';
+import { Pencil, Trash2 } from 'lucide-react';
 import { supabase } from '../../../services/supabase';
 import { CORES } from '../../../utils/colors';
 import type { CarteiraPersonalizada } from '../../../hooks/useHomeMetrics';
@@ -17,6 +22,11 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, clien
     const temAlguma = temBtg || temXp;
     const [carteiras, setCarteiras] = useState<CarteiraPersonalizada[]>([]);
     const [modalCriarAberto, setModalCriarAberto] = useState(false);
+    const [carteiraEditando, setCarteiraEditando] = useState<CarteiraPersonalizada | null>(null);
+
+    // Novo estado para controlar o modal de exclusão
+    const [carteiraParaExcluir, setCarteiraParaExcluir] = useState<CarteiraPersonalizada | null>(null);
+    const [excluindo, setExcluindo] = useState(false);
 
     useEffect(() => {
         async function fetchCarteiras() {
@@ -31,15 +41,59 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, clien
         if (aberto) fetchCarteiras();
     }, [aberto, clienteId]);
 
-    function handleCarteiraCriada(nova: CarteiraPersonalizada) {
-        setCarteiras(prev => [...prev, nova]);
+    function handleCarteiraSalva(salva: CarteiraPersonalizada, editando: boolean) {
+        if (editando) {
+            setCarteiras(prev => prev.map(c => c.id === salva.id ? salva : c));
+        } else {
+            setCarteiras(prev => [...prev, salva]);
+        }
+        fecharModalCriacao();
+    }
+
+    // Função que realmente executa a exclusão na base de dados
+    async function confirmarExclusao() {
+        if (!carteiraParaExcluir) return;
+        setExcluindo(true);
+
+        try {
+            const { error } = await supabase
+                .from('carteiras_personalizadas')
+                .delete()
+                .eq('id', carteiraParaExcluir.id);
+
+            if (error) throw error;
+
+            setCarteiras(prev => prev.filter(c => c.id !== carteiraParaExcluir.id));
+            setCarteiraParaExcluir(null); // Fecha o modal
+        } catch (e) {
+            console.error('Erro ao excluir:', e);
+            // Idealmente, trocaríamos este alert por um Toast de erro futuramente
+            alert('Ocorreu um erro ao excluir a carteira.');
+        } finally {
+            setExcluindo(false);
+        }
+    }
+
+    function abrirModalCriacao() {
+        setCarteiraEditando(null);
+        setModalCriarAberto(true);
+    }
+
+    function abrirModalEdicao(carteira: CarteiraPersonalizada) {
+        setCarteiraEditando(carteira);
+        setModalCriarAberto(true);
+    }
+
+    function fecharModalCriacao() {
         setModalCriarAberto(false);
+        setTimeout(() => setCarteiraEditando(null), 300);
     }
 
     const labelStyle: React.CSSProperties = { fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.4, marginBottom: '8px' };
     const itemStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: '10px', background: 'rgba(0,0,0,0.03)', marginBottom: '6px' };
     const dotStyle = (cor: string): React.CSSProperties => ({ width: 8, height: 8, borderRadius: '50%', background: cor, flexShrink: 0 });
     const corInstituicao: Record<string, string> = { BTG: CORES.btg, XP: CORES.xp };
+    const actionBtnStyle: React.CSSProperties = { background: 'transparent', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' };
 
     return (
         <>
@@ -52,6 +106,7 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, clien
 
                     <DrawerBody>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
                             <section>
                                 <Typography variant="p" style={labelStyle}>Carteiras padrão</Typography>
                                 {temAlguma && (
@@ -113,12 +168,32 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, clien
                                                         <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>{c.instituicoes.join(' + ')}</Typography>
                                                     </div>
                                                 </div>
-                                                <Badge variant="ghost" style={{ fontSize: '10px' }}>Personalizada</Badge>
+
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <button
+                                                        onClick={() => abrirModalEdicao(c)}
+                                                        style={{ ...actionBtnStyle, color: '#6B7280' }}
+                                                        title="Editar carteira"
+                                                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.05)'}
+                                                        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                                                    >
+                                                        <Pencil size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setCarteiraParaExcluir(c)} // Abre o modal de exclusão
+                                                        style={{ ...actionBtnStyle, color: '#EF4444' }}
+                                                        title="Excluir carteira"
+                                                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                                                        onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
                                 )}
-                                <Button variant="outline" style={{ width: '100%' }} onClick={() => setModalCriarAberto(true)}>
+                                <Button variant="outline" style={{ width: '100%' }} onClick={abrirModalCriacao}>
                                     + Criar nova carteira
                                 </Button>
                             </section>
@@ -127,16 +202,51 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, clien
                 </DrawerContent>
             </Drawer>
 
+            {/* Modal de Criação / Edição */}
             {clienteId && (
                 <ModalCriarCarteira
                     aberto={modalCriarAberto}
-                    onClose={() => setModalCriarAberto(false)}
+                    onClose={fecharModalCriacao}
                     temBtg={temBtg}
                     temXp={temXp}
                     clienteId={clienteId}
-                    onCriada={handleCarteiraCriada}
+                    onSalva={handleCarteiraSalva}
+                    carteiraEditando={carteiraEditando}
                 />
             )}
+
+            {/* Modal de Confirmação de Exclusão */}
+            <Modal
+                open={!!carteiraParaExcluir}
+                onOpenChange={() => !excluindo && setCarteiraParaExcluir(null)}
+            >
+                <ModalContent>
+                    <ModalHeader>
+                        <ModalTitle>Excluir Carteira</ModalTitle>
+                        <ModalDescription>
+                            Tem a certeza de que deseja excluir a carteira <strong>"{carteiraParaExcluir?.nome}"</strong>?
+                            <br /> Esta ação não poderá ser desfeita.
+                        </ModalDescription>
+                    </ModalHeader>
+                    <ModalFooter>
+                        <Button
+                            variant="ghost"
+                            onClick={() => setCarteiraParaExcluir(null)}
+                            disabled={excluindo}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="solid"
+                            onClick={confirmarExclusao}
+                            disabled={excluindo}
+                            style={{ backgroundColor: '#EF4444', color: 'white', borderColor: '#EF4444' }} // Força o vermelho destrutivo
+                        >
+                            {excluindo ? 'A excluir...' : 'Sim, excluir'}
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
         </>
     );
 }

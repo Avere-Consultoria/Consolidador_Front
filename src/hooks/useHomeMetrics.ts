@@ -205,6 +205,8 @@ export function useHomeMetrics() {
             hasData: patrimonioTotal > 0,
             dataRefBtg: snapshotData.btg?.data_referencia,
             dataRefXp: snapshotData.xp?.data_referencia,
+            incluirBtg, // <-- ADICIONAR AQUI
+            incluirXp,  // <-- ADICIONAR AQUI
         };
     }, [snapshotData, diasVencimento, carteiraAtiva, carteirasPersonalizadas]);
 

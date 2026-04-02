@@ -10,18 +10,29 @@ interface ModalCriarCarteiraProps {
     temBtg: boolean;
     temXp: boolean;
     clienteId: string;
-    onCriada: (nova: CarteiraPersonalizada) => void;
+    onSalva: (carteira: CarteiraPersonalizada, editando: boolean) => void;
+    carteiraEditando?: CarteiraPersonalizada | null; // <-- Nova prop
 }
 
-export function ModalCriarCarteira({ aberto, onClose, temBtg, temXp, clienteId, onCriada }: ModalCriarCarteiraProps) {
+export function ModalCriarCarteira({ aberto, onClose, temBtg, temXp, clienteId, onSalva, carteiraEditando }: ModalCriarCarteiraProps) {
     const [nome, setNome] = useState('');
     const [selecionadas, setSelecionadas] = useState<string[]>([]);
     const [salvando, setSalvando] = useState(false);
     const [erro, setErro] = useState('');
 
+    // Preenche o formulário se for edição, ou limpa se for criação
     useEffect(() => {
-        if (aberto) { setNome(''); setSelecionadas([]); setErro(''); }
-    }, [aberto]);
+        if (aberto) {
+            if (carteiraEditando) {
+                setNome(carteiraEditando.nome);
+                setSelecionadas(carteiraEditando.instituicoes);
+            } else {
+                setNome('');
+                setSelecionadas([]);
+            }
+            setErro('');
+        }
+    }, [aberto, carteiraEditando]);
 
     const instituicoesDisponiveis = [
         temBtg && { key: 'BTG', label: 'BTG Pactual', cor: CORES.btg, desc: 'Posição sincronizada via API' },
@@ -32,21 +43,35 @@ export function ModalCriarCarteira({ aberto, onClose, temBtg, temXp, clienteId, 
         setSelecionadas(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
     }
 
-    async function handleCriar() {
+    async function handleSalvar() {
         if (!nome.trim()) { setErro('Dê um nome para a carteira.'); return; }
         if (selecionadas.length === 0) { setErro('Selecione ao menos uma instituição.'); return; }
 
         setSalvando(true);
         setErro('');
-        try {
-            const { data, error } = await supabase
-                .from('carteiras_personalizadas')
-                .insert({ cliente_id: clienteId, nome: nome.trim(), instituicoes: selecionadas })
-                .select('id, nome, instituicoes, criada_em')
-                .single();
 
-            if (error) throw error;
-            onCriada(data);
+        try {
+            let result;
+
+            if (carteiraEditando) {
+                // Fluxo de Edição (UPDATE)
+                result = await supabase
+                    .from('carteiras_personalizadas')
+                    .update({ nome: nome.trim(), instituicoes: selecionadas })
+                    .eq('id', carteiraEditando.id)
+                    .select('id, nome, instituicoes, criada_em')
+                    .single();
+            } else {
+                // Fluxo de Criação (INSERT)
+                result = await supabase
+                    .from('carteiras_personalizadas')
+                    .insert({ cliente_id: clienteId, nome: nome.trim(), instituicoes: selecionadas })
+                    .select('id, nome, instituicoes, criada_em')
+                    .single();
+            }
+
+            if (result.error) throw result.error;
+            onSalva(result.data, !!carteiraEditando);
         } catch (e: any) {
             setErro('Erro ao guardar. Tente novamente.');
             console.error(e);
@@ -56,14 +81,18 @@ export function ModalCriarCarteira({ aberto, onClose, temBtg, temXp, clienteId, 
     }
 
     const podeCriar = nome.trim().length > 0 && selecionadas.length > 0 && !salvando;
+    const titulo = carteiraEditando ? 'Editar carteira' : 'Nova carteira personalizada';
+    const textoBotao = salvando ? 'A guardar...' : (carteiraEditando ? 'Guardar alterações' : 'Criar carteira');
 
     return (
         <Modal open={aberto} onOpenChange={onClose}>
             <ModalContent>
                 <ModalHeader>
-                    <ModalTitle>Nova carteira personalizada</ModalTitle>
+                    <ModalTitle>{titulo}</ModalTitle>
                     <ModalDescription>
-                        Escolha um nome e selecione as instituições que farão parte desta carteira.
+                        {carteiraEditando
+                            ? 'Altere o nome ou as instituições vinculadas a esta carteira.'
+                            : 'Escolha um nome e selecione as instituições que farão parte desta carteira.'}
                     </ModalDescription>
                 </ModalHeader>
 
@@ -132,8 +161,8 @@ export function ModalCriarCarteira({ aberto, onClose, temBtg, temXp, clienteId, 
 
                 <ModalFooter>
                     <Button variant="ghost" onClick={onClose} disabled={salvando}>Cancelar</Button>
-                    <Button variant="solid" onClick={handleCriar} disabled={!podeCriar}>
-                        {salvando ? 'A guardar...' : 'Criar carteira'}
+                    <Button variant="solid" onClick={handleSalvar} disabled={!podeCriar}>
+                        {textoBotao}
                     </Button>
                 </ModalFooter>
             </ModalContent>

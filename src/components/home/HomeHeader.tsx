@@ -2,12 +2,14 @@ import { Typography, Select, Button } from 'avere-ui';
 import { fmtDate } from '../../utils/formatters';
 
 interface HomeHeaderProps {
-    cliente: any; // Podes tipar melhor com a interface do teu ClientContext depois
+    cliente: any;
     carteiraAtiva: string;
     setCarteiraAtiva: (val: string) => void;
     opcoesCarteira: { label: string; value: string }[];
     dataRefBtg?: string;
     dataRefXp?: string;
+    incluirBtg: boolean; // <-- Nova prop
+    incluirXp: boolean;  // <-- Nova prop
     onOpenGerenciarCarteiras: () => void;
 }
 
@@ -18,6 +20,8 @@ export function HomeHeader({
     opcoesCarteira,
     dataRefBtg,
     dataRefXp,
+    incluirBtg,
+    incluirXp,
     onOpenGerenciarCarteiras
 }: HomeHeaderProps) {
     return (
@@ -41,10 +45,12 @@ export function HomeHeader({
                     </Button>
                 </div>
             </div>
+
+            {/* Texto dinâmico dependendo das instituições ativas */}
             <Typography variant="p" style={{ opacity: 0.6 }}>
                 {cliente?.nome}
-                {dataRefBtg && ` · BTG: ${fmtDate(dataRefBtg + 'T12:00:00Z')}`}
-                {dataRefXp && ` · XP: ${fmtDate(dataRefXp + 'T12:00:00Z')}`}
+                {incluirBtg && dataRefBtg && ` · BTG: ${fmtDate(dataRefBtg + 'T12:00:00Z')}`}
+                {incluirXp && dataRefXp && ` · XP: ${fmtDate(dataRefXp + 'T12:00:00Z')}`}
             </Typography>
         </header>
     );

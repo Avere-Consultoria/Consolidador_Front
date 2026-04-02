@@ -51,6 +51,8 @@ export default function Home() {
         opcoesCarteira={opcoesCarteira}
         dataRefBtg={metrics.dataRefBtg}
         dataRefXp={metrics.dataRefXp}
+        incluirBtg={metrics.incluirBtg}
+        incluirXp={metrics.incluirXp}
         onOpenGerenciarCarteiras={() => setDrawerCarteirasAberto(true)}
       />
 
