@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import BtgApi from './pages/BtgApi';
 import XpApi from './pages/XpApi';
 import EmDesenvolvimento from './pages/EmDesenvolvimento';
+import MasterAtivos from './pages/MasterAtivos';
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
             <Route path="/btg" element={<BtgApi />} />
             <Route path="/xp" element={<XpApi />} />
             <Route path="/dev" element={<EmDesenvolvimento />} />
+            <Route path="/master" element={<MasterAtivos />} />
           </Route>
         </Routes>
       </BrowserRouter>

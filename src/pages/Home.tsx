@@ -8,6 +8,7 @@ import { Graficos } from '../components/home/Graficos';
 import { AlocacaoCards } from '../components/home/AlocacaoCards';
 import { TabelaAtivos } from '../components/home/TabelaAtivos';
 import { DrawerGerenciarCarteiras } from '../components/home/modais/DrawerGerenciarCarteiras';
+import { RiscoEmissor } from '../components/home/RiscoEmissor';
 
 export default function Home() {
   const {
@@ -60,7 +61,9 @@ export default function Home() {
 
       <Graficos metrics={metrics} />
 
-      <AlocacaoCards alocacao={metrics.alocacao} patrimonioTotal={metrics.patrimonioTotal} />
+      <RiscoEmissor dados={metrics.exposicaoRiscoData} />
+
+      <AlocacaoCards alocacaoData={metrics.alocacaoData} patrimonioTotal={metrics.patrimonioTotal} />
 
       <TabelaAtivos ativos={metrics.todosAtivos} patrimonioTotal={metrics.patrimonioTotal} />
 

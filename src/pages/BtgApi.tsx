@@ -572,6 +572,7 @@ export default function BtgApi() {
 
       if (error) throw new Error(error.message);
 
+      // 1. Atualiza a tela com os dados novos
       setPortfolioData({
         ...data,
         ativos: (data.ativos || []).map((a: any, idx: number) => ({
@@ -579,6 +580,12 @@ export default function BtgApi() {
           _uniqueId: `api-${idx}`,
         })),
       });
+
+      // 2. A MÁGICA ACONTECE AQUI: 
+      // Manda o banco de dados processar os ativos novos e jogar no Dicionário!
+      const { error: rpcError } = await supabase.rpc('alimentar_dicionario');
+      if (rpcError) console.error('Erro ao alimentar dicionário:', rpcError);
+
     } catch (err) {
       console.error(err);
     } finally {
