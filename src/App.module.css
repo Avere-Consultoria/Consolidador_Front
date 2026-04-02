@@ -1,0 +1,139 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--color-fundo);
+  transition: all 0.3s ease;
+}
+
+.rightSide {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* --- Controle das Logos --- */
+.logoFull {
+  height: auto;
+  max-height: 52px;
+  /* Garante que a logo alta caiba no header */
+  width: auto;
+  max-width: 140px;
+  /* Evita que fique larga demais */
+  object-fit: contain;
+}
+
+.logoIcon {
+  height: 32px;
+  width: 32px;
+  /* Força o ícone a ficar quadrado e centralizado */
+  object-fit: contain;
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 32px;
+  max-width: 1400px;
+  width: 100%;
+  gap: 40px;
+  margin: 0 auto;
+  /* Adicionado */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.subtitle {
+  opacity: 0.5;
+  margin-top: 4px;
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  background: white;
+  padding: 6px 6px 6px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--color-borda);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.searchBtn {
+  height: 36px !important;
+  width: 36px !important;
+  padding: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.cardPadding {
+  padding-top: 20px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cardLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.emptyState {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 1px solid var(--color-borda);
+  border-radius: 24px;
+  gap: 20px;
+}
+
+.iconCircle {
+  padding: 24px;
+  background: var(--color-fundo);
+  border-radius: 50%;
+  color: rgba(0, 0, 0, 0.2);
+}
+
+.errorBox {
+  background: #FEF2F2;
+  color: #991B1B;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #FEE2E2;
+}
+
+.fadeContent {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
