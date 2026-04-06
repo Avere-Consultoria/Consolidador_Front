@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Typography, Card, CardContent, Button, DataTable, Spinner, Badge } from 'avere-ui';
+import { Typography, Card, Button, DataTable, Spinner, Badge } from 'avere-ui';
 import { Settings, Building2, PieChart, Plus, Save, Trash2, Edit2, X } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
