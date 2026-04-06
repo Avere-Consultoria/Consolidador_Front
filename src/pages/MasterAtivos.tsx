@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Typography, Card, Badge, Button, DataTable, Spinner } from 'avere-ui';
-import { Filter, Save, AlertCircle } from 'lucide-react';
+import { Filter, Save } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────
