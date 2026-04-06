@@ -1,5 +1,5 @@
 import { Card, CardContent, Typography, Badge } from 'avere-ui';
-import { ShieldAlert, ShieldCheck } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 import { fmt } from '../../utils/formatters';
 
 interface RiscoEmissorProps {
