@@ -120,7 +120,7 @@ export default function MainLayout() {
           active={location.pathname === '/'} onClick={() => navigate('/')}
         />
         <SideBarItem
-          icon={LineChart} label="Rentabilidade" // <-- NOVO ITEM AQUI
+          icon={LineChart} label="Rentabilidade"
           active={location.pathname === '/rentabilidade'} onClick={() => navigate('/rentabilidade')}
         />
         <SideBarItem

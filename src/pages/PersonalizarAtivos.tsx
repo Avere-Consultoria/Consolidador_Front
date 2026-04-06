@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Typography, Card, CardContent, Button, DataTable, Spinner, Badge } from 'avere-ui';
-import { SlidersHorizontal, Plus, Edit2, Trash2, X, Save, ArrowRight } from 'lucide-react';
+import { Typography, Card, Button, DataTable, Spinner, Badge } from 'avere-ui';
+import { SlidersHorizontal, Plus, Edit2, Trash2 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { ModalNovaRegra } from '../components/personalizarAtivos/ModalNovaRegra';
 
 interface DicionarioMaster {
     codigo_identificador: string;
@@ -18,10 +19,14 @@ interface Excecao {
     apelido_ativo: string | null;
     classe_customizada: string | null;
     liquidez_customizada: string | null;
-    // Campos virtuais anexados do Master:
     master_nome?: string;
     master_classe?: string;
     master_liquidez?: string;
+}
+
+interface Cliente {
+    id: string;
+    nome: string;
 }
 
 export default function PersonalizarAtivos() {
@@ -33,37 +38,28 @@ export default function PersonalizarAtivos() {
     const [regras, setRegras] = useState<Excecao[]>([]);
     const [dicionario, setDicionario] = useState<DicionarioMaster[]>([]);
     const [classesDisponiveis, setClassesDisponiveis] = useState<string[]>([]);
+    const [clientes, setClientes] = useState<Cliente[]>([]); // <-- NOVO ESTADO
 
     // Controlo do Modal
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editId, setEditId] = useState<string | null>(null);
-
-    // Formulário
-    const [formAtivo, setFormAtivo] = useState<string>(''); // codigo_identificador
-    const [formApelido, setFormApelido] = useState('');
-    const [formClasse, setFormClasse] = useState('');
-    const [formLiquidez, setFormLiquidez] = useState('');
-    const [formEscopo, setFormEscopo] = useState<'GLOBAL' | 'CLIENTE'>('GLOBAL');
-    const [formClienteId, setFormClienteId] = useState('');
+    const [regraEdicao, setRegraEdicao] = useState<Excecao | null>(null);
 
     const fetchData = async () => {
         if (!perfil) return;
         setLoading(true);
         try {
-            // 1. Busca o Dicionário da Avere (Para comparação)
+            // Se o RLS estiver ativo, isto já traz apenas os clientes do consultor logado
+            const { data: clientesData } = await supabase.from('clientes').select('id, nome').order('nome');
+
             const { data: dictData } = await supabase.from('dicionario_ativos').select('codigo_identificador, nome_ativo, classe_avere, liquidez_avere');
-
-            // 2. Busca as Classes disponíveis
             const { data: classData } = await supabase.from('dicionario_classes').select('nome').order('ordem_exibicao');
-
-            // 3. Busca as regras exclusivas deste Consultor
             const { data: regrasData } = await supabase.from('excecoes_classificacao').select('*').eq('consultor_id', perfil.id);
 
+            if (clientesData) setClientes(clientesData);
             if (dictData) setDicionario(dictData);
             if (classData) setClassesDisponiveis(classData.map(c => c.nome));
 
             if (regrasData && dictData) {
-                // Junta a informação da regra com o padrão Avere
                 const regrasCompletas = regrasData.map(regra => {
                     const master = dictData.find(d => d.codigo_identificador === regra.codigo_identificador);
                     return {
@@ -84,25 +80,15 @@ export default function PersonalizarAtivos() {
 
     useEffect(() => {
         fetchData();
-    }, [perfil]);
-
-    // ── AÇÕES DO MODAL ──
+    }, [perfil?.id]);
 
     const openNewModal = () => {
-        setEditId(null);
-        setFormAtivo(''); setFormApelido(''); setFormClasse(''); setFormLiquidez('');
-        setFormEscopo('GLOBAL'); setFormClienteId('');
+        setRegraEdicao(null);
         setIsModalOpen(true);
     };
 
     const openEditModal = (regra: Excecao) => {
-        setEditId(regra.id);
-        setFormAtivo(regra.codigo_identificador);
-        setFormApelido(regra.apelido_ativo || '');
-        setFormClasse(regra.classe_customizada || '');
-        setFormLiquidez(regra.liquidez_customizada || '');
-        setFormEscopo(regra.cliente_id ? 'CLIENTE' : 'GLOBAL');
-        setFormClienteId(regra.cliente_id || '');
+        setRegraEdicao(regra);
         setIsModalOpen(true);
     };
 
@@ -116,25 +102,16 @@ export default function PersonalizarAtivos() {
         }
     };
 
-    const handleSave = async () => {
-        if (!formAtivo) return alert('Selecione um ativo para personalizar.');
-        if (formEscopo === 'CLIENTE' && !formClienteId) return alert('Introduza o ID do Cliente.');
-
+    // Função passada para o Modal executar quando o utilizador clicar em Salvar
+    const handleSaveRegra = async (payload: any, editId: string | null) => {
         setSalvando(true);
         try {
-            const payload = {
-                consultor_id: perfil!.id,
-                codigo_identificador: formAtivo,
-                cliente_id: formEscopo === 'CLIENTE' ? formClienteId : null,
-                apelido_ativo: formApelido || null,
-                classe_customizada: formClasse || null,
-                liquidez_customizada: formLiquidez || null
-            };
+            const payloadFinal = { ...payload, consultor_id: perfil!.id };
 
             if (editId) {
-                await supabase.from('excecoes_classificacao').update(payload).eq('id', editId);
+                await supabase.from('excecoes_classificacao').update(payloadFinal).eq('id', editId);
             } else {
-                await supabase.from('excecoes_classificacao').insert([payload]);
+                await supabase.from('excecoes_classificacao').insert([payloadFinal]);
             }
 
             setIsModalOpen(false);
@@ -146,13 +123,10 @@ export default function PersonalizarAtivos() {
         }
     };
 
-    // O ativo selecionado no formulário para mostrar o padrão Avere em tempo real
-    const ativoSelecionado = dicionario.find(d => d.codigo_identificador === formAtivo);
-
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px', fontFamily: 'inherit' }}>
 
             {/* HEADER */}
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
@@ -209,11 +183,12 @@ export default function PersonalizarAtivos() {
                         {
                             header: 'Escopo',
                             accessorKey: 'cliente_id',
-                            cell: (item: Excecao) => (
-                                item.cliente_id
-                                    ? <Badge variant="outline" style={{ borderColor: '#F59E0B', color: '#F59E0B' }}>Cliente Específico</Badge>
+                            cell: (item: Excecao) => {
+                                const clienteNome = clientes.find(c => c.id === item.cliente_id)?.nome;
+                                return item.cliente_id
+                                    ? <Badge variant="outline" style={{ borderColor: '#F59E0B', color: '#F59E0B' }} title={clienteNome}>Cliente Específico</Badge>
                                     : <Badge variant="outline" style={{ borderColor: '#10B981', color: '#10B981' }}>Carteira Global</Badge>
-                            )
+                            }
                         },
                         {
                             header: '',
@@ -230,95 +205,16 @@ export default function PersonalizarAtivos() {
                 />
             </Card>
 
-            {/* ── MODAL DE EDIÇÃO / CRIAÇÃO ── */}
-            {isModalOpen && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(8, 31, 40, 0.4)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '24px' }} onClick={() => setIsModalOpen(false)}>
-                    <div style={{ background: '#fff', borderRadius: '12px', width: '100%', maxWidth: '500px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
-
-                        <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography variant="h2" style={{ fontSize: '18px' }}>{editId ? 'Editar Regra' : 'Nova Personalização'}</Typography>
-                            <X size={20} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={() => setIsModalOpen(false)} />
-                        </div>
-
-                        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-                            {/* Seleção do Ativo */}
-                            <div>
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>Ativo (ISIN, CNPJ ou Ticker)</label>
-                                <select
-                                    value={formAtivo} onChange={e => setFormAtivo(e.target.value)} disabled={!!editId}
-                                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', fontFamily: 'inherit' }}
-                                >
-                                    <option value="">Selecione um ativo da base Avere...</option>
-                                    {dicionario.map(d => (
-                                        <option key={d.codigo_identificador} value={d.codigo_identificador}>
-                                            {d.codigo_identificador} - {d.nome_ativo}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* View do Padrão Avere (Gatilho visual) */}
-                            {ativoSelecionado && (
-                                <div style={{ background: '#F9FAFB', padding: '12px', borderRadius: '8px', border: '1px dashed #D1D5DB', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <Typography variant="p" style={{ fontSize: '10px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Padrão Master Avere</Typography>
-                                        <Typography variant="p" style={{ fontSize: '13px', fontWeight: 600, color: '#111827' }}>{ativoSelecionado.nome_ativo}</Typography>
-                                        <Typography variant="p" style={{ fontSize: '11px', color: '#6B7280' }}>Classe: {ativoSelecionado.classe_avere} | Liq: D+{ativoSelecionado.liquidez_avere}</Typography>
-                                    </div>
-                                    <ArrowRight size={20} color="#9CA3AF" />
-                                </div>
-                            )}
-
-                            {/* Os Inputs de Customização */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px', color: '#0083CB' }}>Seu Apelido para o Ativo (Opcional)</label>
-                                    <input value={formApelido} onChange={e => setFormApelido(e.target.value)} placeholder="Deixe em branco para usar o original" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #0083CB' }} />
-                                </div>
-                                <div style={{ display: 'flex', gap: '16px' }}>
-                                    <div style={{ flex: 2 }}>
-                                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>Nova Classe (Opcional)</label>
-                                        <select value={formClasse} onChange={e => setFormClasse(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)' }}>
-                                            <option value="">Manter original</option>
-                                            {classesDisponiveis.map(c => <option key={c} value={c}>{c}</option>)}
-                                        </select>
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>Nova Liq (D+)</label>
-                                        <input type="number" min="0" value={formLiquidez} onChange={e => setFormLiquidez(e.target.value)} placeholder="Manter" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)' }} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Escopo da Regra */}
-                            <div style={{ background: 'rgba(245, 158, 11, 0.05)', padding: '12px', borderRadius: '8px' }}>
-                                <Typography variant="p" style={{ fontSize: '12px', fontWeight: 700, color: '#B45309', marginBottom: '8px' }}>Alcance da Regra</Typography>
-                                <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
-                                        <input type="radio" checked={formEscopo === 'GLOBAL'} onChange={() => setFormEscopo('GLOBAL')} /> Global (Todos os clientes)
-                                    </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
-                                        <input type="radio" checked={formEscopo === 'CLIENTE'} onChange={() => setFormEscopo('CLIENTE')} /> Cliente Específico
-                                    </label>
-                                </div>
-                                {formEscopo === 'CLIENTE' && (
-                                    <input value={formClienteId} onChange={e => setFormClienteId(e.target.value)} placeholder="Digite o ID/Conta do Cliente" style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)', fontSize: '12px' }} />
-                                )}
-                            </div>
-
-                        </div>
-
-                        <div style={{ padding: '16px 24px', background: '#F9FAFB', borderTop: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                            <Button variant="solid" onClick={handleSave} disabled={salvando}>
-                                {salvando ? <Spinner size="sm" /> : <Save size={16} style={{ marginRight: '8px' }} />} Salvar Regra
-                            </Button>
-                        </div>
-
-                    </div>
-                </div>
-            )}
+            <ModalNovaRegra
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSaveRegra}
+                salvando={salvando}
+                regraEdicao={regraEdicao}
+                dicionario={dicionario}
+                classesDisponiveis={classesDisponiveis}
+                clientes={clientes}
+            />
         </div>
     );
 }
