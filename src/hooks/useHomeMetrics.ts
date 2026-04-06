@@ -28,6 +28,7 @@ export function useHomeMetrics() {
     const [snapshotData, setSnapshotData] = useState<{ btg: any; xp: any }>({ btg: null, xp: null });
     const [dicionario, setDicionario] = useState<any[]>([]);
     const [emissores, setEmissores] = useState<any[]>([]);
+    const [classesMaster, setClassesMaster] = useState<any[]>([]); // <-- NOVO: Estado das Classes Dinâmicas
     const [diasVencimento, setDiasVencimento] = useState(30);
     const [drawerCarteirasAberto, setDrawerCarteirasAberto] = useState(false);
     const [carteiraAtiva, setCarteiraAtiva] = useState<string>('CONSOLIDADA');
@@ -38,7 +39,7 @@ export function useHomeMetrics() {
             if (!selectedClient?.id) return;
             setLoading(true);
             try {
-                const [btgRes, xpRes, dictRes, emissorRes] = await Promise.all([
+                const [btgRes, xpRes, dictRes, emissorRes, classesRes] = await Promise.all([
                     supabase
                         .from('posicao_btg_snapshots')
                         .select(`patrimonio_total, data_referencia, saldo_cc, saldo_cripto, posicao_btg_ativos ( id, emissor, sub_tipo, tipo, valor_liquido, maturity_date, isin, ticker, fund_cnpj )`)
@@ -48,12 +49,14 @@ export function useHomeMetrics() {
                         .select(`patrimonio_total, patrimonio_total_liquido, data_referencia, saldo_coe, posicao_xp_ativos ( id, nome, sub_tipo, tipo, valor_liquido, data_vencimento, isin, ticker, cnpj )`)
                         .eq('cliente_id', selectedClient.id).order('data_referencia', { ascending: false }).limit(1).maybeSingle(),
                     supabase.from('dicionario_ativos').select('codigo_identificador, classe_avere, liquidez_avere, emissor_id'),
-                    supabase.from('dicionario_emissores').select('id, nome_fantasia, setor')
+                    supabase.from('dicionario_emissores').select('id, nome_fantasia, setor'),
+                    supabase.from('dicionario_classes').select('*').order('ordem_exibicao') // <-- BUSCA AS CORES E ORDEM
                 ]);
 
                 setSnapshotData({ btg: btgRes.data, xp: xpRes.data });
                 if (dictRes.data) setDicionario(dictRes.data);
                 if (emissorRes.data) setEmissores(emissorRes.data);
+                if (classesRes.data) setClassesMaster(classesRes.data);
                 setCarteiraAtiva('CONSOLIDADA');
             } catch (err) {
                 console.error('Erro na carga da Home:', err);
@@ -78,10 +81,6 @@ export function useHomeMetrics() {
         return [...bases, ...carteirasPersonalizadas.map(c => ({ label: c.nome, value: c.id }))];
     }, [carteirasPersonalizadas]);
 
-    const COR_MAP: Record<string, string> = {
-        'RF Pré': '#0083CB', 'RF IPCA': '#00B4D8', 'RF Pós': '#023E8A', 'MM': '#8B5CF6', 'RV': '#F59E0B', 'Internacional': '#10B981', 'Conta Corrente / Outros': '#6B7280',
-    };
-
     const metrics = useMemo(() => {
         let incluirBtg = true; let incluirXp = true;
         if (carteiraAtiva === 'BTG') incluirXp = false;
@@ -97,11 +96,19 @@ export function useHomeMetrics() {
         const xpTotal = incluirXp ? parseFloat(snapshotData.xp?.patrimonio_total || 0) : 0;
         const patrimonioTotal = btgTotal + xpTotal;
 
+        // Mapas de Dicionário, Emissores e Cores Dinâmicas
         const dictMap = new Map();
         dicionario.forEach(d => dictMap.set(d.codigo_identificador, d));
 
         const emissorMap = new Map();
         emissores.forEach(e => emissorMap.set(e.id, e));
+
+        const colorMap = new Map();
+        const orderMap = new Map();
+        classesMaster.forEach(c => {
+            colorMap.set(c.nome, c.cor_hex);
+            orderMap.set(c.nome, c.ordem_exibicao);
+        });
 
         const classificar = (a: any, corretora: 'BTG' | 'XP') => {
             const isin = a.isin; const cnpj = corretora === 'BTG' ? a.fund_cnpj : a.cnpj; const ticker = a.ticker;
@@ -128,7 +135,6 @@ export function useHomeMetrics() {
 
         const totalAtivos = [...btgAtivos, ...xpAtivos];
 
-        // RESTAURADO: Cálculo de Vencimentos Próximos e Ordenação dos Ativos
         const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
         const limiteData = new Date(); limiteData.setDate(hoje.getDate() + diasVencimento);
         const vencimentosProx = totalAtivos.filter(a => {
@@ -141,7 +147,6 @@ export function useHomeMetrics() {
 
         // CÁLCULO DE EXPOSIÇÃO POR EMISSOR
         const exposicaoRaw: Record<string, { nome: string; setor: string; valor: number }> = {};
-
         totalAtivos.forEach(a => {
             if (a.emissorId && emissorMap.has(a.emissorId)) {
                 const emissor = emissorMap.get(a.emissorId);
@@ -154,7 +159,7 @@ export function useHomeMetrics() {
             .map(e => ({ name: e.nome, setor: e.setor, value: e.valor, pct: pct(e.valor, patrimonioTotal) }))
             .sort((a, b) => b.value - a.value);
 
-        // RESTAURADO: Cálculo das Classes e Gráficos de Alocação
+        // CÁLCULO DAS CLASSES COM ORDENAÇÃO DINÂMICA
         const btgClasses: Record<string, number> = {}; const xpClasses: Record<string, number> = {};
         btgAtivos.forEach(a => btgClasses[a.tipo] = (btgClasses[a.tipo] || 0) + a.valorLiquido);
         xpAtivos.forEach(a => xpClasses[a.tipo] = (xpClasses[a.tipo] || 0) + a.valorLiquido);
@@ -173,14 +178,27 @@ export function useHomeMetrics() {
             ...(xpTotal > 0 ? [{ name: 'XP Investimentos', value: xpTotal, pct: pct(xpTotal, patrimonioTotal), fill: CORES.xp }] : []),
         ];
 
+        // O SEGREDO: Aplica a Cor e Ordena pelo Master
         const alocacaoData = Object.entries(alocacaoMap)
-            .map(([name, value]) => ({ name, value, pct: pct(value, patrimonioTotal), fill: COR_MAP[name] || '#9CA3AF' }))
-            .filter(d => d.value > 0).sort((a, b) => b.value - a.value);
+            .map(([name, value]) => ({
+                name,
+                value,
+                pct: pct(value, patrimonioTotal),
+                fill: colorMap.get(name) || '#9CA3AF', // Usa a cor do Master, se não achar usa Cinza
+                ordem: orderMap.get(name) || 999        // Usa a ordem do Master, se não achar atira pro fundo
+            }))
+            .filter(d => d.value > 0)
+            .sort((a, b) => a.ordem - b.ordem); // Ordenação Mágica!
 
         const todasAsClasses = Array.from(new Set([...Object.keys(btgClasses), ...Object.keys(xpClasses)]));
         const comparativoData = todasAsClasses.map(name => ({
-            name, BTG: btgClasses[name] || 0, XP: xpClasses[name] || 0
-        })).filter(d => d.BTG > 0 || d.XP > 0).sort((a, b) => ((b.BTG + b.XP) - (a.BTG + a.XP)));
+            name,
+            BTG: btgClasses[name] || 0,
+            XP: xpClasses[name] || 0,
+            ordem: orderMap.get(name) || 999
+        }))
+            .filter(d => d.BTG > 0 || d.XP > 0)
+            .sort((a, b) => a.ordem - b.ordem); // Aplica a mesma ordenação no gráfico de barras
 
         return {
             patrimonioTotal, btgTotal, xpTotal,
@@ -191,7 +209,7 @@ export function useHomeMetrics() {
             dataRefXp: snapshotData.xp?.data_referencia,
             incluirBtg, incluirXp
         };
-    }, [snapshotData, diasVencimento, carteiraAtiva, carteirasPersonalizadas, dicionario, emissores]);
+    }, [snapshotData, diasVencimento, carteiraAtiva, carteirasPersonalizadas, dicionario, emissores, classesMaster]);
 
     return { selectedClient, loading, metrics, snapshotData, diasVencimento, setDiasVencimento, drawerCarteirasAberto, setDrawerCarteirasAberto, carteiraAtiva, setCarteiraAtiva, opcoesCarteira };
 }

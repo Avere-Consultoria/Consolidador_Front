@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Typography, Card, Badge, Button, DataTable, Spinner } from 'avere-ui';
-import { Filter, Save } from 'lucide-react';
+import { Filter, Save, AlertCircle } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@ interface AtivoMaster {
     classe_original: string;
     classe_avere: string;
     liquidez_avere: string;
-    emissor_id: string; // <-- NOVO CAMPO
+    emissor_id: string;
     status: 'PENDENTE' | 'CLASSIFICADO';
 }
 
@@ -22,15 +22,9 @@ interface Emissor {
     nome_fantasia: string;
 }
 
-const CLASSES_AVERE = [
-    { label: 'Não classificado', value: '' },
-    { label: 'RF Pré', value: 'RF Pré' },
-    { label: 'RF IPCA', value: 'RF IPCA' },
-    { label: 'RF Pós', value: 'RF Pós' },
-    { label: 'Multimercado', value: 'MM' },
-    { label: 'Renda Variável', value: 'RV' },
-    { label: 'Internacional', value: 'Internacional' },
-];
+interface ClasseDinamica {
+    nome: string;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Componente Principal
@@ -38,29 +32,33 @@ const CLASSES_AVERE = [
 
 export default function MasterAtivos() {
     const [ativos, setAtivos] = useState<AtivoMaster[]>([]);
-    const [emissores, setEmissores] = useState<Emissor[]>([]); // <-- NOVO ESTADO
+    const [emissores, setEmissores] = useState<Emissor[]>([]);
+    const [classesAvere, setClassesAvere] = useState<ClasseDinamica[]>([]); // <-- NOVO: Classes do Banco
     const [loading, setLoading] = useState(true);
     const [salvando, setSalvando] = useState(false);
     const [filtroStatus, setFiltroStatus] = useState<'TODOS' | 'PENDENTE' | 'CLASSIFICADO'>('PENDENTE');
 
     const [idsModificados, setIdsModificados] = useState<Set<string>>(new Set());
 
-    // 1. Carregar dados reais do Supabase (Ativos e Emissores)
+    // 1. Carregar dados reais do Supabase (Ativos, Emissores e agora Classes)
     const fetchData = async () => {
         setLoading(true);
         try {
-            // Busca emissores e ativos em paralelo para ser mais rápido
-            const [emissoresRes, ativosRes] = await Promise.all([
+            const [emissoresRes, ativosRes, classesRes] = await Promise.all([
                 supabase.from('dicionario_emissores').select('id, nome_fantasia').order('nome_fantasia'),
-                supabase.from('dicionario_ativos').select('*').order('criado_em', { ascending: false })
+                supabase.from('dicionario_ativos').select('*').order('criado_em', { ascending: false }),
+                supabase.from('dicionario_classes').select('nome').order('ordem_exibicao') // <-- BUSCA DINÂMICA
             ]);
 
             if (emissoresRes.error) throw emissoresRes.error;
             if (ativosRes.error) throw ativosRes.error;
+            if (classesRes.error) throw classesRes.error;
 
             setEmissores(emissoresRes.data || []);
+            setClassesAvere(classesRes.data || []);
 
             const ativosFormatados: AtivoMaster[] = (ativosRes.data || []).map(row => {
+                // Validação: precisa de Classe, Liquidez e Emissor
                 const estaClassificado = row.classe_avere && row.liquidez_avere !== null && row.liquidez_avere !== '' && row.emissor_id;
 
                 return {
@@ -78,7 +76,7 @@ export default function MasterAtivos() {
             setIdsModificados(new Set());
         } catch (err) {
             console.error('Erro ao buscar dicionário:', err);
-            alert('Erro ao carregar os ativos e emissores.');
+            alert('Erro ao carregar os dados do mestre.');
         } finally {
             setLoading(false);
         }
@@ -99,7 +97,6 @@ export default function MasterAtivos() {
             if (ativo.id !== id) return ativo;
 
             const novoAtivo = { ...ativo, [campo]: valor };
-            // Nova regra de validação rigorosa (Precisa de Classe + Liquidez + Emissor)
             if (novoAtivo.classe_avere && novoAtivo.liquidez_avere.trim() !== '' && novoAtivo.emissor_id) {
                 novoAtivo.status = 'CLASSIFICADO';
             } else {
@@ -111,7 +108,7 @@ export default function MasterAtivos() {
         setIdsModificados(prev => new Set(prev).add(id));
     };
 
-    // 3. Salvar alterações no Supabase
+    // 3. Salvar alterações
     const handleSalvarClassificacoes = async () => {
         if (idsModificados.size === 0) return;
         setSalvando(true);
@@ -124,7 +121,7 @@ export default function MasterAtivos() {
                     .update({
                         classe_avere: ativo.classe_avere,
                         liquidez_avere: ativo.liquidez_avere,
-                        emissor_id: ativo.emissor_id || null, // Salva null se o campo estiver vazio
+                        emissor_id: ativo.emissor_id || null,
                         atualizado_em: new Date().toISOString()
                     })
                     .eq('id', ativo.id)
@@ -135,17 +132,13 @@ export default function MasterAtivos() {
             setIdsModificados(new Set());
         } catch (err) {
             console.error('Erro ao salvar:', err);
-            alert('Ocorreu um erro ao salvar. Tente novamente.');
+            alert('Ocorreu um erro ao salvar.');
         } finally {
             setSalvando(false);
         }
     };
 
-    if (loading) return (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
-            <Spinner size="lg" />
-        </div>
-    );
+    if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px' }}>
@@ -173,13 +166,12 @@ export default function MasterAtivos() {
                         {filtroStatus === 'PENDENTE' ? 'Ver Todos' : 'Ver Pendentes'}
                     </Button>
                     <Button variant="solid" onClick={handleSalvarClassificacoes} disabled={salvando || idsModificados.size === 0}>
-                        {salvando ? <Spinner size="sm" style={{ marginRight: '8px' }} /> : <Save size={16} style={{ marginRight: '8px' }} />}
+                        {salvando ? <Spinner size="sm" /> : <Save size={16} style={{ marginRight: '8px' }} />}
                         {salvando ? 'A guardar...' : `Salvar Alterações (${idsModificados.size})`}
                     </Button>
                 </div>
             </header>
 
-            {/* Tabela Master */}
             <Card style={{ padding: 0, overflow: 'hidden' }}>
                 <DataTable
                     data={ativosFiltrados}
@@ -223,8 +215,7 @@ export default function MasterAtivos() {
                                             width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
                                             fontSize: '12px', fontFamily: 'inherit', outline: 'none',
                                             background: item.emissor_id ? '#fff' : 'rgba(239, 68, 68, 0.05)',
-                                            borderColor: item.emissor_id ? 'rgba(0,0,0,0.1)' : 'rgba(239, 68, 68, 0.4)',
-                                            transition: 'border-color 0.2s ease'
+                                            borderColor: item.emissor_id ? 'rgba(0,0,0,0.1)' : 'rgba(239, 68, 68, 0.4)'
                                         }}
                                     >
                                         <option value="">Selecione o Emissor...</option>
@@ -247,12 +238,13 @@ export default function MasterAtivos() {
                                             width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
                                             fontSize: '12px', fontFamily: 'inherit', outline: 'none',
                                             background: item.classe_avere ? '#fff' : 'rgba(245, 158, 11, 0.05)',
-                                            borderColor: item.classe_avere ? 'rgba(0,0,0,0.1)' : 'rgba(245, 158, 11, 0.4)',
-                                            transition: 'border-color 0.2s ease'
+                                            borderColor: item.classe_avere ? 'rgba(0,0,0,0.1)' : 'rgba(245, 158, 11, 0.4)'
                                         }}
                                     >
-                                        {CLASSES_AVERE.map(opt => (
-                                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        <option value="">Não classificado</option>
+                                        {/* LOOP DINÂMICO DE CLASSES DO BANCO */}
+                                        {classesAvere.map(opt => (
+                                            <option key={opt.nome} value={opt.nome}>{opt.nome}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -263,9 +255,7 @@ export default function MasterAtivos() {
                             accessorKey: 'liquidez_avere',
                             cell: (item: AtivoMaster) => (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', width: '100px' }}>
-                                    <Typography variant="p" style={{ fontSize: '13px', fontWeight: 700, color: '#081F28', opacity: 0.6 }}>
-                                        D+
-                                    </Typography>
+                                    <Typography variant="p" style={{ fontSize: '13px', fontWeight: 700, color: '#081F28', opacity: 0.6 }}>D+</Typography>
                                     <input
                                         type="number" min="0" placeholder="Ex: 30"
                                         value={item.liquidez_avere}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home, LayoutDashboard, TrendingUp, Users, User, Database } from 'lucide-react';
+import { Home, LayoutDashboard, TrendingUp, Users, User, Database, Settings } from 'lucide-react';
 import { SideBar, SideBarItem, TopBar, HierarchicalCombobox, type ComboboxLevel } from 'avere-ui';
 
 // 1. Importe o Contexto e o Cliente do Supabase (ajuste os caminhos conforme seu projeto)
@@ -117,6 +117,12 @@ export default function MainLayout() {
           label="Master Ativos"
           active={location.pathname === '/master'}
           onClick={() => navigate('/master')}
+        />
+        <SideBarItem
+          icon={Settings}
+          label="Gestão Master"
+          active={location.pathname === '/gestao-master'}
+          onClick={() => navigate('/gestao-master')}
         />
       </SideBar>
 
