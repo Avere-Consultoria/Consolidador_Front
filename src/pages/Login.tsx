@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Typography, Button, Spinner } from 'avere-ui';
-import { Mail, Lock, ShieldCheck, PieChart } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useNavigate } from 'react-router-dom';
 import LogoAvere from '../assets/B_Azul.svg';
@@ -47,7 +47,7 @@ export default function Login() {
                 <div style={{ position: 'relative', zIndex: 10 }}>
                     {/* Pode substituir este texto pela tag <img src={LogoAvere} alt="Logo" height="40" /> */}
                     <Typography variant="h1" style={{ color: '#FFF', fontSize: '32px', letterSpacing: '-1px' }}>
-                        Avere Wealth
+                        Avere Consultoria de Investimentos
                     </Typography>
                     <div style={{ width: '40px', height: '4px', background: '#00B4D8', marginTop: '16px', borderRadius: '2px' }} />
                 </div>
@@ -60,21 +60,12 @@ export default function Login() {
                     <Typography variant="p" style={{ color: 'rgba(255,255,255,0.7)', fontSize: '18px', lineHeight: '1.6' }}>
                         Consolidação inteligente, análise de risco profunda e relatórios de excelência para os seus clientes.
                     </Typography>
-
-                    <div style={{ display: 'flex', gap: '24px', marginTop: '48px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.8)' }}>
-                            <ShieldCheck size={20} color="#00B4D8" /> <span style={{ fontSize: '14px', fontWeight: 500 }}>Segurança Bancária</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.8)' }}>
-                            <PieChart size={20} color="#00B4D8" /> <span style={{ fontSize: '14px', fontWeight: 500 }}>Visão Consolidada</span>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Rodapé do lado esquerdo */}
                 <div style={{ position: 'relative', zIndex: 10 }}>
                     <Typography variant="p" style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px' }}>
-                        © {new Date().getFullYear()} Avere Wealth Management. Todos os direitos reservados.
+                        © {new Date().getFullYear()} Avere Consultoria de Investimentos. Todos os direitos reservados.
                     </Typography>
                 </div>
             </div>
@@ -94,7 +85,6 @@ export default function Login() {
                         <div>
                             <img src={LogoAvere} alt="Logo" height="120" />
                         </div>
-                        <Typography variant="h2" style={{ fontSize: '28px', color: '#081F28', marginBottom: '8px' }}>Consolidador</Typography>
                     </div>
 
                     <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

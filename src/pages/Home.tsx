@@ -4,12 +4,14 @@ import { PieChart as PieIcon } from 'lucide-react';
 import { useHomeMetrics } from '../hooks/useHomeMetrics';
 import { HomeHeader } from '../components/home/HomeHeader';
 import { ResumoCards } from '../components/home/ResumoCards';
-import { Graficos } from '../components/home/Graficos';
 import { TabelaAtivos } from '../components/home/TabelaAtivos';
 import { DrawerGerenciarCarteiras } from '../components/home/modais/DrawerGerenciarCarteiras';
 import { RiscoEmissor } from '../components/home/RiscoEmissor';
 import { LiquidezVisao } from '../components/home/LiquidezVisao';
-import { NenhumClienteSelecionado } from '../components/home/NenhumClienteSelecionado'; // <-- NOVO IMPORT
+import { NenhumClienteSelecionado } from '../components/home/NenhumClienteSelecionado';
+import { GraficoAlocacaoClasse } from '../components/home/graficos/GraficoAlocacaoClasse';
+import { GraficoComparativo } from '../components/home/graficos/GraficoComparativo';
+import { GraficoProporcao } from '../components/home/graficos/GraficoProporcao';
 
 export default function Home() {
   const {
@@ -65,7 +67,9 @@ export default function Home() {
 
       <ResumoCards metrics={metrics} diasVencimento={diasVencimento} setDiasVencimento={setDiasVencimento} />
 
-      <Graficos metrics={metrics} />
+      <GraficoAlocacaoClasse data={metrics.alocacaoData} />
+      <GraficoComparativo data={metrics.comparativoData} />
+      <GraficoProporcao data={metrics.donutData} />
 
       <LiquidezVisao dados={metrics.liquidezData} />
 
