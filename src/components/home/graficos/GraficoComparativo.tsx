@@ -41,7 +41,7 @@ export function GraficoComparativo({ data }: { data: any[] }) {
         <Card style={{ gridColumn: '1 / -1' }}>
             <CardContent style={{ padding: '24px', height: '100%' }}>
                 <CardHeaderComSwitch
-                    titulo="Comparativo por Classe — BTG vs XP"
+                    titulo="Comparativo por Classe"
                     modoTabela={modoTabela}
                     setModoTabela={setModoTabela}
                 />

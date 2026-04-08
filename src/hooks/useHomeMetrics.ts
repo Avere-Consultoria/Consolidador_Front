@@ -16,6 +16,7 @@ export interface ConsolidatedAtivo {
     emissorId?: string | null;
     liquidez?: string | null;
     rawData?: any;
+    benchmark?: string | null;
 }
 
 export interface CarteiraPersonalizada {
@@ -199,7 +200,8 @@ export function useHomeMetrics() {
                 instituicao: 'BTG Pactual',
                 emissorId: cls.emissorId,
                 liquidez: cls.liquidez,
-                rawData: a
+                rawData: a,
+                benchmark: a.benchmark || '-',
             };
         }) : [];
 
@@ -215,7 +217,8 @@ export function useHomeMetrics() {
                 instituicao: 'XP Investimentos',
                 emissorId: cls.emissorId,
                 liquidez: cls.liquidez,
-                rawData: a
+                rawData: a,
+                benchmark: a.benchmark || '-',
             };
         }) : [];
 

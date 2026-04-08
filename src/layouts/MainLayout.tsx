@@ -131,6 +131,12 @@ export default function MainLayout() {
           icon={TrendingUp} label="XP API"
           active={location.pathname === '/xp'} onClick={() => navigate('/xp')}
         />
+        {(isMaster || isConsultor) && (
+          <SideBarItem
+            icon={SlidersHorizontal} label="Personalizar Ativos"
+            active={location.pathname === '/personalizar'} onClick={() => navigate('/personalizar')}
+          />
+        )}
 
         {isMaster && (
           <>
@@ -145,12 +151,7 @@ export default function MainLayout() {
           </>
         )}
 
-        {(isMaster || isConsultor) && (
-          <SideBarItem
-            icon={SlidersHorizontal} label="Personalizar Ativos"
-            active={location.pathname === '/personalizar'} onClick={() => navigate('/personalizar')}
-          />
-        )}
+
       </SideBar>
 
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--color-fundo)' }}>

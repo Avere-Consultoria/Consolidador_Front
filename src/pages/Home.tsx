@@ -6,12 +6,13 @@ import { HomeHeader } from '../components/home/HomeHeader';
 import { ResumoCards } from '../components/home/ResumoCards';
 import { TabelaAtivos } from '../components/home/TabelaAtivos';
 import { DrawerGerenciarCarteiras } from '../components/home/modais/DrawerGerenciarCarteiras';
-import { RiscoEmissor } from '../components/home/RiscoEmissor';
-import { LiquidezVisao } from '../components/home/LiquidezVisao';
+import { RiscoEmissor } from '../components/home/graficos/RiscoEmissor';
+import { LiquidezVisao } from '../components/home/graficos/LiquidezVisao';
 import { NenhumClienteSelecionado } from '../components/home/NenhumClienteSelecionado';
 import { GraficoAlocacaoClasse } from '../components/home/graficos/GraficoAlocacaoClasse';
 import { GraficoComparativo } from '../components/home/graficos/GraficoComparativo';
 import { GraficoProporcao } from '../components/home/graficos/GraficoProporcao';
+import { VencimentosVisao } from '../components/home/graficos/VencimentosVisao';
 
 export default function Home() {
   const {
@@ -64,8 +65,12 @@ export default function Home() {
         incluirXp={metrics.incluirXp}
         onOpenGerenciarCarteiras={() => setDrawerCarteirasAberto(true)}
       />
-
-      <ResumoCards metrics={metrics} diasVencimento={diasVencimento} setDiasVencimento={setDiasVencimento} />
+      <ResumoCards metrics={metrics} />
+      <VencimentosVisao
+        ativos={metrics.todosAtivos}
+        diasVencimento={diasVencimento}
+        setDiasVencimento={setDiasVencimento}
+      />
 
       <GraficoAlocacaoClasse data={metrics.alocacaoData} />
       <GraficoComparativo data={metrics.comparativoData} />

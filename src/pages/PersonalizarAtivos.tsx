@@ -5,6 +5,7 @@ import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { ModalNovaRegra } from '../components/personalizarAtivos/ModalNovaRegra';
 
+// ── Tipos ─────────────────────────────────────────────────────────────────
 interface DicionarioMaster {
     codigo_identificador: string;
     nome_ativo: string;
@@ -38,7 +39,7 @@ export default function PersonalizarAtivos() {
     const [regras, setRegras] = useState<Excecao[]>([]);
     const [dicionario, setDicionario] = useState<DicionarioMaster[]>([]);
     const [classesDisponiveis, setClassesDisponiveis] = useState<string[]>([]);
-    const [clientes, setClientes] = useState<Cliente[]>([]); // <-- NOVO ESTADO
+    const [clientes, setClientes] = useState<Cliente[]>([]);
 
     // Controlo do Modal
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,20 +49,20 @@ export default function PersonalizarAtivos() {
         if (!perfil) return;
         setLoading(true);
         try {
-            // Se o RLS estiver ativo, isto já traz apenas os clientes do consultor logado
-            const { data: clientesData } = await supabase.from('clientes').select('id, nome').order('nome');
+            const [clientesRes, dictRes, classRes, regrasRes] = await Promise.all([
+                supabase.from('clientes').select('id, nome').order('nome'),
+                supabase.from('dicionario_ativos').select('codigo_identificador, nome_ativo, classe_avere, liquidez_avere'),
+                supabase.from('dicionario_classes').select('nome').order('ordem_exibicao'),
+                supabase.from('excecoes_classificacao').select('*').eq('consultor_id', perfil.id)
+            ]);
 
-            const { data: dictData } = await supabase.from('dicionario_ativos').select('codigo_identificador, nome_ativo, classe_avere, liquidez_avere');
-            const { data: classData } = await supabase.from('dicionario_classes').select('nome').order('ordem_exibicao');
-            const { data: regrasData } = await supabase.from('excecoes_classificacao').select('*').eq('consultor_id', perfil.id);
+            if (clientesRes.data) setClientes(clientesRes.data);
+            if (dictRes.data) setDicionario(dictRes.data);
+            if (classRes.data) setClassesDisponiveis(classRes.data.map(c => c.nome));
 
-            if (clientesData) setClientes(clientesData);
-            if (dictData) setDicionario(dictData);
-            if (classData) setClassesDisponiveis(classData.map(c => c.nome));
-
-            if (regrasData && dictData) {
-                const regrasCompletas = regrasData.map(regra => {
-                    const master = dictData.find(d => d.codigo_identificador === regra.codigo_identificador);
+            if (regrasRes.data && dictRes.data) {
+                const regrasCompletas = regrasRes.data.map(regra => {
+                    const master = dictRes.data.find(d => d.codigo_identificador === regra.codigo_identificador);
                     return {
                         ...regra,
                         master_nome: master?.nome_ativo || 'Desconhecido',
@@ -93,7 +94,7 @@ export default function PersonalizarAtivos() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Excluir esta regra de personalização? O ativo voltará a usar o Padrão Avere.')) return;
+        if (!window.confirm('Excluir esta regra de personalização?')) return;
         try {
             await supabase.from('excecoes_classificacao').delete().eq('id', id);
             fetchData();
@@ -102,22 +103,19 @@ export default function PersonalizarAtivos() {
         }
     };
 
-    // Função passada para o Modal executar quando o utilizador clicar em Salvar
     const handleSaveRegra = async (payload: any, editId: string | null) => {
         setSalvando(true);
         try {
             const payloadFinal = { ...payload, consultor_id: perfil!.id };
-
             if (editId) {
                 await supabase.from('excecoes_classificacao').update(payloadFinal).eq('id', editId);
             } else {
                 await supabase.from('excecoes_classificacao').insert([payloadFinal]);
             }
-
             setIsModalOpen(false);
             fetchData();
         } catch (err) {
-            alert('Erro ao guardar. Verifique se já não existe uma regra para este ativo neste escopo.');
+            alert('Erro ao guardar as alterações.');
         } finally {
             setSalvando(false);
         }
@@ -126,17 +124,19 @@ export default function PersonalizarAtivos() {
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px', fontFamily: 'inherit' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px', fontFamily: 'Montserrat, sans-serif' }}>
 
             {/* HEADER */}
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <SlidersHorizontal size={28} color="#081F28" />
-                        <Typography variant="h1">Personalizar Ativos</Typography>
+                        <div style={{ background: 'rgba(0, 131, 203, 0.1)', padding: '8px', borderRadius: '8px' }}>
+                            <SlidersHorizontal size={24} color="var(--color-primaria)" />
+                        </div>
+                        <Typography variant="h1" style={{ fontWeight: 700, fontSize: '24px' }}>Personalizar Ativos</Typography>
                     </div>
-                    <Typography variant="p" style={{ opacity: 0.6 }}>
-                        Crie as suas próprias nomenclaturas e regras para a sua carteira de clientes.
+                    <Typography variant="p" style={{ opacity: 0.6, fontSize: '14px' }}>
+                        Crie exceções de nomenclatura e classificação para carteiras específicas ou globais.
                     </Typography>
                 </div>
                 <Button variant="solid" onClick={openNewModal}>
@@ -145,38 +145,58 @@ export default function PersonalizarAtivos() {
             </header>
 
             {/* TABELA DE REGRAS */}
-            <Card style={{ padding: 0, overflow: 'hidden' }}>
+            <Card style={{ padding: 0, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', background: '#fff' }}>
                 <DataTable
                     data={regras}
                     columns={[
                         {
                             header: 'Identificador',
                             accessorKey: 'codigo_identificador',
-                            cell: (item: Excecao) => <Typography variant="p" style={{ fontFamily: 'monospace', fontWeight: 600 }}>{item.codigo_identificador}</Typography>
+                            cell: (item: Excecao) => (
+                                <Typography variant="p" style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '12px', color: '#6B7280' }}>
+                                    {item.codigo_identificador}
+                                </Typography>
+                            )
                         },
                         {
-                            header: 'Padrão Avere (Original)',
-                            accessorKey: 'master_nome',
+                            header: 'Ativo (Original / Personalizado)',
+                            accessorKey: 'apelido_ativo',
                             cell: (item: Excecao) => (
-                                <div style={{ background: 'rgba(0,0,0,0.03)', padding: '8px', borderRadius: '6px' }}>
-                                    <Typography variant="p" style={{ fontSize: '12px', color: '#6B7280', fontWeight: 600 }}>{item.master_nome}</Typography>
-                                    <Typography variant="p" style={{ fontSize: '10px', color: '#9CA3AF' }}>{item.master_classe} • D+{item.master_liquidez}</Typography>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '4px 0' }}>
+                                    <Typography variant="p" style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                                        {item.master_nome}
+                                    </Typography>
+                                    <Typography variant="p" style={{ fontSize: '14px', color: '#0083CB', fontWeight: 700 }}>
+                                        {item.apelido_ativo || <span style={{ opacity: 0.4, fontWeight: 500, fontStyle: 'italic' }}>Nome original mantido</span>}
+                                    </Typography>
                                 </div>
                             )
                         },
                         {
-                            header: 'Sua Personalização',
-                            accessorKey: 'apelido_ativo',
+                            header: 'Classe',
+                            accessorKey: 'classe_customizada',
                             cell: (item: Excecao) => (
-                                <div style={{ padding: '8px' }}>
-                                    <Typography variant="p" style={{ fontSize: '13px', color: '#0083CB', fontWeight: 700 }}>
-                                        {item.apelido_ativo || <span style={{ opacity: 0.5, fontStyle: 'italic' }}>Usa nome original</span>}
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <Typography variant="p" style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' }}>
+                                        {item.master_classe}
                                     </Typography>
-                                    {(item.classe_customizada || item.liquidez_customizada) && (
-                                        <Typography variant="p" style={{ fontSize: '11px', color: '#081F28', marginTop: '4px' }}>
-                                            {item.classe_customizada || item.master_classe} • D+{item.liquidez_customizada || item.master_liquidez}
-                                        </Typography>
-                                    )}
+                                    <Typography variant="p" style={{ fontSize: '13px', color: item.classe_customizada ? '#081F28' : '#9CA3AF', fontWeight: 600 }}>
+                                        {item.classe_customizada || 'Sem alteração'}
+                                    </Typography>
+                                </div>
+                            )
+                        },
+                        {
+                            header: 'Liquidez',
+                            accessorKey: 'liquidez_customizada',
+                            cell: (item: Excecao) => (
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <Typography variant="p" style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 600 }}>
+                                        D+{item.master_liquidez}
+                                    </Typography>
+                                    <Typography variant="p" style={{ fontSize: '13px', color: item.liquidez_customizada ? '#081F28' : '#9CA3AF', fontWeight: 700 }}>
+                                        {item.liquidez_customizada ? `D+${item.liquidez_customizada}` : '—'}
+                                    </Typography>
                                 </div>
                             )
                         },
@@ -185,23 +205,49 @@ export default function PersonalizarAtivos() {
                             accessorKey: 'cliente_id',
                             cell: (item: Excecao) => {
                                 const clienteNome = clientes.find(c => c.id === item.cliente_id)?.nome;
-                                return item.cliente_id
-                                    ? <Badge variant="outline" style={{ borderColor: '#F59E0B', color: '#F59E0B' }} title={clienteNome}>Cliente Específico</Badge>
-                                    : <Badge variant="outline" style={{ borderColor: '#10B981', color: '#10B981' }}>Carteira Global</Badge>
+                                return (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        {item.cliente_id ? (
+                                            <>
+                                                <Badge variant="ghost" style={{ background: '#FFF7ED', color: '#C2410C', fontSize: '10px', border: 'none' }}>
+                                                    Cliente Específico
+                                                </Badge>
+                                                <Typography variant="p" style={{ fontSize: '12px', fontWeight: 600, color: '#4B5563', paddingLeft: '4px' }}>
+                                                    {clienteNome}
+                                                </Typography>
+                                            </>
+                                        ) : (
+                                            <Badge variant="ghost" style={{ background: '#ECFDF5', color: '#047857', fontSize: '10px', border: 'none' }}>
+                                                Carteira Global
+                                            </Badge>
+                                        )}
+                                    </div>
+                                );
                             }
                         },
                         {
                             header: '',
-                            accessorKey: 'id',
                             cell: (item: Excecao) => (
-                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingRight: '16px' }}>
-                                    <Edit2 size={16} color="#6B7280" style={{ cursor: 'pointer' }} onClick={() => openEditModal(item)} />
-                                    <Trash2 size={16} color="#EF4444" style={{ cursor: 'pointer' }} onClick={() => handleDelete(item.id)} />
+                                <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end', paddingRight: '16px' }}>
+                                    <Edit2
+                                        size={16}
+                                        color="#9CA3AF"
+                                        style={{ cursor: 'pointer', transition: 'color 0.2s' }}
+                                        className="hover:text-blue-500"
+                                        onClick={() => openEditModal(item)}
+                                    />
+                                    <Trash2
+                                        size={16}
+                                        color="#EF4444"
+                                        style={{ cursor: 'pointer', opacity: 0.7 }}
+                                        onClick={() => handleDelete(item.id)}
+                                    />
                                 </div>
                             )
                         }
                     ]}
                     keyExtractor={(item) => item.id}
+                    selectable={false}
                 />
             </Card>
 
