@@ -60,8 +60,7 @@ export default function MasterAtivos() {
                     classe_avere: row.classe_avere || '',
                     liquidez_avere: row.liquidez_avere || '',
                     emissor_id: row.emissor_id || '',
-                    // Agora lê o campo benchmark que você criou no banco
-                    benchmark: row.benchmark || '—',
+                    benchmark: row.benchmark || '',
                     instituicao_origem: row.instituicao_origem || 'Desconhecida',
                     classe_original: row.classe_original || '—',
                     status: estaClassificado ? 'CLASSIFICADO' : 'PENDENTE'
@@ -195,7 +194,7 @@ export default function MasterAtivos() {
                             ),
                         },
                         {
-                            header: 'Benchmark',
+                            header: 'Taxa',
                             accessorKey: 'benchmark',
                             cell: (item: AtivoMaster) => (
                                 <div style={{

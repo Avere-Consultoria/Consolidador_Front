@@ -11,6 +11,7 @@ export interface ConsolidatedAtivo {
     tipo: string;
     subTipo?: string;
     valorLiquido: number;
+    valorBruto?: number;
     vencimento?: string | null;
     instituicao: 'BTG Pactual' | 'XP Investimentos';
     emissorId?: string | null;
@@ -174,7 +175,7 @@ export function useHomeMetrics() {
                 regraCliente = excecoes.find(e => e.codigo_identificador === codigoId && e.cliente_id === selectedClient?.id);
             }
 
-            const classeFinal = regraCliente?.classe_customizada || regraGlobal?.classe_customizada || matchMaster?.classe_avere || a.tipo || 'Outros';
+            const classeFinal = regraCliente?.classe_customizada || regraGlobal?.classe_customizada || matchMaster?.classe_avere || 'Classificar';
             const liquidezFinal = regraCliente?.liquidez_customizada || regraGlobal?.liquidez_customizada || matchMaster?.liquidez_avere || null;
             const apelidoFinal = regraCliente?.apelido_ativo || regraGlobal?.apelido_ativo || null;
 
@@ -196,6 +197,7 @@ export function useHomeMetrics() {
                 tipo: cls.classe,
                 subTipo: a.sub_tipo,
                 valorLiquido: parseFloat(a.valor_liquido || 0),
+                valorBruto: parseFloat(a.valor_bruto || 0),
                 vencimento: a.maturity_date,
                 instituicao: 'BTG Pactual',
                 emissorId: cls.emissorId,
@@ -213,6 +215,7 @@ export function useHomeMetrics() {
                 tipo: cls.classe,
                 subTipo: a.sub_tipo,
                 valorLiquido: parseFloat(a.valor_liquido || 0),
+                valorBruto: parseFloat(a.valor_bruto || 0),
                 vencimento: a.data_vencimento,
                 instituicao: 'XP Investimentos',
                 emissorId: cls.emissorId,

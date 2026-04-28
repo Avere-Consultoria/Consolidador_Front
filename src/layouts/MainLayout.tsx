@@ -65,7 +65,6 @@ export default function MainLayout() {
       label: "Instituição",
       placeholder: "Instituição",
       icon: Building2 as any,
-      // Instituição fica com 1 opção para TODOS, logo fica sempre travada (correto)
       options: [
         { value: "avere", label: "Avere Consultoria" }
       ],
@@ -76,11 +75,10 @@ export default function MainLayout() {
       label: "Consultor",
       placeholder: "Selecione o Consultor",
       icon: Users as any,
-      // <-- CORREÇÃO AQUI: Damos 2 opções ao Master para desbloquear o Dropdown -->
       options: isMaster
         ? [
           { value: "todos", label: "Todos os Consultores" },
-          { value: "meus", label: "Apenas Meus Clientes" } // Segunda opção para forçar o dropdown a abrir
+          { value: "meus", label: "Apenas Meus Clientes" }
         ]
         : [
           { value: perfil?.id || "eu", label: perfil?.nome || "Meu Perfil" }
@@ -147,6 +145,10 @@ export default function MainLayout() {
             <SideBarItem
               icon={Settings} label="Gestão Master"
               active={location.pathname === '/gestao-master'} onClick={() => navigate('/gestao-master')}
+            />
+            <SideBarItem
+              icon={Settings} label="Cadastro Clientes"
+              active={location.pathname === '/cadastro-clientes'} onClick={() => navigate('/cadastro-clientes')}
             />
           </>
         )}

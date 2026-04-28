@@ -3,7 +3,7 @@ import { PieChart as PieIcon } from 'lucide-react';
 
 import { useHomeMetrics } from '../hooks/useHomeMetrics';
 import { HomeHeader } from '../components/home/HomeHeader';
-import { ResumoCards } from '../components/home/ResumoCards';
+import { ResumoCards } from '../components/home/graficos/ResumoCards';
 import { TabelaAtivos } from '../components/home/TabelaAtivos';
 import { DrawerGerenciarCarteiras } from '../components/home/modais/DrawerGerenciarCarteiras';
 import { RiscoEmissor } from '../components/home/graficos/RiscoEmissor';
@@ -65,6 +65,7 @@ export default function Home() {
         incluirXp={metrics.incluirXp}
         onOpenGerenciarCarteiras={() => setDrawerCarteirasAberto(true)}
       />
+
       <ResumoCards metrics={metrics} />
       <VencimentosVisao
         ativos={metrics.todosAtivos}

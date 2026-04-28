@@ -113,17 +113,6 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                                 </Button>
                             ))}
                         </div>
-
-                        {/* Opção 2: Select Raiz (Corrigido) */}
-                        <div style={{ width: '130px' }}>
-                            <Select
-                                value={viewMode}
-                                onChange={(val) => setViewMode(val)} // Ajustado para receber apenas a string
-                                options={opcoesVisualizacao}
-                                placeholder="Filtrar..."
-                                className="risk-select-custom" // Caso queira aplicar CSS via classe
-                            />
-                        </div>
                     </div>
                 </div>
 

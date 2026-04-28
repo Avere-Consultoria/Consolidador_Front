@@ -104,7 +104,7 @@ export function DrawerDetalheConsolidado({ ativo, aberto, onClose, patrimonioTot
                         <Secao titulo="Rentabilidade">
                             <DetalheItem label="Taxa" value={rentabilidade} />
                             <DetalheItem label="Benchmark" value={benchmark} />
-                            {raw.yield_avg != null && <DetalheItem label="Yield Médio" value={`${fmtNum(raw.yield_avg)}%`} />}
+                            {raw.yield_avg != null && <DetalheItem label="Cupom (Yield Médio)" value={`${fmtNum(raw.yield_avg)}%`} />}
                         </Secao>
 
                         {(dataEmissao || ativo.vencimento || ativo.liquidez) && (

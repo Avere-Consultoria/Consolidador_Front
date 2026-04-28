@@ -163,7 +163,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                 ),
                                             },
                                             {
-                                                header: 'Benchmark',
+                                                header: 'Taxa',
                                                 accessorKey: 'benchmark' as any,
                                                 cell: (item: ConsolidatedAtivo) => (
                                                     <Typography variant="p" style={{ fontSize: '11px', fontWeight: 600, color: '#6B7280', fontFamily: 'Montserrat, sans-serif' }}>
@@ -186,16 +186,16 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                 ),
                                             },
                                             {
-                                                header: 'Vencimento',
+                                                header: 'Vencimento/Liquidez',
                                                 accessorKey: 'vencimento',
                                                 cell: (item: ConsolidatedAtivo) => item.vencimento
                                                     ? <Typography variant="p" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 500, fontFamily: 'Montserrat, sans-serif' }}>{fmtDate(item.vencimento)}</Typography>
                                                     : <span style={{ opacity: 0.3 }}>—</span>,
                                             },
                                             {
-                                                header: 'Valor Líquido',
-                                                accessorKey: 'valorLiquido',
-                                                cell: (item: ConsolidatedAtivo) => <strong style={{ fontFamily: 'Montserrat, sans-serif' }}>{fmt(item.valorLiquido)}</strong>,
+                                                header: 'Valor Bruto',
+                                                accessorKey: 'valorBruto',
+                                                cell: (item: ConsolidatedAtivo) => <strong style={{ fontFamily: 'Montserrat, sans-serif' }}>{fmt(item.valorBruto ?? item.valorLiquido)}</strong>,
                                             },
                                             {
                                                 header: '',
