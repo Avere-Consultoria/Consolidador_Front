@@ -16,9 +16,13 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
     const xpPercent = (metrics.xpTotal / metrics.patrimonioTotal) * 100;
     const btgPercent = (metrics.btgTotal / metrics.patrimonioTotal) * 100;
 
+    // AQUI ESTÁ A MÁGICA: Puxando as cores que vieram do Supabase via Hook
+    const corBtg = metrics.coresInstituicoes?.btg || '#172652';
+    const corXp = metrics.coresInstituicoes?.xp || '#FFC800';
+
     const instituicoes = [
-        { id: 'btg', nome: 'BTG Pactual', total: metrics.btgTotal, percent: btgPercent, ref: metrics.dataRefBtg, color: '#172652' },
-        { id: 'xp', nome: 'XP Investimentos', total: metrics.xpTotal, percent: xpPercent, ref: metrics.dataRefXp, color: '#FFC800' }
+        { id: 'btg', nome: 'BTG Pactual', total: metrics.btgTotal, percent: btgPercent, ref: metrics.dataRefBtg, color: corBtg },
+        { id: 'xp', nome: 'XP Investimentos', total: metrics.xpTotal, percent: xpPercent, ref: metrics.dataRefXp, color: corXp }
     ].filter(inst => inst.total > 0);
 
     return (

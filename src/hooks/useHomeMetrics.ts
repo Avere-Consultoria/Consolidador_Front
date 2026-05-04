@@ -34,9 +34,11 @@ export function useHomeMetrics() {
     const [loading, setLoading] = useState(false);
     const [snapshotData, setSnapshotData] = useState<{ btg: any; xp: any }>({ btg: null, xp: null });
 
+    // Estados do Dicionário e Master
     const [dicionario, setDicionario] = useState<any[]>([]);
     const [emissores, setEmissores] = useState<any[]>([]);
     const [classesMaster, setClassesMaster] = useState<any[]>([]);
+    const [instituicoesDb, setInstituicoesDb] = useState<any[]>([]); // Cores das Instituições
     const [excecoes, setExcecoes] = useState<any[]>([]);
 
     const [diasVencimento, setDiasVencimento] = useState(30);
@@ -49,8 +51,9 @@ export function useHomeMetrics() {
             if (!selectedClient?.id) return;
             setLoading(true);
             try {
-                const queries = [
-                    // QUERY BTG EXPANDIDA (Trazendo histórico de aquisições e janelas)
+                // Montando as queries
+                const queries: any[] = [
+                    // 0: BTG
                     supabase
                         .from('posicao_btg_snapshots')
                         .select(`
@@ -72,7 +75,7 @@ export function useHomeMetrics() {
                         .limit(1)
                         .maybeSingle(),
 
-                    // 2. QUERY XP (Restaurada para os campos originais validados)
+                    // 1: XP
                     supabase
                         .from('posicao_xp_snapshots')
                         .select(`
@@ -86,23 +89,28 @@ export function useHomeMetrics() {
                         .limit(1)
                         .maybeSingle(),
 
+                    // 2, 3, 4, 5: Infraestrutura
                     supabase.from('dicionario_ativos').select('codigo_identificador, classe_avere, liquidez_avere, emissor_id'),
                     supabase.from('dicionario_emissores').select('id, nome_fantasia, setor'),
-                    supabase.from('dicionario_classes').select('*').order('ordem_exibicao')
+                    supabase.from('dicionario_classes').select('*').order('ordem_exibicao'),
+                    supabase.from('instituicoes').select('*')
                 ];
 
+                // 6: Exceções do consultor (Opcional)
                 if (perfil?.id) {
                     queries.push(supabase.from('excecoes_classificacao').select('*').eq('consultor_id', perfil.id));
                 }
 
-                const [btgRes, xpRes, dictRes, emissorRes, classesRes, excecoesRes] = await Promise.all(queries);
+                // Resolvendo todas as requisições juntas
+                const results = await Promise.all(queries);
 
-                setSnapshotData({ btg: btgRes.data, xp: xpRes.data });
+                setSnapshotData({ btg: results[0].data, xp: results[1].data });
 
-                if (dictRes.data) setDicionario(dictRes.data as any[]);
-                if (emissorRes.data) setEmissores(emissorRes.data as any[]);
-                if (classesRes.data) setClassesMaster(classesRes.data as any[]);
-                if (excecoesRes && excecoesRes.data) setExcecoes(excecoesRes.data as any[]);
+                if (results[2].data) setDicionario(results[2].data);
+                if (results[3].data) setEmissores(results[3].data);
+                if (results[4].data) setClassesMaster(results[4].data);
+                if (results[5].data) setInstituicoesDb(results[5].data);
+                if (perfil?.id && results[6]?.data) setExcecoes(results[6].data);
 
                 setCarteiraAtiva('CONSOLIDADA');
             } catch (err) {
@@ -149,12 +157,20 @@ export function useHomeMetrics() {
         const emissorMap = new Map();
         emissores.forEach(e => emissorMap.set(e.id, e));
 
+        // ── MAPA DE CORES BLINDADO ────────────────────────────────────────────────
         const colorMap = new Map();
         const orderMap = new Map();
         classesMaster.forEach(c => {
-            colorMap.set(c.nome, c.cor_hex);
-            orderMap.set(c.nome, c.ordem_exibicao);
+            // Ignora maiúsculas e espaços extras para evitar quebra de cor
+            const keyFormatada = c.nome.trim().toUpperCase();
+            colorMap.set(keyFormatada, c.cor_hex);
+            orderMap.set(keyFormatada, c.ordem_exibicao);
         });
+
+        // Cores Dinâmicas das Instituições (com fallback para utils/colors)
+        const corBtgDb = instituicoesDb.find(i => i.nome.toUpperCase().includes('BTG'))?.cor_primaria || CORES.btg;
+        const corXpDb = instituicoesDb.find(i => i.nome.toUpperCase().includes('XP'))?.cor_primaria || CORES.xp;
+        // ──────────────────────────────────────────────────────────────────────────
 
         const classificar = (a: any, corretora: 'BTG' | 'XP') => {
             const isin = a.isin; const cnpj = corretora === 'BTG' ? a.fund_cnpj : a.cnpj; const ticker = a.ticker;
@@ -178,50 +194,26 @@ export function useHomeMetrics() {
             const classeFinal = regraCliente?.classe_customizada || regraGlobal?.classe_customizada || matchMaster?.classe_avere || 'Classificar';
             const liquidezFinal = regraCliente?.liquidez_customizada || regraGlobal?.liquidez_customizada || matchMaster?.liquidez_avere || null;
             const apelidoFinal = regraCliente?.apelido_ativo || regraGlobal?.apelido_ativo || null;
-
             const emissorIdFinal = matchMaster?.emissor_id || null;
 
-            return {
-                classe: classeFinal,
-                liquidez: liquidezFinal,
-                apelido: apelidoFinal,
-                emissorId: emissorIdFinal
-            };
+            return { classe: classeFinal, liquidez: liquidezFinal, apelido: apelidoFinal, emissorId: emissorIdFinal };
         };
 
         const btgAtivos: ConsolidatedAtivo[] = incluirBtg ? (snapshotData.btg?.posicao_btg_ativos || []).map((a: any, i: number) => {
             const cls = classificar(a, 'BTG');
             return {
-                rowId: `btg-${i}`,
-                nome: cls.apelido || a.emissor || '-',
-                tipo: cls.classe,
-                subTipo: a.sub_tipo,
-                valorLiquido: parseFloat(a.valor_liquido || 0),
-                valorBruto: parseFloat(a.valor_bruto || 0),
-                vencimento: a.maturity_date,
-                instituicao: 'BTG Pactual',
-                emissorId: cls.emissorId,
-                liquidez: cls.liquidez,
-                rawData: a,
-                benchmark: a.benchmark || '-',
+                rowId: `btg-${i}`, nome: cls.apelido || a.emissor || '-', tipo: cls.classe, subTipo: a.sub_tipo,
+                valorLiquido: parseFloat(a.valor_liquido || 0), valorBruto: parseFloat(a.valor_bruto || 0), vencimento: a.maturity_date,
+                instituicao: 'BTG Pactual', emissorId: cls.emissorId, liquidez: cls.liquidez, rawData: a, benchmark: a.benchmark || '-',
             };
         }) : [];
 
         const xpAtivos: ConsolidatedAtivo[] = incluirXp ? (snapshotData.xp?.posicao_xp_ativos || []).map((a: any, i: number) => {
             const cls = classificar(a, 'XP');
             return {
-                rowId: `xp-${i}`,
-                nome: cls.apelido || a.nome || '-',
-                tipo: cls.classe,
-                subTipo: a.sub_tipo,
-                valorLiquido: parseFloat(a.valor_liquido || 0),
-                valorBruto: parseFloat(a.valor_bruto || 0),
-                vencimento: a.data_vencimento,
-                instituicao: 'XP Investimentos',
-                emissorId: cls.emissorId,
-                liquidez: cls.liquidez,
-                rawData: a,
-                benchmark: a.benchmark || '-',
+                rowId: `xp-${i}`, nome: cls.apelido || a.nome || '-', tipo: cls.classe, subTipo: a.sub_tipo,
+                valorLiquido: parseFloat(a.valor_liquido || 0), valorBruto: parseFloat(a.valor_bruto || 0), vencimento: a.data_vencimento,
+                instituicao: 'XP Investimentos', emissorId: cls.emissorId, liquidez: cls.liquidez, rawData: a, benchmark: a.benchmark || '-',
             };
         }) : [];
 
@@ -286,29 +278,64 @@ export function useHomeMetrics() {
         Object.keys(btgClasses).forEach(k => alocacaoMap[k] = (alocacaoMap[k] || 0) + btgClasses[k]);
         Object.keys(xpClasses).forEach(k => alocacaoMap[k] = (alocacaoMap[k] || 0) + xpClasses[k]);
 
+        // ALIMENTA O GRÁFICO PROPORÇÃO (Donut BTG vs XP)
         const donutData = [
-            ...(btgTotal > 0 ? [{ name: 'BTG Pactual', value: btgTotal, pct: pct(btgTotal, patrimonioTotal), fill: CORES.btg }] : []),
-            ...(xpTotal > 0 ? [{ name: 'XP Investimentos', value: xpTotal, pct: pct(xpTotal, patrimonioTotal), fill: CORES.xp }] : []),
+            ...(btgTotal > 0 ? [{ name: 'BTG Pactual', value: btgTotal, pct: pct(btgTotal, patrimonioTotal), fill: corBtgDb }] : []),
+            ...(xpTotal > 0 ? [{ name: 'XP Investimentos', value: xpTotal, pct: pct(xpTotal, patrimonioTotal), fill: corXpDb }] : []),
         ];
 
+        // ALIMENTA O GRÁFICO ALOCAÇÃO CLASSE
         const alocacaoData = Object.entries(alocacaoMap)
-            .map(([name, value]) => ({
-                name,
-                value,
-                pct: pct(value, patrimonioTotal),
-                fill: colorMap.get(name) || '#9CA3AF',
-                ordem: orderMap.get(name) || 999
-            }))
+            .map(([name, value]) => {
+                const keyBusca = name.trim().toUpperCase();
+                let corFinal = colorMap.get(keyBusca);
+
+                // --- LOG DE DIAGNÓSTICO ---
+                if (!corFinal) {
+                    console.warn(`⚠️ MISSING COLOR: A classe "${name}" (Key: "${keyBusca}") não foi encontrada no dicionário de cores.`);
+                    console.log("Dicionário atual de chaves disponíveis:", Array.from(colorMap.keys()));
+                }
+                // --------------------------
+
+                if (!corFinal) {
+                    if (keyBusca === 'CLASSIFICAR') corFinal = '#EF4444';
+                    else if (keyBusca === 'CONTA CORRENTE / OUTROS') corFinal = '#10B981';
+                    else corFinal = '#9CA3AF'; // O cinza que você está vendo
+                }
+
+                return {
+                    name,
+                    value,
+                    pct: pct(value, patrimonioTotal),
+                    fill: corFinal,
+                    ordem: orderMap.get(keyBusca) || 999
+                };
+            })
             .filter(d => d.value > 0)
             .sort((a, b) => a.ordem - b.ordem);
 
+        // ALIMENTA O GRÁFICO COMPARATIVO (Barras)
         const todasAsClasses = Array.from(new Set([...Object.keys(btgClasses), ...Object.keys(xpClasses)]));
-        const comparativoData = todasAsClasses.map(name => ({
-            name,
-            BTG: btgClasses[name] || 0,
-            XP: xpClasses[name] || 0,
-            ordem: orderMap.get(name) || 999
-        }))
+        const comparativoData = todasAsClasses.map(name => {
+            const keyBusca = name.trim().toUpperCase();
+
+            let corFinal = colorMap.get(keyBusca);
+            if (!corFinal) {
+                if (keyBusca === 'CLASSIFICAR') corFinal = '#EF4444';
+                else if (keyBusca === 'CONTA CORRENTE / OUTROS') corFinal = '#10B981';
+                else corFinal = '#9CA3AF';
+            }
+
+            return {
+                name,
+                BTG: btgClasses[name] || 0,
+                XP: xpClasses[name] || 0,
+                ordem: orderMap.get(keyBusca) || 999,
+                cor_classe: corFinal,
+                cor_btg: corBtgDb,
+                cor_xp: corXpDb
+            };
+        })
             .filter(d => d.BTG > 0 || d.XP > 0)
             .sort((a, b) => a.ordem - b.ordem);
 
@@ -319,9 +346,10 @@ export function useHomeMetrics() {
             hasData: patrimonioTotal > 0,
             dataRefBtg: snapshotData.btg?.data_referencia,
             dataRefXp: snapshotData.xp?.data_referencia,
-            incluirBtg, incluirXp
+            incluirBtg, incluirXp,
+            coresInstituicoes: { btg: corBtgDb, xp: corXpDb } // Disponível para uso futuro
         };
-    }, [snapshotData, diasVencimento, carteiraAtiva, carteirasPersonalizadas, dicionario, emissores, classesMaster, excecoes, selectedClient]);
+    }, [snapshotData, diasVencimento, carteiraAtiva, carteirasPersonalizadas, dicionario, emissores, classesMaster, instituicoesDb, excecoes, selectedClient]);
 
     return { selectedClient, loading, metrics, snapshotData, diasVencimento, setDiasVencimento, drawerCarteirasAberto, setDrawerCarteirasAberto, carteiraAtiva, setCarteiraAtiva, opcoesCarteira };
 }

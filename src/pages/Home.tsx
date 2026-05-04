@@ -67,15 +67,16 @@ export default function Home() {
       />
 
       <ResumoCards metrics={metrics} />
+      <GraficoProporcao data={metrics.donutData} />
+      <GraficoComparativo data={metrics.comparativoData} />
+
+      <GraficoAlocacaoClasse data={metrics.alocacaoData} />
+
       <VencimentosVisao
         ativos={metrics.todosAtivos}
         diasVencimento={diasVencimento}
         setDiasVencimento={setDiasVencimento}
       />
-
-      <GraficoAlocacaoClasse data={metrics.alocacaoData} />
-      <GraficoComparativo data={metrics.comparativoData} />
-      <GraficoProporcao data={metrics.donutData} />
 
       <LiquidezVisao dados={metrics.liquidezData} />
 

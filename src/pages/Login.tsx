@@ -15,11 +15,18 @@ export default function Login() {
         e.preventDefault();
         setLoading(true);
         try {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
-            if (error) throw error;
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                console.error("ERRO SUPABASE:", error.message);
+                alert(`Login falhou: ${error.message}`);
+                return;
+            }
+
             navigate('/');
         } catch (error: any) {
-            alert('Erro ao fazer login. Verifique as suas credenciais.');
+            console.error("Erro no catch:", error);
+            alert('Erro inesperado na aplicação.');
         } finally {
             setLoading(false);
         }
@@ -45,7 +52,6 @@ export default function Login() {
 
                 {/* Topo do lado esquerdo */}
                 <div style={{ position: 'relative', zIndex: 10 }}>
-                    {/* Pode substituir este texto pela tag <img src={LogoAvere} alt="Logo" height="40" /> */}
                     <Typography variant="h1" style={{ color: '#FFF', fontSize: '32px', letterSpacing: '-1px' }}>
                         Avere Consultoria de Investimentos
                     </Typography>
@@ -111,7 +117,7 @@ export default function Login() {
                             </div>
                         </div>
 
-                        {/* Input Password com Ícone */}
+                        {/* input das Senhas */}
                         <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>Senha</label>

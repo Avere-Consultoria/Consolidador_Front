@@ -17,6 +17,7 @@ import GestaoMaster from './pages/GestaoMaster';
 import PersonalizarAtivos from './pages/PersonalizarAtivos';
 import Rentabilidade from './pages/Rentabilidade';
 import CadastroClientes from './pages/Cadastroclientes';
+import GestaoEquipe from './pages/GestaoEquipe';
 
 export default function App() {
   return (
@@ -47,6 +48,7 @@ export default function App() {
                 <Route path="/master" element={<MasterAtivos />} />
                 <Route path="/gestao-master" element={<GestaoMaster />} />
                 <Route path="/cadastro-clientes" element={<CadastroClientes />} />
+                <Route path="/gestao-equipe" element={<GestaoEquipe />} />
               </Route>
             </Route>
 

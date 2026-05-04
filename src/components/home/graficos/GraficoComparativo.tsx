@@ -3,9 +3,9 @@ import { Card, CardContent } from 'avere-ui';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 import { CardHeaderComSwitch } from './CardHeaderComSwitch';
-import { CORES } from '../../../utils/colors'; // Ajuste o caminho se necessário
+import { CORES } from '../../../utils/colors'; // Usado apenas como fallback de segurança
 import { TooltipBarras } from './Tooltips';
-import { fmt, fmtK } from '../../../utils/formatters'; // Ajuste o caminho se necessário
+import { fmt, fmtK } from '../../../utils/formatters';
 
 // ── Estilos Locais (CSS-in-JS) ──────────────────────────────────────────────
 const tableStyle: React.CSSProperties = {
@@ -37,6 +37,10 @@ const tdStyle: React.CSSProperties = {
 export function GraficoComparativo({ data }: { data: any[] }) {
     const [modoTabela, setModoTabela] = useState(false);
 
+    // Extrai as cores dinâmicas do primeiro item do array (se existir), senão usa o fallback
+    const corBtgDinâmica = data.length > 0 ? (data[0].cor_btg || CORES.btg) : CORES.btg;
+    const corXpDinâmica = data.length > 0 ? (data[0].cor_xp || CORES.xp) : CORES.xp;
+
     return (
         <Card style={{ gridColumn: '1 / -1' }}>
             <CardContent style={{ padding: '24px', height: '100%' }}>
@@ -62,11 +66,17 @@ export function GraficoComparativo({ data }: { data: any[] }) {
                                     const total = (d.BTG || 0) + (d.XP || 0);
                                     return (
                                         <tr key={d.name}>
-                                            <td style={tdStyle}>{d.name}</td>
-                                            <td style={{ ...tdStyle, color: CORES.btg, fontWeight: 600 }}>
+                                            <td style={tdStyle}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    {/* Pequeno indicador da cor da Classe (opcional, mas fica legal!) */}
+                                                    <div style={{ width: 8, height: 8, borderRadius: '2px', background: d.cor_classe || '#9CA3AF' }} />
+                                                    {d.name}
+                                                </div>
+                                            </td>
+                                            <td style={{ ...tdStyle, color: corBtgDinâmica, fontWeight: 600 }}>
                                                 {fmt(d.BTG || 0)}
                                             </td>
-                                            <td style={{ ...tdStyle, color: CORES.xp, fontWeight: 600 }}>
+                                            <td style={{ ...tdStyle, color: corXpDinâmica, fontWeight: 600 }}>
                                                 {fmt(d.XP || 0)}
                                             </td>
                                             <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>
@@ -112,14 +122,14 @@ export function GraficoComparativo({ data }: { data: any[] }) {
                             <Bar
                                 dataKey="BTG"
                                 name="BTG Pactual"
-                                fill={CORES.btg}
+                                fill={corBtgDinâmica} /* APLICANDO A COR DINÂMICA */
                                 stackId="a"
                                 animationDuration={800}
                             />
                             <Bar
                                 dataKey="XP"
                                 name="XP Investimentos"
-                                fill={CORES.xp}
+                                fill={corXpDinâmica} /* APLICANDO A COR DINÂMICA */
                                 stackId="a"
                                 radius={[4, 4, 0, 0]}
                                 animationDuration={900}

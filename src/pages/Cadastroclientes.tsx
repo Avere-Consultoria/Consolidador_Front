@@ -1,358 +1,223 @@
 import { useState, useEffect } from 'react';
-import { Typography, Card, Button, Spinner, Badge } from 'avere-ui';
-import { Users, Save, Search } from 'lucide-react';
+import {
+    Typography, Card, Button, Spinner,
+    Modal, ModalContent, ModalHeader, ModalTitle, ModalFooter,
+    TextField
+} from 'avere-ui';
+import { Save, Plus } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
-// ── Tipos ──────────────────────────────────────────────────────────────────
-interface Consultor {
-    id: string;
-    nome: string;
-    email: string;
-    role: string;
-}
-
+interface Consultor { id: string; nome: string; }
 interface Cliente {
     id: string;
     nome: string;
-}
-
-interface Instituicao {
-    id: string;
-    nome: string;
-    cor_primaria: string;
-}
-
-interface CodigoCliente {
-    id: string;
-    cliente_id: string;
     consultor_id: string | null;
-    codigo_avere: string;
-    codigos_instituicoes: Record<string, string>; // { instituicao_id: codigo }
+    codigo_avere: string | null;
+    codigo_xp: string | null;
+    codigo_btg: string | null;
 }
+interface LinhaTabela extends Cliente { modificado: boolean; }
 
-interface LinhaTabela {
-    clienteId: string;
-    clienteNome: string;
-    consultorId: string;
-    codigoAvere: string;
-    codigos: Record<string, string>;
-    modificado: boolean;
-    registroId: string | null;
-}
-
-// ── Estilos ────────────────────────────────────────────────────────────────
-const thStyle: React.CSSProperties = {
-    padding: '10px 14px',
-    textAlign: 'left',
-    fontSize: '10px',
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    color: '#6B7280',
-    background: '#F9FAFB',
-    borderBottom: '1px solid rgba(0,0,0,0.08)',
-    whiteSpace: 'nowrap',
-    position: 'sticky',
-    top: 0,
-    zIndex: 1,
-};
-
-const tdStyle: React.CSSProperties = {
-    padding: '10px 14px',
-    borderBottom: '1px solid rgba(0,0,0,0.05)',
-    verticalAlign: 'middle',
-};
-
-const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '6px 10px',
-    borderRadius: '6px',
-    border: '1px solid rgba(0,0,0,0.1)',
-    fontSize: '12px',
-    fontFamily: 'Montserrat, sans-serif',
-    outline: 'none',
-    background: '#fff',
-    minWidth: '110px',
-    boxSizing: 'border-box' as const,
-};
-
-// ── Componente Principal ───────────────────────────────────────────────────
 export default function CadastroClientes() {
     const [loading, setLoading] = useState(true);
     const [salvando, setSalvando] = useState(false);
-
     const [consultores, setConsultores] = useState<Consultor[]>([]);
-    const [clientes, setClientes] = useState<Cliente[]>([]);
-    const [instituicoes, setInstituicoes] = useState<Instituicao[]>([]);
     const [linhas, setLinhas] = useState<LinhaTabela[]>([]);
-
     const [busca, setBusca] = useState('');
 
-    // ── Carga inicial ──
-    useEffect(() => {
-        async function fetchAll() {
-            setLoading(true);
-            try {
-                const [consultoresRes, clientesRes, instituicoesRes, codigosRes] = await Promise.all([
-                    supabase.from('perfis').select('id, nome, email, role').order('nome'),
-                    supabase.from('clientes').select('id, nome').order('nome'),
-                    supabase.from('instituicoes').select('id, nome, cor_primaria').order('nome'),
-                    supabase.from('clientes_codigos').select('*'),
-                ]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [novoCliente, setNovoCliente] = useState<Partial<Cliente>>({
+        nome: '', consultor_id: null, codigo_avere: '', codigo_btg: '', codigo_xp: ''
+    });
 
-                const cons: Consultor[] = consultoresRes.data || [];
-                const clis: Cliente[] = clientesRes.data || [];
-                const insts: Instituicao[] = instituicoesRes.data || [];
-                const codigos: CodigoCliente[] = codigosRes.data || [];
-
-                setConsultores(cons);
-                setInstituicoes(insts);
-                setClientes(clis);
-
-                // Montar uma linha por cliente
-                const linhasBase: LinhaTabela[] = clis.map(cliente => {
-                    const registro = codigos.find(c => c.cliente_id === cliente.id);
-                    return {
-                        clienteId: cliente.id,
-                        clienteNome: cliente.nome,
-                        consultorId: registro?.consultor_id || '',
-                        codigoAvere: registro?.codigo_avere || '',
-                        codigos: registro?.codigos_instituicoes || {},
-                        modificado: false,
-                        registroId: registro?.id || null,
-                    };
-                });
-
-                setLinhas(linhasBase);
-            } catch (err) {
-                console.error('Erro ao carregar:', err);
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchAll();
-    }, []);
-
-    // ── Edição de campo ──
-    const handleChange = (clienteId: string, campo: string, valor: string, isInstituicao = false) => {
-        setLinhas(prev => prev.map(l => {
-            if (l.clienteId !== clienteId) return l;
-            if (isInstituicao) {
-                return { ...l, codigos: { ...l.codigos, [campo]: valor }, modificado: true };
-            }
-            return { ...l, [campo]: valor, modificado: true };
-        }));
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const [consRes, clisRes] = await Promise.all([
+                supabase.from('consultores').select('id, nome').eq('ativo', true).order('nome'),
+                supabase.from('clientes').select('*').order('nome')
+            ]);
+            if (consRes.data) setConsultores(consRes.data);
+            if (clisRes.data) setLinhas(clisRes.data.map(c => ({ ...c, modificado: false })));
+        } catch (err) { console.error(err); } finally { setLoading(false); }
     };
 
-    // ── Salvar alterações ──
-    const handleSalvar = async () => {
+    useEffect(() => { fetchData(); }, []);
+
+    const handleChangeTabela = (id: string, campo: keyof Cliente, valor: string | null) => {
+        setLinhas(prev => prev.map(l =>
+            l.id === id ? { ...l, [campo]: valor === "" ? null : valor, modificado: true } : l
+        ));
+    };
+
+    const handleSalvarEdicoes = async () => {
         const modificadas = linhas.filter(l => l.modificado);
         if (modificadas.length === 0) return;
-
         setSalvando(true);
         try {
-            const promessas = modificadas.map(linha => {
-                const payload = {
-                    cliente_id: linha.clienteId,
-                    consultor_id: linha.consultorId || null,
-                    codigo_avere: linha.codigoAvere,
-                    codigos_instituicoes: linha.codigos,
-                };
-                if (linha.registroId) {
-                    return supabase.from('clientes_codigos').update(payload).eq('id', linha.registroId);
-                } else {
-                    return supabase.from('clientes_codigos').insert([payload]);
-                }
-            });
-
-            await Promise.all(promessas);
-
-            // Marcar como salvo e atualizar IDs dos novos registros
-            const { data: codigosRes } = await supabase.from('clientes_codigos').select('*');
-            const codigos: CodigoCliente[] = codigosRes || [];
-
-            setLinhas(prev => prev.map(l => {
-                const registro = codigos.find(c => c.cliente_id === l.clienteId);
-                return { ...l, modificado: false, registroId: registro?.id || l.registroId };
-            }));
-
-            alert(`${modificadas.length} cliente(s) atualizado(s) com sucesso!`);
-        } catch (err) {
-            console.error('Erro ao salvar:', err);
-            alert('Erro ao salvar. Verifique o console.');
-        } finally {
-            setSalvando(false);
-        }
+            const upsertData = modificadas.map(({ modificado, ...dados }) => dados);
+            await supabase.from('clientes').upsert(upsertData);
+            fetchData();
+        } catch (err) { alert('Erro ao salvar.'); } finally { setSalvando(false); }
     };
 
-    // ── Filtro de busca ──
-    const linhasFiltradas = linhas.filter(l =>
-        l.clienteNome.toLowerCase().includes(busca.toLowerCase())
-    );
-
-    const modificadasCount = linhas.filter(l => l.modificado).length;
-
-    if (loading) return (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
-            <Spinner size="lg" />
-        </div>
-    );
+    const handleCriarCliente = async () => {
+        if (!novoCliente.nome) return alert('Nome é obrigatório');
+        setSalvando(true);
+        try {
+            await supabase.from('clientes').insert([novoCliente]);
+            setIsModalOpen(false);
+            setNovoCliente({ nome: '', consultor_id: null, codigo_avere: '', codigo_btg: '', codigo_xp: '' });
+            fetchData();
+        } catch (err) { alert('Erro ao cadastrar.'); } finally { setSalvando(false); }
+    };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px', fontFamily: 'Montserrat, sans-serif' }}>
-
-            {/* HEADER */}
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '32px' }}>
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <Users size={28} color="#081F28" />
-                        <Typography variant="h1" style={{ fontWeight: 700, fontFamily: 'Montserrat, sans-serif' }}>
-                            Cadastro de Clientes
-                        </Typography>
-                        {modificadasCount > 0 && (
-                            <Badge intent="primaria" variant="solid">{modificadasCount} alteração(ões)</Badge>
-                        )}
-                    </div>
-                    <Typography variant="p" style={{ opacity: 0.6, fontFamily: 'Montserrat, sans-serif' }}>
-                        Relacionamento de clientes com consultores e códigos por instituição
-                    </Typography>
+                    <Typography variant="h1">Base de Clientes</Typography>
+                    <Typography variant="p" style={{ opacity: 0.6 }}>Gerencie vínculos e códigos operacionais.</Typography>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    {/* Busca */}
-                    <div style={{ position: 'relative' }}>
-                        <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4 }} />
-                        <input
-                            placeholder="Buscar cliente..."
-                            value={busca}
-                            onChange={e => setBusca(e.target.value)}
-                            style={{ ...inputStyle, paddingLeft: '30px', minWidth: '200px' }}
-                        />
-                    </div>
-                    <Button
-                        variant="solid"
-                        onClick={handleSalvar}
-                        disabled={salvando || modificadasCount === 0}
-                    >
-                        {salvando ? <Spinner size="sm" /> : <Save size={16} style={{ marginRight: '8px' }} />}
-                        {salvando ? 'Salvando...' : `Salvar (${modificadasCount})`}
+                <div style={{ display: 'flex', gap: '12px' }}>
+                    <input
+                        className="avere-input"
+                        style={{ width: '280px' }}
+                        placeholder="Pesquisar cliente..."
+                        value={busca}
+                        onChange={e => setBusca(e.target.value)}
+                    />
+                    <Button onClick={() => setIsModalOpen(true)}>
+                        <Plus size={20} style={{ marginRight: 8 }} /> Novo Cliente
                     </Button>
                 </div>
             </header>
 
-            {/* TABELA */}
-            <Card style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                        <thead>
-                            <tr>
-                                <th style={{ ...thStyle, minWidth: '200px' }}>Cliente</th>
-                                <th style={{ ...thStyle, minWidth: '180px' }}>Consultor</th>
-                                <th style={{ ...thStyle, minWidth: '130px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#0083CB' }} />
-                                        Cód. Avere
-                                    </div>
-                                </th>
-                                {instituicoes.map(inst => (
-                                    <th key={inst.id} style={{ ...thStyle, minWidth: '130px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '2px', background: inst.cor_primaria }} />
-                                            {inst.nome}
-                                        </div>
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {linhasFiltradas.length === 0 ? (
-                                <tr>
-                                    <td colSpan={3 + instituicoes.length} style={{ ...tdStyle, textAlign: 'center', padding: '40px', opacity: 0.4 }}>
-                                        Nenhum cliente encontrado
-                                    </td>
-                                </tr>
-                            ) : (
-                                linhasFiltradas.map(linha => (
-                                    <tr
-                                        key={linha.clienteId}
-                                        style={{ background: linha.modificado ? 'rgba(0, 131, 203, 0.02)' : 'transparent' }}
+            <Card style={{ padding: '0' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                        <tr style={{ textAlign: 'left', background: '#F9FAFB', borderBottom: '1px solid #EEE' }}>
+                            <th style={{ padding: '16px' }}>Nome</th>
+                            <th style={{ padding: '16px' }}>Consultor</th>
+                            <th style={{ padding: '16px' }}>Avere</th>
+                            <th style={{ padding: '16px' }}>BTG</th>
+                            <th style={{ padding: '16px' }}>XP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {linhas.filter(l => l.nome.toLowerCase().includes(busca.toLowerCase())).map(l => (
+                            <tr key={l.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                                <td style={{ padding: '12px 16px' }}>
+                                    <input
+                                        style={{ border: 'none', background: 'transparent', width: '100%', fontWeight: 500 }}
+                                        value={l.nome}
+                                        onChange={e => handleChangeTabela(l.id, 'nome', e.target.value)}
+                                    />
+                                </td>
+                                <td style={{ padding: '12px 16px' }}>
+                                    <select
+                                        style={{ border: 'none', background: 'transparent' }}
+                                        value={l.consultor_id || ''}
+                                        onChange={e => handleChangeTabela(l.id, 'consultor_id', e.target.value)}
                                     >
-                                        {/* Nome do cliente */}
-                                        <td style={tdStyle}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                {linha.modificado && (
-                                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#0083CB', flexShrink: 0 }} />
-                                                )}
-                                                <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px', color: '#081F28', fontFamily: 'Montserrat, sans-serif' }}>
-                                                    {linha.clienteNome}
-                                                </Typography>
-                                            </div>
-                                        </td>
-
-                                        {/* Consultor (select) */}
-                                        <td style={tdStyle}>
-                                            <select
-                                                value={linha.consultorId}
-                                                onChange={e => handleChange(linha.clienteId, 'consultorId', e.target.value)}
-                                                style={{
-                                                    ...inputStyle,
-                                                    minWidth: '160px',
-                                                    background: linha.consultorId ? '#fff' : 'rgba(245, 158, 11, 0.04)',
-                                                }}
-                                            >
-                                                <option value="">Sem consultor</option>
-                                                {consultores.map(c => (
-                                                    <option key={c.id} value={c.id}>{c.nome || c.email}</option>
-                                                ))}
-                                            </select>
-                                        </td>
-
-                                        {/* Código Avere */}
-                                        <td style={tdStyle}>
-                                            <input
-                                                style={inputStyle}
-                                                placeholder="AVE-000"
-                                                value={linha.codigoAvere}
-                                                onChange={e => handleChange(linha.clienteId, 'codigoAvere', e.target.value)}
-                                            />
-                                        </td>
-
-                                        {/* Códigos por Instituição (dinâmico) */}
-                                        {instituicoes.map(inst => (
-                                            <td key={inst.id} style={tdStyle}>
-                                                <input
-                                                    style={inputStyle}
-                                                    placeholder="—"
-                                                    value={linha.codigos[inst.id] || ''}
-                                                    onChange={e => handleChange(linha.clienteId, inst.id, e.target.value, true)}
-                                                />
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* RODAPÉ */}
-                <div style={{
-                    padding: '12px 20px',
-                    background: '#F9FAFB',
-                    borderTop: '1px solid rgba(0,0,0,0.06)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                }}>
-                    <Typography variant="p" style={{ fontSize: '12px', opacity: 0.5, fontFamily: 'Montserrat, sans-serif' }}>
-                        {linhasFiltradas.length} de {linhas.length} clientes
-                    </Typography>
-                    {instituicoes.length === 0 && (
-                        <Typography variant="p" style={{ fontSize: '12px', color: '#F59E0B', fontWeight: 600, fontFamily: 'Montserrat, sans-serif' }}>
-                            · Nenhuma instituição cadastrada. Adicione em Configurações → Instituições.
-                        </Typography>
-                    )}
-                </div>
+                                        <option value="">Selecione...</option>
+                                        {consultores.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                                    </select>
+                                </td>
+                                <td style={{ padding: '12px 16px' }}><input style={{ border: 'none', background: 'transparent', width: '80px' }} value={l.codigo_avere || ''} onChange={e => handleChangeTabela(l.id, 'codigo_avere', e.target.value)} /></td>
+                                <td style={{ padding: '12px 16px' }}><input style={{ border: 'none', background: 'transparent', width: '80px' }} value={l.codigo_btg || ''} onChange={e => handleChangeTabela(l.id, 'codigo_btg', e.target.value)} /></td>
+                                <td style={{ padding: '12px 16px' }}><input style={{ border: 'none', background: 'transparent', width: '80px' }} value={l.codigo_xp || ''} onChange={e => handleChangeTabela(l.id, 'codigo_xp', e.target.value)} /></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </Card>
+
+            {linhas.some(l => l.modificado) && (
+                <div style={{ position: 'fixed', bottom: '32px', right: '32px' }}>
+                    <Button onClick={handleSalvarEdicoes}><Save size={20} style={{ marginRight: 8 }} /> Salvar Alterações</Button>
+                </div>
+            )}
+
+            {/* Modal Corrigida conforme avere-ui */}
+            {/* Modal de Cadastro com Seletor Convencional */}
+            <Modal open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <ModalContent onInteractOutside={(e) => e.preventDefault()}>
+                    <ModalHeader>
+                        <ModalTitle>Cadastrar Novo Cliente</ModalTitle>
+                    </ModalHeader>
+
+                    <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <TextField
+                            label="Nome Completo"
+                            value={novoCliente.nome || ''}
+                            onChange={e => setNovoCliente(p => ({ ...p, nome: e.target.value }))}
+                        />
+
+                        {/* Seletor Convencional para garantir o funcionamento */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>
+                                Consultor Responsável
+                            </label>
+                            <select
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 12px',
+                                    borderRadius: '6px',
+                                    border: '1px solid rgba(0,0,0,0.1)',
+                                    background: '#fcfcfc',
+                                    fontFamily: 'Montserrat, sans-serif',
+                                    fontSize: '14px',
+                                    outline: 'none'
+                                }}
+                                value={novoCliente.consultor_id || ""}
+                                onChange={(e) => {
+                                    const valor = e.target.value;
+                                    console.log("Selecionado via Nativo:", valor);
+                                    setNovoCliente(prev => ({ ...prev, consultor_id: valor || null }));
+                                }}
+                            >
+                                <option value="">Selecione um consultor...</option>
+                                {consultores.map(c => (
+                                    <option key={c.id} value={c.id}>
+                                        {c.nome}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                            <TextField
+                                label="Cód. Avere"
+                                value={novoCliente.codigo_avere || ''}
+                                onChange={e => setNovoCliente(p => ({ ...p, codigo_avere: e.target.value }))}
+                            />
+                            <TextField
+                                label="Cód. BTG"
+                                value={novoCliente.codigo_btg || ''}
+                                onChange={e => setNovoCliente(p => ({ ...p, codigo_btg: e.target.value }))}
+                            />
+                            <TextField
+                                label="Cód. XP"
+                                value={novoCliente.codigo_xp || ''}
+                                onChange={e => setNovoCliente(p => ({ ...p, codigo_xp: e.target.value }))}
+                            />
+                        </div>
+                    </div>
+
+                    <ModalFooter>
+                        <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={handleCriarCliente}
+                            disabled={salvando || !novoCliente.nome}
+                        >
+                            {salvando ? <Spinner size="sm" /> : 'Confirmar Cadastro'}
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
         </div>
     );
 }
