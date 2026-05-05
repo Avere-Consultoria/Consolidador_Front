@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import Home from './pages/Home';
 import BtgApi from './pages/BtgApi';
 import XpApi from './pages/XpApi';
+
 import EmDesenvolvimento from './pages/EmDesenvolvimento';
 import MasterAtivos from './pages/MasterAtivos';
 import GestaoMaster from './pages/GestaoMaster';
@@ -18,6 +19,7 @@ import PersonalizarAtivos from './pages/PersonalizarAtivos';
 import Rentabilidade from './pages/Rentabilidade';
 import CadastroClientes from './pages/Cadastroclientes';
 import GestaoEquipe from './pages/GestaoEquipe';
+import AvenueApi from './pages/AvenueAPI';
 
 export default function App() {
   return (
@@ -37,6 +39,7 @@ export default function App() {
                 <Route path="rentabilidade" element={<Rentabilidade />} />
                 <Route path="/btg" element={<BtgApi />} />
                 <Route path="/xp" element={<XpApi />} />
+                <Route path="/avenue" element={<AvenueApi />} />
                 <Route path="/dev" element={<EmDesenvolvimento />} />
                 <Route path="/personalizar" element={<PersonalizarAtivos />} />
               </Route>

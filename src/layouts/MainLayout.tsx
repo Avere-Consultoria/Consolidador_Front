@@ -79,7 +79,8 @@ export default function MainLayout() {
         codigoAvere: clienteEncontrado.codigo_avere,
         nome: clienteEncontrado.nome,
         codigoXp: clienteEncontrado.codigo_xp,
-        codigoBtg: clienteEncontrado.codigo_btg
+        codigoBtg: clienteEncontrado.codigo_btg,
+        codigoAvenue: clienteEncontrado.codigo_avenue
       });
     } else {
       setSelectedClient(null);
@@ -172,6 +173,10 @@ export default function MainLayout() {
         <SideBarItem
           icon={TrendingUp} label="XP API"
           active={location.pathname === '/xp'} onClick={() => navigate('/xp')}
+        />
+        <SideBarItem
+          icon={TrendingUp} label="Avenue API"
+          active={location.pathname === '/avenue'} onClick={() => navigate('/avenue')}
         />
         {(isMaster || isConsultor) && (
           <SideBarItem

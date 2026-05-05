@@ -6,6 +6,7 @@ interface Cliente {
     codigoAvere: string;
     nome: string;
     codigoXp: string | null;
+    codigoAvenue: string | null;
     codigoBtg: string | null;
 }
 
