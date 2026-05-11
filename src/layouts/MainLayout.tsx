@@ -80,7 +80,9 @@ export default function MainLayout() {
         nome: clienteEncontrado.nome,
         codigoXp: clienteEncontrado.codigo_xp,
         codigoBtg: clienteEncontrado.codigo_btg,
-        codigoAvenue: clienteEncontrado.codigo_avenue
+        codigoAvenue: clienteEncontrado.codigo_avenue,
+        cpf: clienteEncontrado.cpf,
+        codigo_agora: clienteEncontrado.codigo_agora,
       });
     } else {
       setSelectedClient(null);
@@ -167,7 +169,7 @@ export default function MainLayout() {
           active={location.pathname === '/rentabilidade'} onClick={() => navigate('/rentabilidade')}
         />
         <SideBarItem
-          icon={LayoutDashboard} label="BTG API"
+          icon={TrendingUp} label="BTG API"
           active={location.pathname === '/btg'} onClick={() => navigate('/btg')}
         />
         <SideBarItem
@@ -178,6 +180,10 @@ export default function MainLayout() {
           icon={TrendingUp} label="Avenue API"
           active={location.pathname === '/avenue'} onClick={() => navigate('/avenue')}
         />
+        <SideBarItem
+          icon={TrendingUp} label="Ágora API"
+          active={location.pathname === '/agora'} onClick={() => navigate('/agora')}
+        />
         {(isMaster || isConsultor) && (
           <SideBarItem
             icon={SlidersHorizontal} label="Personalizar Ativos"
@@ -187,6 +193,30 @@ export default function MainLayout() {
 
         {isMaster && (
           <>
+            <div style={{
+              padding: isCollapsed ? '24px 12px 8px' : '24px 20px 8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}>
+              {!isCollapsed && (
+                <span style={{
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  color: 'rgba(255,255,255,0.3)', // Cor suave para não distrair
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  whiteSpace: 'nowrap'
+                }}>
+                  Administração
+                </span>
+              )}
+              <div style={{
+                flex: 1,
+                height: '1px',
+                background: 'rgba(255,255,255,0.1)'
+              }} />
+            </div>
             <SideBarItem
               icon={Database} label="Master Ativos"
               active={location.pathname === '/master'} onClick={() => navigate('/master')}

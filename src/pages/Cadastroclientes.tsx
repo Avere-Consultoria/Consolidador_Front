@@ -16,6 +16,8 @@ interface Cliente {
     codigo_xp: string | null;
     codigo_btg: string | null;
     codigo_avenue: string | null;
+    cpf: string | null;
+    codigo_agora: string | null;
 }
 interface LinhaTabela extends Cliente { modificado: boolean; }
 
@@ -29,7 +31,7 @@ export default function CadastroClientes() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [clienteEmEdicao, setClienteEmEdicao] = useState<string | null>(null);
     const [formCliente, setFormCliente] = useState<Partial<Cliente>>({
-        nome: '', consultor_id: null, codigo_avere: '', codigo_btg: '', codigo_xp: '', codigo_avenue: ''
+        nome: '', consultor_id: null, codigo_avere: '', codigo_btg: '', codigo_xp: '', codigo_avenue: '', cpf: '', codigo_agora: ''
     });
 
     const fetchData = async () => {
@@ -48,7 +50,7 @@ export default function CadastroClientes() {
 
     const handleNovoCliente = () => {
         setClienteEmEdicao(null);
-        setFormCliente({ nome: '', consultor_id: null, codigo_avere: '', codigo_btg: '', codigo_xp: '', codigo_avenue: '' });
+        setFormCliente({ nome: '', consultor_id: null, codigo_avere: '', codigo_btg: '', codigo_xp: '', codigo_avenue: '', cpf: '', codigo_agora: '' });
         setIsModalOpen(true);
     };
 
@@ -58,14 +60,15 @@ export default function CadastroClientes() {
         setIsModalOpen(true);
     };
 
-    // Função auxiliar para garantir que enviamos apenas campos que existem no banco
     const cleanPayload = (data: Partial<Cliente>) => ({
         nome: data.nome,
         consultor_id: data.consultor_id,
         codigo_avere: data.codigo_avere,
         codigo_btg: data.codigo_btg,
         codigo_xp: data.codigo_xp,
-        codigo_avenue: data.codigo_avenue, // Certifique-se de criar esta coluna no Supabase
+        codigo_avenue: data.codigo_avenue,
+        cpf: data.cpf,
+        codigo_agora: data.codigo_agora,
     });
 
     const handleSalvarModal = async () => {
@@ -76,11 +79,9 @@ export default function CadastroClientes() {
 
         try {
             if (clienteEmEdicao) {
-                // UPDATE
                 const { error } = await supabase.from('clientes').update(payload).eq('id', clienteEmEdicao);
                 if (error) throw error;
             } else {
-                // INSERT[cite: 2]
                 const { error } = await supabase.from('clientes').insert([payload]);
                 if (error) throw error;
             }
@@ -88,7 +89,7 @@ export default function CadastroClientes() {
             fetchData();
         } catch (err) {
             console.error(err);
-            alert('Erro ao salvar. Verifique se a coluna codigo_avenue foi criada no banco.');
+            alert('Erro ao salvar.');
         } finally { setSalvando(false); }
     };
 
@@ -111,7 +112,6 @@ export default function CadastroClientes() {
         if (modificadas.length === 0) return;
         setSalvando(true);
         try {
-            // Limpa cada linha da tabela antes do upsert[cite: 2]
             const upsertData = modificadas.map(l => ({
                 id: l.id,
                 ...cleanPayload(l)
@@ -146,15 +146,17 @@ export default function CadastroClientes() {
                 </div>
             </header>
 
-            <Card style={{ padding: '0' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <Card style={{ padding: '0', overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1000px' }}>
                     <thead>
                         <tr style={{ textAlign: 'left', background: '#F9FAFB', borderBottom: '1px solid #EEE' }}>
                             <th style={{ padding: '16px' }}>Nome</th>
+                            <th style={{ padding: '16px' }}>CPF</th>
                             <th style={{ padding: '16px' }}>Consultor</th>
                             <th style={{ padding: '16px' }}>BTG</th>
                             <th style={{ padding: '16px' }}>XP</th>
                             <th style={{ padding: '16px' }}>Avenue</th>
+                            <th style={{ padding: '16px' }}>Agora</th>
                             <th style={{ padding: '16px', textAlign: 'center' }}>Ações</th>
                         </tr>
                     </thead>
@@ -169,6 +171,9 @@ export default function CadastroClientes() {
                                     />
                                 </td>
                                 <td style={{ padding: '12px 16px' }}>
+                                    <input style={{ border: 'none', background: 'transparent', width: '110px' }} value={l.cpf || ''} onChange={e => handleChangeTabela(l.id, 'cpf', e.target.value)} />
+                                </td>
+                                <td style={{ padding: '12px 16px' }}>
                                     <select
                                         style={{ border: 'none', background: 'transparent' }}
                                         value={l.consultor_id || ''}
@@ -181,6 +186,7 @@ export default function CadastroClientes() {
                                 <td style={{ padding: '12px 16px' }}><input style={{ border: 'none', background: 'transparent', width: '80px' }} value={l.codigo_btg || ''} onChange={e => handleChangeTabela(l.id, 'codigo_btg', e.target.value)} /></td>
                                 <td style={{ padding: '12px 16px' }}><input style={{ border: 'none', background: 'transparent', width: '80px' }} value={l.codigo_xp || ''} onChange={e => handleChangeTabela(l.id, 'codigo_xp', e.target.value)} /></td>
                                 <td style={{ padding: '12px 16px' }}><input style={{ border: 'none', background: 'transparent', width: '80px' }} value={l.codigo_avenue || ''} onChange={e => handleChangeTabela(l.id, 'codigo_avenue', e.target.value)} /></td>
+                                <td style={{ padding: '12px 16px' }}><input style={{ border: 'none', background: 'transparent', width: '80px' }} value={l.codigo_agora || ''} onChange={e => handleChangeTabela(l.id, 'codigo_agora', e.target.value)} /></td>
                                 <td style={{ padding: '12px 16px', display: 'flex', justifyContent: 'center', gap: '12px' }}>
                                     <button onClick={() => handleEditarNoModal(l)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-primaria)' }}>
                                         <Pencil size={18} />
@@ -205,16 +211,22 @@ export default function CadastroClientes() {
                 <ModalContent>
                     <ModalHeader>
                         <ModalTitle>{clienteEmEdicao ? 'Editar Cliente' : 'Novo Cliente'}</ModalTitle>
-                        {/* Adicionado ModalDescription para corrigir o warning de acessibilidade */}
                         <ModalDescription>Preencha os dados de identificação e códigos de integração.</ModalDescription>
                     </ModalHeader>
 
                     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <TextField
-                            label="Nome Completo"
-                            value={formCliente.nome || ''}
-                            onChange={e => setFormCliente(p => ({ ...p, nome: e.target.value }))}
-                        />
+                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
+                            <TextField
+                                label="Nome Completo"
+                                value={formCliente.nome || ''}
+                                onChange={e => setFormCliente(p => ({ ...p, nome: e.target.value }))}
+                            />
+                            <TextField
+                                label="CPF"
+                                value={formCliente.cpf || ''}
+                                onChange={e => setFormCliente(p => ({ ...p, cpf: e.target.value }))}
+                            />
+                        </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                             <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Consultor Responsável</label>
@@ -228,10 +240,11 @@ export default function CadastroClientes() {
                             </select>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                             <TextField label="Cód. BTG" value={formCliente.codigo_btg || ''} onChange={e => setFormCliente(p => ({ ...p, codigo_btg: e.target.value }))} />
                             <TextField label="Cód. XP" value={formCliente.codigo_xp || ''} onChange={e => setFormCliente(p => ({ ...p, codigo_xp: e.target.value }))} />
                             <TextField label="Cód. Avenue" value={formCliente.codigo_avenue || ''} onChange={e => setFormCliente(p => ({ ...p, codigo_avenue: e.target.value }))} />
+                            <TextField label="Cód. Agora" value={formCliente.codigo_agora || ''} onChange={e => setFormCliente(p => ({ ...p, codigo_agora: e.target.value }))} />
                             <TextField label="Cód. Avere" value={formCliente.codigo_avere || ''} onChange={e => setFormCliente(p => ({ ...p, codigo_avere: e.target.value }))} />
                         </div>
                     </div>

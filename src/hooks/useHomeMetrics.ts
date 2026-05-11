@@ -13,7 +13,7 @@ export interface ConsolidatedAtivo {
     valorLiquido: number;
     valorBruto?: number;
     vencimento?: string | null;
-    instituicao: 'BTG Pactual' | 'XP Investimentos';
+    instituicao: 'BTG Pactual' | 'XP Investimentos' | 'Avenue';
     emissorId?: string | null;
     liquidez?: string | null;
     rawData?: any;

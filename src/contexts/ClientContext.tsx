@@ -8,6 +8,8 @@ interface Cliente {
     codigoXp: string | null;
     codigoAvenue: string | null;
     codigoBtg: string | null;
+    cpf?: string | null;
+    codigo_agora?: string | null;
 }
 
 interface ClientContextType {
