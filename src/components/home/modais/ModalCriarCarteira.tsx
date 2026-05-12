@@ -9,12 +9,14 @@ interface ModalCriarCarteiraProps {
     onClose: () => void;
     temBtg: boolean;
     temXp: boolean;
+    temAvenue: boolean;
+    temAgora: boolean;
     clienteId: string;
     onSalva: (carteira: CarteiraPersonalizada, editando: boolean) => void;
-    carteiraEditando?: CarteiraPersonalizada | null; // <-- Nova prop
+    carteiraEditando?: CarteiraPersonalizada | null;
 }
 
-export function ModalCriarCarteira({ aberto, onClose, temBtg, temXp, clienteId, onSalva, carteiraEditando }: ModalCriarCarteiraProps) {
+export function ModalCriarCarteira({ aberto, onClose, temBtg, temXp, temAvenue, temAgora, clienteId, onSalva, carteiraEditando }: ModalCriarCarteiraProps) {
     const [nome, setNome] = useState('');
     const [selecionadas, setSelecionadas] = useState<string[]>([]);
     const [salvando, setSalvando] = useState(false);
@@ -37,6 +39,8 @@ export function ModalCriarCarteira({ aberto, onClose, temBtg, temXp, clienteId, 
     const instituicoesDisponiveis = [
         temBtg && { key: 'BTG', label: 'BTG Pactual', cor: CORES.btg, desc: 'Posição sincronizada via API' },
         temXp && { key: 'XP', label: 'XP Investimentos', cor: CORES.xp, desc: 'Posição sincronizada via API' },
+        temAvenue && { key: 'AVENUE', label: 'Avenue', cor: CORES.avenue, desc: 'Posição internacional sincronizada' },
+        temAgora && { key: 'AGORA', label: 'Ágora', cor: CORES.agora, desc: 'Posição Ágora sincronizada' },
     ].filter(Boolean) as { key: string; label: string; cor: string; desc: string }[];
 
     function toggleInstituicao(key: string) {

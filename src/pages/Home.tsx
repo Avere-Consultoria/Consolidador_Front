@@ -38,8 +38,8 @@ export default function Home() {
     </div>
   );
 
-  // 3. Empty State (Sem dados em ambas as corretoras para o cliente selecionado)
-  if (!parseFloat(snapshotData.btg?.patrimonio_total || 0) && !parseFloat(snapshotData.xp?.patrimonio_total || 0) && selectedClient) {
+  // 3. Empty State (Sem dados em nenhuma corretora para o cliente selecionado)
+  if (!metrics.hasData && selectedClient) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '100px', gap: '16px', border: '2px dashed var(--color-borda)', borderRadius: '12px', opacity: 0.6 }}>
         <PieIcon size={48} />
@@ -90,6 +90,8 @@ export default function Home() {
         onClose={() => setDrawerCarteirasAberto(false)}
         temBtg={!!snapshotData.btg}
         temXp={!!snapshotData.xp}
+        temAvenue={!!snapshotData.avenue}
+        temAgora={!!snapshotData.agora}
         clienteId={selectedClient?.id ?? null}
       />
     </div>
