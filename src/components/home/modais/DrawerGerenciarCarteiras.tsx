@@ -114,7 +114,7 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAv
                                 {temAlguma && (
                                     <div style={itemStyle}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <div style={dotStyle('var(--color-primaria, #0083CB)')} />
+                                            <div style={dotStyle('var(--color-primaria)')} />
                                             <div>
                                                 <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>Consolidada</Typography>
                                                 <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>Visão unificada de todas as corretoras</Typography>

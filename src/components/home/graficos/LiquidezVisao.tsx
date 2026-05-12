@@ -31,7 +31,7 @@ const tdStyle: React.CSSProperties = {
     padding: '12px 4px',
     borderBottom: '1px solid rgba(0,0,0,0.04)',
     fontWeight: 500,
-    color: '#081F28'
+    color: 'var(--color-secundaria)'
 };
 
 export function LiquidezVisao({ dados }: LiquidezVisaoProps) {
@@ -86,7 +86,7 @@ export function LiquidezVisao({ dados }: LiquidezVisaoProps) {
                                     </Typography>
                                     <Typography variant="p" style={{ fontWeight: 700, fontSize: '13px', color: '#00B4D8', fontFamily: 'Montserrat, sans-serif' }}>
                                         {liq.pct.toFixed(1)}%
-                                        <span style={{ opacity: 0.5, fontWeight: 400, fontSize: '11px', marginLeft: '6px', color: '#081F28' }}>
+                                        <span style={{ opacity: 0.5, fontWeight: 400, fontSize: '11px', marginLeft: '6px', color: 'var(--color-secundaria)' }}>
                                             ({fmt(liq.value)})
                                         </span>
                                     </Typography>
@@ -96,7 +96,7 @@ export function LiquidezVisao({ dados }: LiquidezVisaoProps) {
                                         style={{
                                             height: '100%',
                                             width: `${Math.min(liq.pct, 100)}%`,
-                                            background: 'linear-gradient(90deg, #0083CB 0%, #00B4D8 100%)',
+                                            background: 'linear-gradient(90deg, var(--color-primaria) 0%, #00B4D8 100%)',
                                             borderRadius: '4px',
                                             transition: 'width 1s ease-in-out'
                                         }}

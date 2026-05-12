@@ -15,7 +15,7 @@ function DetalheItem({ label, value, highlight = false, mono = false, fullWidth 
     return (
         <div style={{ background: 'rgba(0,131,203,0.05)', borderRadius: '8px', padding: '10px 12px', gridColumn: fullWidth ? '1 / -1' : undefined }}>
             <div style={{ fontSize: '11px', opacity: 0.45, marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
-            <div style={{ fontSize: '14px', fontWeight: highlight ? 700 : 500, wordBreak: 'break-all', color: highlight ? 'var(--color-primaria, #0083CB)' : 'inherit', fontFamily: mono ? 'monospace' : 'inherit' }}>
+            <div style={{ fontSize: '14px', fontWeight: highlight ? 700 : 500, wordBreak: 'break-all', color: highlight ? 'var(--color-primaria)' : 'inherit', fontFamily: mono ? 'monospace' : 'inherit' }}>
                 {value}
             </div>
         </div>

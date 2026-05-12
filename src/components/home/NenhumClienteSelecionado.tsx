@@ -23,7 +23,7 @@ export function NenhumClienteSelecionado() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#0083CB',
+                color: 'var(--color-primaria)',
                 marginBottom: '24px',
                 border: '8px solid rgba(0, 131, 203, 0.02)'
             }}>
@@ -31,7 +31,7 @@ export function NenhumClienteSelecionado() {
             </div>
 
             {/* Textos Principais */}
-            <Typography variant="h2" style={{ fontSize: '24px', color: '#081F28', marginBottom: '12px' }}>
+            <Typography variant="h2" style={{ fontSize: '24px', marginBottom: '12px' }}>
                 Nenhum cliente selecionado
             </Typography>
 
@@ -48,7 +48,7 @@ export function NenhumClienteSelecionado() {
                 background: 'rgba(0, 131, 203, 0.08)',
                 padding: '10px 20px',
                 borderRadius: '100px',
-                color: '#0083CB'
+                color: 'var(--color-primaria)'
             }}>
                 <Typography variant="p" style={{ fontSize: '14px', fontWeight: 600 }}>
                     Utilize o seletor no topo da página

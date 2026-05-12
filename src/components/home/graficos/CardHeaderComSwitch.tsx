@@ -49,7 +49,7 @@ export function CardHeaderComSwitch({
                         padding: '0 12px',
                         borderRadius: '6px',
                         background: !modoTabela ? '#fff' : 'transparent',
-                        color: !modoTabela ? '#081F28' : '#6B7280',
+                        color: !modoTabela ? 'var(--color-secundaria)' : '#6B7280',
                         boxShadow: !modoTabela ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
                     }}
                 >
@@ -64,7 +64,7 @@ export function CardHeaderComSwitch({
                         padding: '0 12px',
                         borderRadius: '6px',
                         background: modoTabela ? '#fff' : 'transparent',
-                        color: modoTabela ? '#081F28' : '#6B7280',
+                        color: modoTabela ? 'var(--color-secundaria)' : '#6B7280',
                         boxShadow: modoTabela ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
                     }}
                 >

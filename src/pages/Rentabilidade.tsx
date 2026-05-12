@@ -125,7 +125,7 @@ export default function Rentabilidade() {
                 <Card>
                     <CardContent style={{ padding: '24px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-                            <LineIcon size={20} color="#0083CB" />
+                            <LineIcon size={20} color="var(--color-primaria)" />
                             <Typography variant="h2" style={{ fontSize: '18px' }}>Evolução Acumulada</Typography>
                         </div>
                         <div style={{ height: '350px', width: '100%' }}>
@@ -153,7 +153,7 @@ export default function Rentabilidade() {
                 <Card>
                     <CardContent style={{ padding: '24px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-                            <BarChart3 size={20} color="#0083CB" />
+                            <BarChart3 size={20} color="var(--color-primaria)" />
                             <Typography variant="h2" style={{ fontSize: '18px' }}>Retorno Mensal vs CDI</Typography>
                         </div>
                         <div style={{ height: '300px', width: '100%' }}>

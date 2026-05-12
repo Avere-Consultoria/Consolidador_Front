@@ -50,7 +50,7 @@ const TooltipBarras = ({ active, payload, label }: any) => {
 // ── Estilos da Tabela ──────────────────────────────────────────────────────
 const tableStyle: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginTop: '8px' };
 const thStyle: React.CSSProperties = { textAlign: 'left', padding: '8px 4px', borderBottom: '1px solid rgba(0,0,0,0.06)', opacity: 0.4, textTransform: 'uppercase', fontWeight: 700, fontSize: '10px', letterSpacing: '0.05em' };
-const tdStyle: React.CSSProperties = { padding: '12px 4px', borderBottom: '1px solid rgba(0,0,0,0.04)', fontWeight: 500, color: '#081F28' };
+const tdStyle: React.CSSProperties = { padding: '12px 4px', borderBottom: '1px solid rgba(0,0,0,0.04)', fontWeight: 500, color: 'var(--color-secundaria)' };
 
 // ── Componente de Cabeçalho do Card com Switch ──────────────────────────────
 function CardHeaderComSwitch({ titulo, modoTabela, setModoTabela }: { titulo: string; modoTabela: boolean; setModoTabela: (v: boolean) => void }) {
@@ -127,7 +127,7 @@ export function Graficos({ metrics }: GraficosProps) {
                                     </Pie>
                                     <Tooltip content={<TooltipCustom />} />
                                     <Legend iconType="circle" iconSize={10} formatter={(value, entry: any) => (
-                                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#081F28' }}>
+                                        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-secundaria)' }}>
                                             {value} — {entry.payload.pct.toFixed(1)}%
                                         </span>
                                     )} />
@@ -173,11 +173,11 @@ export function Graficos({ metrics }: GraficosProps) {
                                 <BarChart data={metrics.alocacaoData} layout="vertical" margin={{ top: 0, right: 60, left: 0, bottom: 0 }} barSize={14}>
                                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.06)" />
                                     <XAxis type="number" hide />
-                                    <YAxis type="category" dataKey="name" width={95} tick={{ fontSize: 12, fontFamily: 'Montserrat, sans-serif', fill: '#081F28', opacity: 0.6 }} axisLine={false} tickLine={false} />
+                                    <YAxis type="category" dataKey="name" width={95} tick={{ fontSize: 12, fontFamily: 'Montserrat, sans-serif', fill: 'var(--color-secundaria)', opacity: 0.6 }} axisLine={false} tickLine={false} />
                                     <Tooltip content={<TooltipCustom />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
                                     <Bar dataKey="value" radius={[0, 4, 4, 0]} animationDuration={800}>
                                         {metrics.alocacaoData.map((entry: any, i: number) => <Cell key={i} fill={entry.fill} />)}
-                                        <LabelList dataKey="value" position="right" formatter={(v: any) => fmtK(Number(v))} style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif', fill: '#081F28', opacity: 0.7 }} />
+                                        <LabelList dataKey="value" position="right" formatter={(v: any) => fmtK(Number(v))} style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif', fill: 'var(--color-secundaria)', opacity: 0.7 }} />
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
@@ -224,11 +224,11 @@ export function Graficos({ metrics }: GraficosProps) {
                             <ResponsiveContainer width="100%" height={220}>
                                 <BarChart data={metrics.comparativoData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }} barSize={28} barCategoryGap="35%">
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
-                                    <XAxis dataKey="name" tick={{ fontSize: 12, fontFamily: 'Montserrat, sans-serif', fill: '#081F28', opacity: 0.6 }} axisLine={false} tickLine={false} />
-                                    <YAxis tickFormatter={fmtK} tick={{ fontSize: 11, fontFamily: 'Montserrat, sans-serif', fill: '#081F28', opacity: 0.4 }} axisLine={false} tickLine={false} width={70} />
+                                    <XAxis dataKey="name" tick={{ fontSize: 12, fontFamily: 'Montserrat, sans-serif', fill: 'var(--color-secundaria)', opacity: 0.6 }} axisLine={false} tickLine={false} />
+                                    <YAxis tickFormatter={fmtK} tick={{ fontSize: 11, fontFamily: 'Montserrat, sans-serif', fill: 'var(--color-secundaria)', opacity: 0.4 }} axisLine={false} tickLine={false} width={70} />
                                     <Tooltip content={<TooltipBarras />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
                                     <Legend iconType="circle" iconSize={10} formatter={(value) => (
-                                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#081F28' }}>{value}</span>
+                                        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-secundaria)' }}>{value}</span>
                                     )} />
                                     <Bar dataKey="BTG" name="BTG Pactual" fill={CORES.btg} stackId="a" radius={[0, 0, 0, 0]} animationDuration={800} />
                                     <Bar dataKey="XP" name="XP Investimentos" fill={CORES.xp} stackId="a" radius={[4, 4, 0, 0]} animationDuration={900} />

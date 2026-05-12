@@ -32,7 +32,7 @@ const tdStyle: React.CSSProperties = {
     padding: '12px 4px',
     borderBottom: '1px solid rgba(0,0,0,0.04)',
     fontWeight: 500,
-    color: '#081F28'
+    color: 'var(--color-secundaria)'
 };
 
 export function RiscoEmissor({ dados }: RiscoEmissorProps) {
@@ -105,7 +105,7 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                                         fontWeight: 600,
                                         fontFamily: 'Montserrat, sans-serif',
                                         background: viewMode === opt.value ? '#fff' : 'transparent',
-                                        color: viewMode === opt.value ? '#081F28' : '#6B7280',
+                                        color: viewMode === opt.value ? 'var(--color-secundaria)' : '#6B7280',
                                         boxShadow: viewMode === opt.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                                     }}
                                 >
@@ -163,7 +163,7 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                                             )}
                                         </div>
                                         <Typography variant="p" style={{ fontWeight: 700, fontSize: '13px', color: corBarra, fontFamily: 'Montserrat, sans-serif' }}>
-                                            {emissor.pct.toFixed(1)}% <span style={{ opacity: 0.5, fontWeight: 400, fontSize: '11px', marginLeft: '6px', color: '#081F28' }}>({fmt(emissor.value)})</span>
+                                            {emissor.pct.toFixed(1)}% <span style={{ opacity: 0.5, fontWeight: 400, fontSize: '11px', marginLeft: '6px', color: 'var(--color-secundaria)' }}>({fmt(emissor.value)})</span>
                                         </Typography>
                                     </div>
                                     <div style={{ height: '6px', width: '100%', background: 'rgba(0,0,0,0.05)', borderRadius: '3px' }}>

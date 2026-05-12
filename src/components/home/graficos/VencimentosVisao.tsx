@@ -3,6 +3,7 @@ import { Card, CardContent, Typography, Badge, Select } from 'avere-ui';
 import { Calendar } from 'lucide-react';
 import { CardHeaderComSwitch } from './CardHeaderComSwitch';
 import { fmt, fmtDate } from '../../../utils/formatters';
+import { CORES } from '../../../utils/colors';
 
 interface VencimentosVisaoProps {
     ativos: any[];
@@ -45,7 +46,14 @@ const tdStyle: React.CSSProperties = {
     padding: '12px 4px',
     borderBottom: '1px solid rgba(0,0,0,0.04)',
     fontWeight: 500,
-    color: '#081F28'
+    color: 'var(--color-secundaria)'
+};
+
+const COR_INSTITUICAO: Record<string, string> = {
+    'BTG Pactual': CORES.btg,
+    'XP Investimentos': CORES.xp,
+    'Avenue': CORES.avenue,
+    'Ágora': CORES.agora,
 };
 
 export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: VencimentosVisaoProps) {
@@ -158,8 +166,8 @@ export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: 
                                     <tr key={a.rowId || i}>
                                         <td style={tdStyle}>{a.nome}</td>
                                         <td style={tdStyle}>
-                                            <Badge variant="ghost" style={{ fontSize: '10px', color: a.instituicao.includes('BTG') ? '#0083CB' : '#FF6B00' }}>
-                                                {a.instituicao.includes('BTG') ? 'BTG' : 'XP'}
+                                            <Badge variant="ghost" style={{ fontSize: '10px', color: COR_INSTITUICAO[a.instituicao] ?? 'var(--color-primaria)' }}>
+                                                {a.instituicao}
                                             </Badge>
                                         </td>
                                         <td style={{ ...tdStyle, fontWeight: 600 }}>{fmtDate(a.vencimento || a.data_vencimento)}</td>

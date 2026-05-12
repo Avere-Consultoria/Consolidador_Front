@@ -10,7 +10,6 @@ interface ResumoCardsProps {
 
 export function ResumoCards({ metrics }: ResumoCardsProps) {
     const [modoTabela, setModoTabela] = useState(false);
-    const montserrat = { fontFamily: 'Montserrat, sans-serif' };
 
     // Cálculo de Share
     const xpPercent = (metrics.xpTotal / metrics.patrimonioTotal) * 100;
@@ -40,11 +39,11 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
                 <div style={{ marginBottom: '32px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6B7280', marginBottom: '4px' }}>
                         <Briefcase size={16} />
-                        <Typography variant="p" style={{ ...montserrat, fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <Typography variant="p" style={{fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                             Patrimônio Total da Visão
                         </Typography>
                     </div>
-                    <Typography variant="h1" style={{ ...montserrat, fontSize: '36px', fontWeight: 800, color: '#081F28' }}>
+                    <Typography variant="h1" style={{fontSize: '36px', fontWeight: 800, color: 'var(--color-secundaria)' }}>
                         {fmt(metrics.patrimonioTotal)}
                     </Typography>
                 </div>
@@ -56,17 +55,17 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
                         {instituicoes.map(inst => (
                             <div key={inst.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                                    <Typography variant="p" style={{ ...montserrat, fontWeight: 700, fontSize: '13px', color: '#4B5563' }}>
+                                    <Typography variant="p" style={{fontWeight: 700, fontSize: '13px', color: '#4B5563' }}>
                                         {inst.nome}
                                         <span style={{ fontWeight: 400, opacity: 0.4, fontSize: '11px', marginLeft: '8px' }}>
                                             Ref: {fmtDate(inst.ref + 'T12:00:00Z')}
                                         </span>
                                     </Typography>
                                     <div style={{ textAlign: 'right' }}>
-                                        <Typography variant="p" style={{ ...montserrat, fontWeight: 800, fontSize: '15px', color: '#081F28' }}>
+                                        <Typography variant="p" style={{fontWeight: 800, fontSize: '15px', color: 'var(--color-secundaria)' }}>
                                             {fmt(inst.total)}
                                         </Typography>
-                                        <Typography variant="p" style={{ ...montserrat, fontSize: '11px', fontWeight: 700, color: inst.color }}>
+                                        <Typography variant="p" style={{fontSize: '11px', fontWeight: 700, color: inst.color }}>
                                             {inst.percent.toFixed(1)}%
                                         </Typography>
                                     </div>

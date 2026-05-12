@@ -28,7 +28,7 @@ const tdStyle: React.CSSProperties = {
     padding: '12px 4px',
     borderBottom: '1px solid rgba(0,0,0,0.04)',
     fontWeight: 500,
-    color: '#081F28'
+    color: 'var(--color-secundaria)'
 };
 
 // ── Componente Principal ─────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ export function GraficoAlocacaoClasse({ data }: { data: any[] }) {
                                 tick={{
                                     fontSize: 12,
                                     fontFamily: 'Montserrat, sans-serif',
-                                    fill: '#081F28',
+                                    fill: 'var(--color-secundaria)',
                                     opacity: 0.6
                                 }}
                                 axisLine={false}
@@ -116,7 +116,7 @@ export function GraficoAlocacaoClasse({ data }: { data: any[] }) {
                                         fontSize: '11px',
                                         fontWeight: 700,
                                         fontFamily: 'Montserrat, sans-serif',
-                                        fill: '#081F28',
+                                        fill: 'var(--color-secundaria)',
                                         opacity: 0.7
                                     }}
                                 />

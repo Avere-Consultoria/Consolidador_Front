@@ -13,7 +13,7 @@ export default function GestaoMaster() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px' }}>
             <header style={{ borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Settings size={28} color="#081F28" />
+                    <Settings size={28} color="var(--color-secundaria)" />
                     <Typography variant="h1">Configurações do Sistema</Typography>
                 </div>
             </header>

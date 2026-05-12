@@ -38,7 +38,7 @@ export default function Login() {
             {/* LADO ESQUERDO: Branding (Oculto em ecrãs muito pequenos) */}
             <div style={{
                 flex: 1.2,
-                background: 'linear-gradient(135deg, #081F28 0%, #004D7A 100%)',
+                background: 'linear-gradient(135deg, var(--color-secundaria) 0%, #004D7A 100%)',
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
@@ -47,7 +47,7 @@ export default function Login() {
                 color: 'white'
             }}>
                 {/* Elementos Gráficos Decorativos (Círculos desfocados) */}
-                <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '400px', height: '400px', background: '#0083CB', borderRadius: '50%', filter: 'blur(100px)', opacity: 0.4 }} />
+                <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '400px', height: '400px', background: 'var(--color-primaria)', borderRadius: '50%', filter: 'blur(100px)', opacity: 0.4 }} />
                 <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '400px', height: '400px', background: '#00B4D8', borderRadius: '50%', filter: 'blur(120px)', opacity: 0.3 }} />
 
                 {/* Topo do lado esquerdo */}
@@ -111,7 +111,7 @@ export default function Login() {
                                         fontSize: '15px', color: '#111827', outline: 'none',
                                         transition: 'border-color 0.2s, box-shadow 0.2s'
                                     }}
-                                    onFocus={(e) => { e.target.style.borderColor = '#0083CB'; e.target.style.boxShadow = '0 0 0 3px rgba(0, 131, 203, 0.1)'; }}
+                                    onFocus={(e) => { e.target.style.borderColor = 'var(--color-primaria)'; e.target.style.boxShadow = '0 0 0 3px rgba(0, 131, 203, 0.1)'; }}
                                     onBlur={(e) => { e.target.style.borderColor = '#D1D5DB'; e.target.style.boxShadow = 'none'; }}
                                 />
                             </div>
@@ -122,7 +122,7 @@ export default function Login() {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>Senha</label>
                                 {/* Link falso para recuperar senha, muito comum em SaaS */}
-                                <a href="#" style={{ fontSize: '12px', color: '#0083CB', textDecoration: 'none', fontWeight: 500 }}>Esqueceu a senha?</a>
+                                <a href="#" style={{ fontSize: '12px', color: 'var(--color-primaria)', textDecoration: 'none', fontWeight: 500 }}>Esqueceu a senha?</a>
                             </div>
                             <div style={{ position: 'relative' }}>
                                 <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '14px', color: '#9CA3AF' }}>
@@ -137,7 +137,7 @@ export default function Login() {
                                         fontSize: '15px', color: '#111827', outline: 'none',
                                         transition: 'border-color 0.2s, box-shadow 0.2s'
                                     }}
-                                    onFocus={(e) => { e.target.style.borderColor = '#0083CB'; e.target.style.boxShadow = '0 0 0 3px rgba(0, 131, 203, 0.1)'; }}
+                                    onFocus={(e) => { e.target.style.borderColor = 'var(--color-primaria)'; e.target.style.boxShadow = '0 0 0 3px rgba(0, 131, 203, 0.1)'; }}
                                     onBlur={(e) => { e.target.style.borderColor = '#D1D5DB'; e.target.style.boxShadow = 'none'; }}
                                 />
                             </div>
@@ -149,7 +149,7 @@ export default function Login() {
                             disabled={loading}
                             style={{
                                 marginTop: '12px', height: '48px', fontSize: '16px', fontWeight: 600,
-                                borderRadius: '8px', background: '#0083CB'
+                                borderRadius: '8px', background: 'var(--color-primaria)'
                             }}
                         >
                             {loading ? <Spinner size="md" /> : 'Entrar na Plataforma'}

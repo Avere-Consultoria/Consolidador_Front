@@ -127,7 +127,7 @@ function DetalheItem({
         fontSize: '14px',
         fontWeight: highlight ? 700 : 500,
         wordBreak: 'break-all',
-        color: highlight ? 'var(--color-primaria, #0083CB)' : 'inherit',
+        color: highlight ? 'var(--color-primaria)' : 'inherit',
         fontFamily: mono ? 'monospace' : 'inherit',
       }}>
         {value}
@@ -370,7 +370,7 @@ function DrawerDetalhes({ ativo, aberto, onClose }: {
                         {acq.acquisitionDate && (
                           <div style={{ gridColumn: '1 / -1' }}>
                             <div style={{ fontSize: '10px', opacity: 0.4, marginBottom: '2px', textTransform: 'uppercase', fontWeight: 600 }}>Data de Compra</div>
-                            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-primaria, #0083CB)' }}>{fmtDate(acq.acquisitionDate)}</div>
+                            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-primaria)' }}>{fmtDate(acq.acquisitionDate)}</div>
                           </div>
                         )}
                         {acq.quantity != null && (
@@ -400,7 +400,7 @@ function DrawerDetalhes({ ativo, aberto, onClose }: {
                         {acq.netValue != null && (
                           <div>
                             <div style={{ fontSize: '10px', opacity: 0.4, marginBottom: '2px', textTransform: 'uppercase', fontWeight: 600 }}>Valor Líquido Atual</div>
-                            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-primaria, #0083CB)' }}>{fmt(acq.netValue)}</div>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-primaria)' }}>{fmt(acq.netValue)}</div>
                           </div>
                         )}
                         {(acq.incomeTax ?? 0) > 0 && (
@@ -727,7 +727,7 @@ export default function BtgApi() {
                               background: 'none', border: 'none', cursor: 'pointer',
                               padding: '4px 8px', borderRadius: '6px',
                               display: 'flex', alignItems: 'center',
-                              color: 'var(--color-primaria, #0083CB)',
+                              color: 'var(--color-primaria)',
                               opacity: 0.5, transition: 'opacity 0.15s',
                             }}
                             onMouseEnter={e => (e.currentTarget.style.opacity = '1')}

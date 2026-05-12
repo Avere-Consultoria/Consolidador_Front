@@ -183,7 +183,7 @@ export default function MasterAtivos() {
                             accessorKey: 'nome_ativo',
                             cell: (item: AtivoMaster) => (
                                 <div className="cell-wrap">
-                                    <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px', color: '#081F28', fontFamily: 'Montserrat, sans-serif' }}>
+                                    <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>
                                         {item.nome_ativo}
                                     </Typography>
                                     <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>

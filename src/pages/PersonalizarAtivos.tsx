@@ -166,7 +166,7 @@ export default function PersonalizarAtivos() {
                                     <Typography variant="p" style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                                         {item.master_nome}
                                     </Typography>
-                                    <Typography variant="p" style={{ fontSize: '14px', color: '#0083CB', fontWeight: 700 }}>
+                                    <Typography variant="p" style={{ fontSize: '14px', color: 'var(--color-primaria)', fontWeight: 700 }}>
                                         {item.apelido_ativo || <span style={{ opacity: 0.4, fontWeight: 500, fontStyle: 'italic' }}>Nome original mantido</span>}
                                     </Typography>
                                 </div>
@@ -180,7 +180,7 @@ export default function PersonalizarAtivos() {
                                     <Typography variant="p" style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' }}>
                                         {item.master_classe}
                                     </Typography>
-                                    <Typography variant="p" style={{ fontSize: '13px', color: item.classe_customizada ? '#081F28' : '#9CA3AF', fontWeight: 600 }}>
+                                    <Typography variant="p" style={{ fontSize: '13px', color: item.classe_customizada ? 'var(--color-secundaria)' : '#9CA3AF', fontWeight: 600 }}>
                                         {item.classe_customizada || 'Sem alteração'}
                                     </Typography>
                                 </div>
@@ -194,7 +194,7 @@ export default function PersonalizarAtivos() {
                                     <Typography variant="p" style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 600 }}>
                                         D+{item.master_liquidez}
                                     </Typography>
-                                    <Typography variant="p" style={{ fontSize: '13px', color: item.liquidez_customizada ? '#081F28' : '#9CA3AF', fontWeight: 700 }}>
+                                    <Typography variant="p" style={{ fontSize: '13px', color: item.liquidez_customizada ? 'var(--color-secundaria)' : '#9CA3AF', fontWeight: 700 }}>
                                         {item.liquidez_customizada ? `D+${item.liquidez_customizada}` : '—'}
                                     </Typography>
                                 </div>

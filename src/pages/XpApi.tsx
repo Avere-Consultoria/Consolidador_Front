@@ -291,7 +291,7 @@ function DetalheItem({
       <div style={{ fontSize: '11px', opacity: 0.45, marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
       <div style={{
         fontSize: '14px', fontWeight: highlight ? 700 : 500, wordBreak: 'break-all',
-        color: highlight ? 'var(--color-primaria, #0083CB)' : 'inherit',
+        color: highlight ? 'var(--color-primaria)' : 'inherit',
         fontFamily: mono ? 'monospace' : 'inherit',
       }}>{value}</div>
     </div>
@@ -783,7 +783,7 @@ export default function XpApi() {
                               background: 'none', border: 'none', cursor: 'pointer',
                               padding: '4px 8px', borderRadius: '6px',
                               display: 'flex', alignItems: 'center',
-                              color: 'var(--color-primaria, #0083CB)',
+                              color: 'var(--color-primaria)',
                               opacity: 0.5, transition: 'opacity 0.15s',
                             }}
                             onMouseEnter={e => (e.currentTarget.style.opacity = '1')}

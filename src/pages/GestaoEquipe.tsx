@@ -53,7 +53,7 @@ export default function GestaoEquipe() {
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <Users size={28} color="#081F28" />
+                        <Users size={28} color="var(--color-secundaria)" />
                         <Typography variant="h1">Gestão de Equipe</Typography>
                     </div>
                     <Typography variant="p" style={{ opacity: 0.6 }}>Administração de Consultores e Vínculos de Acesso</Typography>

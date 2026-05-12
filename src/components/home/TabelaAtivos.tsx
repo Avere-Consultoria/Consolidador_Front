@@ -54,7 +54,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                         <List size={20} />
                     </div>
                     <div>
-                        <Typography variant="h2" style={{ fontSize: '15px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif', color: '#081F28' }}>
+                        <Typography variant="h2" style={{ fontSize: '15px', fontWeight: 700 }}>
                             Detalhamento da Carteira
                         </Typography>
                         <Typography variant="p" style={{ fontSize: '12px', opacity: 0.6, fontFamily: 'Montserrat, sans-serif' }}>
@@ -116,7 +116,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                 </Badge>
 
                                 <div style={{ marginLeft: 'auto' }}>
-                                    <Typography variant="p" style={{ fontSize: '14px', fontWeight: 700, color: '#081F28', fontFamily: 'Montserrat, sans-serif' }}>
+                                    <Typography variant="p" style={{ fontSize: '14px', fontWeight: 700 }}>
                                         {fmt(total)}
                                     </Typography>
                                 </div>
@@ -149,8 +149,6 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                             style={{
                                                                 fontWeight: 600,
                                                                 fontSize: '13px',
-                                                                color: '#081F28',
-                                                                fontFamily: 'Montserrat, sans-serif',
                                                                 whiteSpace: 'nowrap',
                                                                 overflow: 'hidden',
                                                                 textOverflow: 'ellipsis'
@@ -211,7 +209,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                             background: 'none', border: 'none', cursor: 'pointer',
                                                             padding: '4px 8px', borderRadius: '6px',
                                                             display: 'flex', alignItems: 'center',
-                                                            color: 'var(--color-primaria, #0083CB)',
+                                                            color: 'var(--color-primaria)',
                                                             opacity: 0.5, transition: 'opacity 0.15s',
                                                         }}
                                                         onMouseEnter={e => (e.currentTarget.style.opacity = '1')}

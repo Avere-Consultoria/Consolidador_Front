@@ -30,7 +30,7 @@ const tdStyle: React.CSSProperties = {
     padding: '12px 4px',
     borderBottom: '1px solid rgba(0,0,0,0.04)',
     fontWeight: 500,
-    color: '#081F28'
+    color: 'var(--color-secundaria)'
 };
 
 // ── Componente Principal ─────────────────────────────────────────────────────
@@ -114,7 +114,7 @@ export function GraficoComparativo({ data }: { data: any[] }) {
                                 iconType="circle"
                                 iconSize={10}
                                 formatter={(value) => (
-                                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#081F28' }}>
+                                    <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-secundaria)' }}>
                                         {value}
                                     </span>
                                 )}

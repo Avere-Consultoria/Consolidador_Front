@@ -116,7 +116,7 @@ export function ModalCriarCarteira({ aberto, onClose, temBtg, temXp, temAvenue, 
                                 fontFamily: 'Montserrat, sans-serif', border: '1.5px solid rgba(0,0,0,0.15)',
                                 borderRadius: '8px', outline: 'none', background: 'transparent', transition: 'border-color 0.15s',
                             }}
-                            onFocus={e => (e.target.style.borderColor = 'var(--color-primaria, #0083CB)')}
+                            onFocus={e => (e.target.style.borderColor = 'var(--color-primaria)')}
                             onBlur={e => (e.target.style.borderColor = 'rgba(0,0,0,0.15)')}
                         />
                     </div>
