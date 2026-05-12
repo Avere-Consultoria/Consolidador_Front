@@ -12,6 +12,7 @@ import {
 
 import { useClient } from '../contexts/ClientContext';
 import { supabase } from '../services/supabase';
+import { DetalheItem, Secao } from '../components/shared/DrawerDetalhe';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interfaces (Mapeadas para o banco da Ágora)
@@ -59,54 +60,10 @@ const categoryMap: Record<string, string> = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componentes Auxiliares do Drawer
+// Drawer de Detalhes
 // ─────────────────────────────────────────────────────────────────────────────
 
-function DetalheItem({
-    label, value, highlight = false, mono = false, fullWidth = false
-}: {
-    label: string; value: string;
-    highlight?: boolean; mono?: boolean; fullWidth?: boolean;
-}) {
-    return (
-        <div style={{
-            background: 'rgba(22, 163, 74, 0.05)', // Cor verde padrão Ágora/Avere
-            borderRadius: '8px',
-            padding: '10px 12px',
-            gridColumn: fullWidth ? '1 / -1' : undefined,
-        }}>
-            <div style={{ fontSize: '11px', opacity: 0.45, marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase' }}>
-                {label}
-            </div>
-            <div style={{
-                fontSize: '14px',
-                fontWeight: highlight ? 700 : 500,
-                wordBreak: 'break-all',
-                color: highlight ? '#16a34a' : 'inherit',
-                fontFamily: mono ? 'monospace' : 'inherit',
-            }}>
-                {value}
-            </div>
-        </div>
-    );
-}
-
-function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
-    return (
-        <section style={{ marginBottom: '4px' }}>
-            <Typography variant="p" style={{
-                fontSize: '11px', fontWeight: 700,
-                textTransform: 'uppercase', opacity: 0.4,
-                marginBottom: '10px', letterSpacing: '0.05em'
-            }}>
-                {titulo}
-            </Typography>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                {children}
-            </div>
-        </section>
-    );
-}
+const AGORA_COLOR = '#16a34a';
 
 function DrawerDetalhes({ ativo, aberto, onClose }: {
     ativo: AvereAtivo;
@@ -129,21 +86,21 @@ function DrawerDetalhes({ ativo, aberto, onClose }: {
                 <DrawerBody>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         <Secao titulo="Valores Atuais">
-                            <DetalheItem label="Valor Bruto (BRL)" value={fmt(ativo.valorBruto)} highlight />
-                            <DetalheItem label="Valor Líquido (BRL)" value={fmt(ativo.valorLiquido)} />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Valor Bruto (BRL)" value={fmt(ativo.valorBruto)} highlight />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Valor Líquido (BRL)" value={fmt(ativo.valorLiquido)} />
                         </Secao>
 
                         <DrawerSeparator />
 
                         <Secao titulo="Informações do Produto">
-                            <DetalheItem label="Classe de Ativo" value={categoryMap[ativo.tipo || ''] || ativo.tipo || '-'} />
-                            <DetalheItem label="Quantidade" value={fmtNum(ativo.quantidade)} />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Classe de Ativo" value={categoryMap[ativo.tipo || ''] || ativo.tipo || '-'} />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Quantidade" value={fmtNum(ativo.quantidade)} />
                         </Secao>
 
                         <DrawerSeparator />
 
                         <Secao titulo="Identificação">
-                            <DetalheItem label="Ticker / Tipo" value={ativo.ticker || '-'} mono fullWidth />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Ticker / Tipo" value={ativo.ticker || '-'} mono fullWidth />
                         </Secao>
                     </div>
                 </DrawerBody>

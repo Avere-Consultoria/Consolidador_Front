@@ -12,6 +12,7 @@ import {
 
 import { useClient } from '../contexts/ClientContext';
 import { supabase } from '../services/supabase';
+import { DetalheItem, Secao } from '../components/shared/DrawerDetalhe';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interfaces
@@ -62,54 +63,10 @@ const fmtNum = (v?: number | null, decimais = 4) =>
         : '-';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Componentes auxiliares do Drawer
+// Drawer de Detalhes
 // ─────────────────────────────────────────────────────────────────────────────
 
-function DetalheItem({
-    label, value, highlight = false, mono = false, fullWidth = false
-}: {
-    label: string; value: string;
-    highlight?: boolean; mono?: boolean; fullWidth?: boolean;
-}) {
-    return (
-        <div style={{
-            background: 'rgba(249, 115, 22, 0.05)',
-            borderRadius: '8px',
-            padding: '10px 12px',
-            gridColumn: fullWidth ? '1 / -1' : undefined,
-        }}>
-            <div style={{ fontSize: '11px', opacity: 0.45, marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase' }}>
-                {label}
-            </div>
-            <div style={{
-                fontSize: '14px',
-                fontWeight: highlight ? 700 : 500,
-                wordBreak: 'break-all',
-                color: highlight ? '#f97316' : 'inherit',
-                fontFamily: mono ? 'monospace' : 'inherit',
-            }}>
-                {value}
-            </div>
-        </div>
-    );
-}
-
-function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
-    return (
-        <section style={{ marginBottom: '4px' }}>
-            <Typography variant="p" style={{
-                fontSize: '11px', fontWeight: 700,
-                textTransform: 'uppercase', opacity: 0.4,
-                marginBottom: '10px', letterSpacing: '0.05em'
-            }}>
-                {titulo}
-            </Typography>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                {children}
-            </div>
-        </section>
-    );
-}
+const AVENUE_COLOR = '#f97316';
 
 function DrawerDetalhes({ ativo, aberto, onClose }: {
     ativo: AvereAtivo;
@@ -133,23 +90,23 @@ function DrawerDetalhes({ ativo, aberto, onClose }: {
                 <DrawerBody>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         <Secao titulo="Valores Atuais">
-                            <DetalheItem label="Valor de Mercado (BRL)" value={fmt(ativo.valorBruto)} highlight />
-                            <DetalheItem label="Quantidade" value={fmtNum(ativo.quantidade)} />
+                            <DetalheItem accentColor={AVENUE_COLOR} label="Valor de Mercado (BRL)" value={fmt(ativo.valorBruto)} highlight />
+                            <DetalheItem accentColor={AVENUE_COLOR} label="Quantidade" value={fmtNum(ativo.quantidade)} />
                         </Secao>
 
                         <DrawerSeparator />
 
                         <Secao titulo="Informações Adicionais">
-                            <DetalheItem label="Tipo de Produto" value={ativo.subTipo || '-'} />
-                            <DetalheItem label="Moeda" value="USD" />
-                            {ativo.vencimento && <DetalheItem label="Vencimento" value={fmtDate(ativo.vencimento)} />}
+                            <DetalheItem accentColor={AVENUE_COLOR} label="Tipo de Produto" value={ativo.subTipo || '-'} />
+                            <DetalheItem accentColor={AVENUE_COLOR} label="Moeda" value="USD" />
+                            {ativo.vencimento && <DetalheItem accentColor={AVENUE_COLOR} label="Vencimento" value={fmtDate(ativo.vencimento)} />}
                         </Secao>
 
                         <DrawerSeparator />
 
                         <Secao titulo="Identificação">
-                            <DetalheItem label="Ticker / Symbol" value={ativo.ticker || '-'} mono />
-                            {ativo.extra?.officeName && <DetalheItem label="Escritório" value={ativo.extra.officeName} fullWidth />}
+                            <DetalheItem accentColor={AVENUE_COLOR} label="Ticker / Symbol" value={ativo.ticker || '-'} mono />
+                            {ativo.extra?.officeName && <DetalheItem accentColor={AVENUE_COLOR} label="Escritório" value={ativo.extra.officeName} fullWidth />}
                         </Secao>
                     </div>
                 </DrawerBody>
