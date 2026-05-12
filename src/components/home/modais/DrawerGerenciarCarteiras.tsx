@@ -15,11 +15,13 @@ interface DrawerGerenciarCarteirasProps {
     onClose: () => void;
     temBtg: boolean;
     temXp: boolean;
+    temAvenue: boolean;
+    temAgora: boolean;
     clienteId: string | null;
 }
 
-export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, clienteId }: DrawerGerenciarCarteirasProps) {
-    const temAlguma = temBtg || temXp;
+export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAvenue, temAgora, clienteId }: DrawerGerenciarCarteirasProps) {
+    const temAlguma = temBtg || temXp || temAvenue || temAgora;
     const [carteiras, setCarteiras] = useState<CarteiraPersonalizada[]>([]);
     const [modalCriarAberto, setModalCriarAberto] = useState(false);
     const [carteiraEditando, setCarteiraEditando] = useState<CarteiraPersonalizada | null>(null);
@@ -92,7 +94,7 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, clien
     const labelStyle: React.CSSProperties = { fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.4, marginBottom: '8px' };
     const itemStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: '10px', background: 'rgba(0,0,0,0.03)', marginBottom: '6px' };
     const dotStyle = (cor: string): React.CSSProperties => ({ width: 8, height: 8, borderRadius: '50%', background: cor, flexShrink: 0 });
-    const corInstituicao: Record<string, string> = { BTG: CORES.btg, XP: CORES.xp };
+    const corInstituicao: Record<string, string> = { BTG: CORES.btg, XP: CORES.xp, AVENUE: CORES.avenue, AGORA: CORES.agora };
     const actionBtnStyle: React.CSSProperties = { background: 'transparent', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' };
 
     return (
@@ -140,6 +142,30 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, clien
                                             <div>
                                                 <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>XP Investimentos</Typography>
                                                 <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>Posição XP sincronizada</Typography>
+                                            </div>
+                                        </div>
+                                        <Badge variant="ghost" style={{ fontSize: '10px', opacity: 0.5 }}>Padrão</Badge>
+                                    </div>
+                                )}
+                                {temAvenue && (
+                                    <div style={itemStyle}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div style={dotStyle(CORES.avenue)} />
+                                            <div>
+                                                <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>Avenue</Typography>
+                                                <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>Posição internacional sincronizada</Typography>
+                                            </div>
+                                        </div>
+                                        <Badge variant="ghost" style={{ fontSize: '10px', opacity: 0.5 }}>Padrão</Badge>
+                                    </div>
+                                )}
+                                {temAgora && (
+                                    <div style={itemStyle}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <div style={dotStyle(CORES.agora)} />
+                                            <div>
+                                                <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>Ágora</Typography>
+                                                <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>Posição Ágora sincronizada</Typography>
                                             </div>
                                         </div>
                                         <Badge variant="ghost" style={{ fontSize: '10px', opacity: 0.5 }}>Padrão</Badge>
@@ -209,6 +235,8 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, clien
                     onClose={fecharModalCriacao}
                     temBtg={temBtg}
                     temXp={temXp}
+                    temAvenue={temAvenue}
+                    temAgora={temAgora}
                     clienteId={clienteId}
                     onSalva={handleCarteiraSalva}
                     carteiraEditando={carteiraEditando}
