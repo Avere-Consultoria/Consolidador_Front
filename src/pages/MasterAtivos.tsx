@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Typography, Card, Badge, Button, DataTable, Spinner } from 'avere-ui';
+import { Typography, Card, Badge, Button, DataTable, Spinner, toast } from 'avere-ui';
 import { Filter, Save } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
@@ -71,7 +71,7 @@ export default function MasterAtivos() {
             setIdsModificados(new Set());
         } catch (err) {
             console.error('Erro ao buscar dicionário:', err);
-            alert('Erro ao carregar os dados.');
+            toast.error('Erro ao carregar os dados.');
         } finally {
             setLoading(false);
         }
@@ -109,11 +109,11 @@ export default function MasterAtivos() {
                     .eq('id', ativo.id)
             );
             await Promise.all(promessas);
-            alert(`${idsModificados.size} ativo(s) atualizado(s) com sucesso!`);
+            toast.success(`${idsModificados.size} ativo(s) atualizado(s) com sucesso!`);
             setIdsModificados(new Set());
         } catch (err) {
             console.error('Erro ao salvar:', err);
-            alert('Erro ao salvar no banco.');
+            toast.error('Erro ao salvar no banco.');
         } finally {
             setSalvando(false);
         }
@@ -125,7 +125,7 @@ export default function MasterAtivos() {
     const pendentesCount = ativos.filter(a => a.status === 'PENDENTE').length;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px', fontFamily: 'Montserrat, sans-serif' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
             <style>{`
                 input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -141,12 +141,12 @@ export default function MasterAtivos() {
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <Typography variant="h1" style={{ fontWeight: 700, fontFamily: 'Montserrat, sans-serif' }}>Master de Ativos</Typography>
+                        <Typography variant="h1" style={{ fontWeight: 700 }}>Master de Ativos</Typography>
                         <Badge intent={pendentesCount > 0 ? 'primaria' : 'secundaria'} variant="solid">
                             {pendentesCount} Pendentes
                         </Badge>
                     </div>
-                    <Typography variant="p" style={{ opacity: 0.6, fontFamily: 'Montserrat, sans-serif' }}>
+                    <Typography variant="p" style={{ opacity: 0.6 }}>
                         Dicionário Universal de Classificação e Risco da Avere
                     </Typography>
                 </div>
@@ -206,7 +206,7 @@ export default function MasterAtivos() {
                                     textAlign: 'center',
                                     border: '1px solid rgba(0,0,0,0.03)'
                                 }}>
-                                    <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, color: '#4B5563', fontFamily: 'Montserrat, sans-serif' }}>
+                                    <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, color: '#4B5563' }}>
                                         {item.benchmark}
                                     </Typography>
                                 </div>
@@ -222,7 +222,7 @@ export default function MasterAtivos() {
                                         onChange={(e) => handleAtualizarAtivo(item.id, 'emissor_id', e.target.value)}
                                         style={{
                                             width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
-                                            fontSize: '12px', fontFamily: 'Montserrat, sans-serif', outline: 'none',
+                                            fontSize: '12px', fontFamily: 'var(--font-family)', outline: 'none',
                                             background: item.emissor_id ? '#fff' : 'rgba(239, 68, 68, 0.05)'
                                         }}
                                     >
@@ -244,7 +244,7 @@ export default function MasterAtivos() {
                                         onChange={(e) => handleAtualizarAtivo(item.id, 'classe_avere', e.target.value)}
                                         style={{
                                             width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
-                                            fontSize: '12px', fontFamily: 'Montserrat, sans-serif', outline: 'none',
+                                            fontSize: '12px', fontFamily: 'var(--font-family)', outline: 'none',
                                             background: item.classe_avere ? '#fff' : 'rgba(245, 158, 11, 0.05)'
                                         }}
                                     >
