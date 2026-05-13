@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, Button, Typography, Spinner, Modal, ModalContent, ModalHeader, ModalTitle, ModalFooter, TextField } from 'avere-ui';
+import { Card, Button, Typography, Spinner, Modal, ModalContent, ModalHeader, ModalTitle, ModalFooter, TextField, toast } from 'avere-ui';
 import { Plus, Edit2, Trash2, GripVertical, Save } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
@@ -120,7 +120,7 @@ export default function ClassesTab() {
 
     // Criar ou Editar
     const handleSave = async () => {
-        if (!formData.nome || !formData.cor_hex) return alert('Preencha nome e cor.');
+        if (!formData.nome || !formData.cor_hex) { toast.error('Preencha nome e cor.'); return; }
 
         setSalvando(true);
 
@@ -156,7 +156,7 @@ export default function ClassesTab() {
 
         } catch (err) {
             console.error('Erro ao salvar:', err);
-            alert('Falha ao salvar alterações no banco de dados.');
+            toast.error('Falha ao salvar alterações no banco de dados.');
         } finally {
             setSalvando(false);
         }
@@ -195,11 +195,15 @@ export default function ClassesTab() {
                                         setFormData(item);
                                         setIsModalOpen(true);
                                     }}
-                                    onDelete={async (id) => {
-                                        if (confirm('Deseja excluir esta classe?')) {
-                                            await supabase.from('dicionario_classes').delete().eq('id', id);
-                                            loadData();
-                                        }
+                                    onDelete={(id) => {
+                                        toast('Excluir esta classe?', {
+                                            action: { label: 'Excluir', onClick: async () => {
+                                                await supabase.from('dicionario_classes').delete().eq('id', id);
+                                                toast.success('Classe excluída.');
+                                                loadData();
+                                            }},
+                                            cancel: { label: 'Cancelar', onClick: () => {} },
+                                        });
                                     }}
                                 />
                             ))

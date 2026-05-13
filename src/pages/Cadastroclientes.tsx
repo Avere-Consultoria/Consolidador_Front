@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-    Typography, Card, Button, Spinner,
+    Typography, Card, Button, Spinner, toast,
     Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter,
     TextField
 } from 'avere-ui';
@@ -72,7 +72,7 @@ export default function CadastroClientes() {
     });
 
     const handleSalvarModal = async () => {
-        if (!formCliente.nome) return alert('Nome é obrigatório');
+        if (!formCliente.nome) { toast.error('Nome é obrigatório.'); return; }
         setSalvando(true);
 
         const payload = cleanPayload(formCliente);
@@ -89,16 +89,21 @@ export default function CadastroClientes() {
             fetchData();
         } catch (err) {
             console.error(err);
-            alert('Erro ao salvar.');
+            toast.error('Erro ao salvar.');
         } finally { setSalvando(false); }
     };
 
-    const handleExcluirCliente = async (id: string, nome: string) => {
-        if (!confirm(`Excluir o cliente ${nome}?`)) return;
-        try {
-            await supabase.from('clientes').delete().eq('id', id);
-            fetchData();
-        } catch (err) { alert('Erro ao excluir.'); }
+    const handleExcluirCliente = (id: string, nome: string) => {
+        toast(`Excluir o cliente ${nome}?`, {
+            action: { label: 'Excluir', onClick: async () => {
+                try {
+                    await supabase.from('clientes').delete().eq('id', id);
+                    toast.success('Cliente excluído.');
+                    fetchData();
+                } catch (err) { toast.error('Erro ao excluir.'); }
+            }},
+            cancel: { label: 'Cancelar', onClick: () => {} },
+        });
     };
 
     const handleChangeTabela = (id: string, campo: keyof Cliente, valor: string | null) => {
@@ -121,7 +126,7 @@ export default function CadastroClientes() {
             fetchData();
         } catch (err) {
             console.error(err);
-            alert('Erro ao salvar tabela.');
+            toast.error('Erro ao salvar tabela.');
         } finally { setSalvando(false); }
     };
 

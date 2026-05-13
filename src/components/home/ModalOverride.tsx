@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Typography, Button, Spinner } from 'avere-ui';
+import { Typography, Button, Spinner, toast } from 'avere-ui';
 import { X, Save, AlertCircle } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -92,7 +92,7 @@ export function ModalOverride({ isOpen, onClose, onSuccess, clienteId, ativo }: 
             onClose();
         } catch (err: any) {
             console.error(err);
-            alert('Erro ao guardar a exceção: ' + err.message);
+            toast.error('Erro ao guardar a exceção: ' + err.message);
         } finally {
             setSalvando(false);
         }

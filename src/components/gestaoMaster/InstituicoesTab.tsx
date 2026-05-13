@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, Button, DataTable, Spinner, Modal, ModalContent, ModalHeader, ModalTitle, ModalFooter, TextField } from 'avere-ui';
+import { Card, Button, DataTable, Spinner, Modal, ModalContent, ModalHeader, ModalTitle, ModalFooter, TextField, toast } from 'avere-ui';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 
@@ -49,7 +49,7 @@ export default function InstituicoesTab() {
             setIsModalOpen(false);
             load();
         } catch (err) {
-            alert('Erro ao salvar instituição');
+            toast.error('Erro ao salvar instituição.');
         }
     };
 
@@ -99,11 +99,15 @@ export default function InstituicoesTab() {
                                         size={16}
                                         color="#EF4444"
                                         style={{ cursor: 'pointer' }}
-                                        onClick={async () => {
-                                            if (confirm('Excluir instituição?')) {
-                                                await supabase.from('instituicoes').delete().eq('id', item.id);
-                                                load();
-                                            }
+                                        onClick={() => {
+                                            toast('Excluir instituição?', {
+                                                action: { label: 'Excluir', onClick: async () => {
+                                                    await supabase.from('instituicoes').delete().eq('id', item.id);
+                                                    toast.success('Instituição excluída.');
+                                                    load();
+                                                }},
+                                                cancel: { label: 'Cancelar', onClick: () => {} },
+                                            });
                                         }}
                                     />
                                 </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, Button, DataTable, Spinner, Modal, ModalContent, ModalHeader, ModalTitle, ModalFooter, TextField } from 'avere-ui';
+import { Card, Button, DataTable, Spinner, Modal, ModalContent, ModalHeader, ModalTitle, ModalFooter, TextField, toast } from 'avere-ui';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 
@@ -55,7 +55,7 @@ export default function EmissoresTab() {
             setIsModalOpen(false);
             load();
         } catch (err) {
-            alert('Erro ao salvar emissor');
+            toast.error('Erro ao salvar emissor.');
         }
     };
 
@@ -114,11 +114,15 @@ export default function EmissoresTab() {
                                         size={16}
                                         color="#EF4444"
                                         style={{ cursor: 'pointer' }}
-                                        onClick={async () => {
-                                            if (confirm('Excluir este emissor?')) {
-                                                await supabase.from('dicionario_emissores').delete().eq('id', item.id);
-                                                load();
-                                            }
+                                        onClick={() => {
+                                            toast('Excluir este emissor?', {
+                                                action: { label: 'Excluir', onClick: async () => {
+                                                    await supabase.from('dicionario_emissores').delete().eq('id', item.id);
+                                                    toast.success('Emissor excluído.');
+                                                    load();
+                                                }},
+                                                cancel: { label: 'Cancelar', onClick: () => {} },
+                                            });
                                         }}
                                     />
                                 </div>

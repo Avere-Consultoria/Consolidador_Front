@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
     Drawer, DrawerContent, DrawerHeader, DrawerBody, DrawerTitle, DrawerDescription, DrawerSeparator,
-    Typography, Badge, Button,
-    Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter // <-- Adicionados imports do Modal
+    Typography, Badge, Button, toast,
+    Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter
 } from 'avere-ui';
 import { Pencil, Trash2 } from 'lucide-react';
 import { supabase } from '../../../services/supabase';
@@ -69,8 +69,7 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAv
             setCarteiraParaExcluir(null); // Fecha o modal
         } catch (e) {
             console.error('Erro ao excluir:', e);
-            // Idealmente, trocaríamos este alert por um Toast de erro futuramente
-            alert('Ocorreu um erro ao excluir a carteira.');
+            toast.error('Ocorreu um erro ao excluir a carteira.');
         } finally {
             setExcluindo(false);
         }

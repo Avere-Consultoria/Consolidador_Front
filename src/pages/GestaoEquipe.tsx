@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Typography, Card, Button, DataTable, Spinner, Badge } from 'avere-ui';
+import { Typography, Card, Button, DataTable, Spinner, Badge, toast } from 'avere-ui';
 import { Users, Plus, Save, Trash2, Edit2, X, Mail, Shield } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
@@ -29,24 +29,24 @@ export default function GestaoEquipe() {
     useEffect(() => { fetchData(); }, []);
 
     const handleSave = async () => {
-        if (!formData.nome || !formData.email_professional || !formData.perfil_id) return alert('Campos obrigatórios!');
+        if (!formData.nome || !formData.email_professional || !formData.perfil_id) { toast.error('Preencha todos os campos obrigatórios.'); return; }
         setSalvando(true);
         try {
             if (editId) await supabase.from('consultores').update(formData).eq('id', editId);
             else await supabase.from('consultores').insert([formData]);
             setIsModalOpen(false);
             fetchData();
-        } catch (err) { alert('Erro ao salvar.'); } finally { setSalvando(false); }
+        } catch (err) { toast.error('Erro ao salvar.'); } finally { setSalvando(false); }
     };
 
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px', fontFamily: 'Montserrat, sans-serif' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px' }}>
             <style>{`
                 .avere-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(8, 31, 40, 0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 24px; }
                 .avere-modal-content { background: #fff; border-radius: 12px; width: 100%; max-width: 480px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); overflow: hidden; }
-                .avere-input { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); font-family: 'Montserrat', sans-serif; font-size: 14px; outline: none; background: #fcfcfc; box-sizing: border-box; }
+                .avere-input { width: 100%; padding: 10px 12px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.1); font-family: var(--font-family); font-size: 14px; outline: none; background: #fcfcfc; box-sizing: border-box; }
                 .avere-label { display: block; font-size: 11px; font-weight: 700; margin-bottom: 6px; color: #6B7280; text-transform: uppercase; letter-spacing: 0.05em; }
             `}</style>
 
@@ -75,7 +75,16 @@ export default function GestaoEquipe() {
                             cell: (item) => (
                                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingRight: '16px' }}>
                                     <Edit2 size={16} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={() => { setFormData({ ...item }); setEditId(item.id); setIsModalOpen(true); }} />
-                                    <Trash2 size={16} color="#EF4444" style={{ cursor: 'pointer' }} onClick={() => { if (window.confirm('Excluir?')) supabase.from('consultores').delete().eq('id', item.id).then(() => fetchData()); }} />
+                                    <Trash2 size={16} color="#EF4444" style={{ cursor: 'pointer' }} onClick={() => {
+                                        toast('Excluir este consultor?', {
+                                            action: { label: 'Excluir', onClick: async () => {
+                                                await supabase.from('consultores').delete().eq('id', item.id);
+                                                toast.success('Consultor excluído.');
+                                                fetchData();
+                                            }},
+                                            cancel: { label: 'Cancelar', onClick: () => {} },
+                                        });
+                                    }} />
                                 </div>
                             )
                         }

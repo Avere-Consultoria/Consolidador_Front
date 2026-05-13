@@ -9,24 +9,26 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
     const navigate = useNavigate();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        setErrorMsg('');
         setLoading(true);
         try {
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
             if (error) {
                 console.error("ERRO SUPABASE:", error.message);
-                alert(`Login falhou: ${error.message}`);
+                setErrorMsg('E-mail ou senha incorretos. Tente novamente.');
                 return;
             }
 
             navigate('/');
         } catch (error: any) {
             console.error("Erro no catch:", error);
-            alert('Erro inesperado na aplicação.');
+            setErrorMsg('Erro inesperado na aplicação. Tente novamente.');
         } finally {
             setLoading(false);
         }
@@ -142,6 +144,12 @@ export default function Login() {
                                 />
                             </div>
                         </div>
+
+                        {errorMsg && (
+                            <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '10px 14px' }}>
+                                <Typography variant="p" style={{ fontSize: '13px', color: '#DC2626', fontWeight: 500 }}>{errorMsg}</Typography>
+                            </div>
+                        )}
 
                         <Button
                             variant="solid"
