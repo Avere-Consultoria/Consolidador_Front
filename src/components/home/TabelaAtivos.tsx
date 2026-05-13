@@ -32,7 +32,13 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
             .sort((a, b) => b.total - a.total);
     }, [ativos]);
 
-    const corInstituicao = (inst: string) => inst === 'BTG Pactual' ? CORES.btg : CORES.xp;
+    const COR_INSTITUICAO: Record<string, string> = {
+        'BTG Pactual': CORES.btg,
+        'XP Investimentos': CORES.xp,
+        'Avenue': CORES.avenue,
+        'Ágora': CORES.agora,
+    };
+    const corInstituicao = (inst: string) => COR_INSTITUICAO[inst] ?? CORES.btg;
 
     if (ativos.length === 0) return null;
 

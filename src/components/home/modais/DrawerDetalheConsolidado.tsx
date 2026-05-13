@@ -43,10 +43,19 @@ export function DrawerDetalheConsolidado({ ativo, aberto, onClose, patrimonioTot
     if (!ativo || !ativo.rawData) return null;
 
     const raw = ativo.rawData;
-    const isBTG = ativo.instituicao === 'BTG Pactual';
+    const instituicao = ativo.instituicao;
+    const isBTG    = instituicao === 'BTG Pactual';
+    const isXP     = instituicao === 'XP Investimentos';
+    const isAvenue = instituicao === 'Avenue';
+    // const isAgora  = instituicao === 'Ágora'; // reservado para uso futuro
 
-    // Extração inteligente baseada na fonte (BTG vs XP)
-    const valorBruto = isBTG ? raw.valor_bruto : raw.valor_liquido;
+    // Extração de campos conforme a estrutura de cada corretora
+    const valorBruto = isBTG
+        ? raw.valor_bruto
+        : isAvenue
+            ? raw.valor_bruto_brl
+            : raw.valor_bruto ?? raw.valor_liquido; // XP e Ágora
+
     const ir = raw.ir || 0;
     const quantidade = raw.quantidade;
     const precoMercado = raw.preco_mercado;
@@ -56,12 +65,13 @@ export function DrawerDetalheConsolidado({ ativo, aberto, onClose, patrimonioTot
     const ticker = raw.ticker;
     const isin = raw.isin;
     const codigoCetip = raw.cetip_code;
-    const cnpjFundo = isBTG ? raw.fund_cnpj : raw.cnpj;
+    const cnpjFundo = isBTG ? raw.fund_cnpj : (isXP ? raw.cnpj : null);
 
     const pesoPct = patrimonioTotal > 0 ? (ativo.valorLiquido / patrimonioTotal) * 100 : 0;
 
+    // Aquisições e janelas de liquidez: exclusivas do BTG por enquanto
     const acquisitions = isBTG ? (raw.posicao_btg_aquisicoes || []) : [];
-    const schedules = isBTG ? (raw.posicao_btg_janelas_liquidez || []) : [];
+    const schedules    = isBTG ? (raw.posicao_btg_janelas_liquidez || []) : [];
 
     return (
         <Drawer open={aberto} onOpenChange={onClose}>
@@ -69,7 +79,7 @@ export function DrawerDetalheConsolidado({ ativo, aberto, onClose, patrimonioTot
 
                 <DrawerHeader>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                        <Badge intent={isBTG ? "primaria" : "secundaria"} variant="solid" style={{ fontSize: '12px' }}>
+                        <Badge variant="solid" style={{ fontSize: '12px' }}>
                             {ativo.instituicao}
                         </Badge>
                         {ativo.subTipo && (

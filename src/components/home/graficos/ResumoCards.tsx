@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, Typography, Badge } from 'avere-ui';
 import { Briefcase } from 'lucide-react';
 import { fmt, fmtDate } from '../../../utils/formatters';
+import { CORES } from '../../../utils/colors';
 import { CardHeaderComSwitch } from './CardHeaderComSwitch';
 
 interface ResumoCardsProps {
@@ -11,17 +12,21 @@ interface ResumoCardsProps {
 export function ResumoCards({ metrics }: ResumoCardsProps) {
     const [modoTabela, setModoTabela] = useState(false);
 
-    // Cálculo de Share
-    const xpPercent = (metrics.xpTotal / metrics.patrimonioTotal) * 100;
-    const btgPercent = (metrics.btgTotal / metrics.patrimonioTotal) * 100;
+    const pct = (valor: number) => metrics.patrimonioTotal > 0
+        ? (valor / metrics.patrimonioTotal) * 100
+        : 0;
 
-    // AQUI ESTÁ A MÁGICA: Puxando as cores que vieram do Supabase via Hook
-    const corBtg = metrics.coresInstituicoes?.btg || '#172652';
-    const corXp = metrics.coresInstituicoes?.xp || '#FFC800';
+    // Cores dinâmicas vindas do Supabase via hook
+    const corBtg = metrics.coresInstituicoes?.btg || CORES.btg;
+    const corXp = metrics.coresInstituicoes?.xp || CORES.xp;
+    const corAvenue = metrics.coresInstituicoes?.avenue || CORES.avenue;
+    const corAgora = metrics.coresInstituicoes?.agora || CORES.agora;
 
     const instituicoes = [
-        { id: 'btg', nome: 'BTG Pactual', total: metrics.btgTotal, percent: btgPercent, ref: metrics.dataRefBtg, color: corBtg },
-        { id: 'xp', nome: 'XP Investimentos', total: metrics.xpTotal, percent: xpPercent, ref: metrics.dataRefXp, color: corXp }
+        { id: 'btg',    nome: 'BTG Pactual',       total: metrics.btgTotal,    percent: pct(metrics.btgTotal),    ref: metrics.dataRefBtg,    color: corBtg    },
+        { id: 'xp',     nome: 'XP Investimentos',  total: metrics.xpTotal,     percent: pct(metrics.xpTotal),     ref: metrics.dataRefXp,     color: corXp     },
+        { id: 'avenue', nome: 'Avenue',             total: metrics.avenueTotal, percent: pct(metrics.avenueTotal), ref: metrics.dataRefAvenue, color: corAvenue },
+        { id: 'agora',  nome: 'Ágora',              total: metrics.agoraTotal,  percent: pct(metrics.agoraTotal),  ref: metrics.dataRefAgora,  color: corAgora  },
     ].filter(inst => inst.total > 0);
 
     return (
@@ -85,7 +90,7 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
                 ) : (
                     /* VISÃO EM TABELA */
                     <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', ...montserrat }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr style={{ textAlign: 'left', borderBottom: '1px solid #F3F4F6' }}>
                                     <th style={{ paddingBottom: '12px', fontSize: '11px', color: '#9CA3AF', textTransform: 'uppercase' }}>Instituição</th>

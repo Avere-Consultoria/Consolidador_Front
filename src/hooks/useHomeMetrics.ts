@@ -129,12 +129,21 @@ function buildAlocacaoData(
 function buildComparativoData(
     btgClasses: Record<string, number>,
     xpClasses: Record<string, number>,
+    avenueClasses: Record<string, number>,
+    agoraClasses: Record<string, number>,
     colorMap: Map<string, string>,
     orderMap: Map<string, number>,
     corBtg: string,
     corXp: string,
+    corAvenue: string,
+    corAgora: string,
 ) {
-    const todasAsClasses = Array.from(new Set([...Object.keys(btgClasses), ...Object.keys(xpClasses)]));
+    const todasAsClasses = Array.from(new Set([
+        ...Object.keys(btgClasses),
+        ...Object.keys(xpClasses),
+        ...Object.keys(avenueClasses),
+        ...Object.keys(agoraClasses),
+    ]));
     return todasAsClasses
         .map(name => {
             const key = name.trim().toUpperCase();
@@ -142,13 +151,17 @@ function buildComparativoData(
                 name,
                 BTG: btgClasses[name] || 0,
                 XP: xpClasses[name] || 0,
+                AVENUE: avenueClasses[name] || 0,
+                AGORA: agoraClasses[name] || 0,
                 ordem: orderMap.get(key) || 999,
                 cor_classe: resolveCorClasse(key, colorMap),
                 cor_btg: corBtg,
                 cor_xp: corXp,
+                cor_avenue: corAvenue,
+                cor_agora: corAgora,
             };
         })
-        .filter(d => d.BTG > 0 || d.XP > 0)
+        .filter(d => d.BTG > 0 || d.XP > 0 || d.AVENUE > 0 || d.AGORA > 0)
         .sort((a, b) => a.ordem - b.ordem);
 }
 
@@ -453,7 +466,7 @@ export function useHomeMetrics() {
         ];
 
         const alocacaoData = buildAlocacaoData(alocacaoMap, colorMap, orderMap, patrimonioTotal);
-        const comparativoData = buildComparativoData(btgClasses, xpClasses, colorMap, orderMap, corBtgDb, corXpDb);
+        const comparativoData = buildComparativoData(btgClasses, xpClasses, avenueClasses, agoraClasses, colorMap, orderMap, corBtgDb, corXpDb, corAvenueDb, corAgoraDb);
 
         return {
             patrimonioTotal, btgTotal, xpTotal, avenueTotal, agoraTotal,

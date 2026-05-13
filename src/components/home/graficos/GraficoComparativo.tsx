@@ -3,11 +3,11 @@ import { Card, CardContent } from 'avere-ui';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 import { CardHeaderComSwitch } from './CardHeaderComSwitch';
-import { CORES } from '../../../utils/colors'; // Usado apenas como fallback de segurança
+import { CORES } from '../../../utils/colors';
 import { TooltipBarras } from './Tooltips';
 import { fmt, fmtK } from '../../../utils/formatters';
 
-// ── Estilos Locais (CSS-in-JS) ──────────────────────────────────────────────
+// ── Estilos Locais ───────────────────────────────────────────────────────────
 const tableStyle: React.CSSProperties = {
     width: '100%',
     borderCollapse: 'collapse',
@@ -37,9 +37,27 @@ const tdStyle: React.CSSProperties = {
 export function GraficoComparativo({ data }: { data: any[] }) {
     const [modoTabela, setModoTabela] = useState(false);
 
-    // Extrai as cores dinâmicas do primeiro item do array (se existir), senão usa o fallback
-    const corBtgDinâmica = data.length > 0 ? (data[0].cor_btg || CORES.btg) : CORES.btg;
-    const corXpDinâmica = data.length > 0 ? (data[0].cor_xp || CORES.xp) : CORES.xp;
+    if (!data || data.length === 0) return null;
+
+    // Cores dinâmicas do primeiro item (fallback para CORES se não vier do banco)
+    const corBtg = data[0].cor_btg || CORES.btg;
+    const corXp = data[0].cor_xp || CORES.xp;
+    const corAvenue = data[0].cor_avenue || CORES.avenue;
+    const corAgora = data[0].cor_agora || CORES.agora;
+
+    // Detecta quais corretoras têm dados — evita barras/colunas vazias
+    const temBtg = data.some(d => d.BTG > 0);
+    const temXp = data.some(d => d.XP > 0);
+    const temAvenue = data.some(d => d.AVENUE > 0);
+    const temAgora = data.some(d => d.AGORA > 0);
+
+    // Colunas da tabela (apenas as ativas)
+    const colunas = [
+        temBtg && { key: 'BTG', label: 'BTG Pactual', cor: corBtg },
+        temXp && { key: 'XP', label: 'XP Investimentos', cor: corXp },
+        temAvenue && { key: 'AVENUE', label: 'Avenue', cor: corAvenue },
+        temAgora && { key: 'AGORA', label: 'Ágora', cor: corAgora },
+    ].filter(Boolean) as { key: string; label: string; cor: string }[];
 
     return (
         <Card style={{ gridColumn: '1 / -1' }}>
@@ -56,29 +74,28 @@ export function GraficoComparativo({ data }: { data: any[] }) {
                             <thead>
                                 <tr>
                                     <th style={thStyle}>Classe de Ativo</th>
-                                    <th style={thStyle}>BTG Pactual</th>
-                                    <th style={thStyle}>XP Investimentos</th>
+                                    {colunas.map(c => (
+                                        <th key={c.key} style={thStyle}>{c.label}</th>
+                                    ))}
                                     <th style={{ ...thStyle, textAlign: 'right' }}>Total</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {data.map((d) => {
-                                    const total = (d.BTG || 0) + (d.XP || 0);
+                                    const total = colunas.reduce((sum, c) => sum + (d[c.key] || 0), 0);
                                     return (
                                         <tr key={d.name}>
                                             <td style={tdStyle}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    {/* Pequeno indicador da cor da Classe (opcional, mas fica legal!) */}
                                                     <div style={{ width: 8, height: 8, borderRadius: '2px', background: d.cor_classe || '#9CA3AF' }} />
                                                     {d.name}
                                                 </div>
                                             </td>
-                                            <td style={{ ...tdStyle, color: corBtgDinâmica, fontWeight: 600 }}>
-                                                {fmt(d.BTG || 0)}
-                                            </td>
-                                            <td style={{ ...tdStyle, color: corXpDinâmica, fontWeight: 600 }}>
-                                                {fmt(d.XP || 0)}
-                                            </td>
+                                            {colunas.map(c => (
+                                                <td key={c.key} style={{ ...tdStyle, color: c.cor, fontWeight: 600 }}>
+                                                    {fmt(d[c.key] || 0)}
+                                                </td>
+                                            ))}
                                             <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>
                                                 {fmt(total)}
                                             </td>
@@ -98,13 +115,13 @@ export function GraficoComparativo({ data }: { data: any[] }) {
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
                             <XAxis
                                 dataKey="name"
-                                tick={{ fontSize: 12, fontFamily: 'Montserrat, sans-serif' }}
+                                tick={{ fontSize: 12 }}
                                 axisLine={false}
                                 tickLine={false}
                             />
                             <YAxis
                                 tickFormatter={fmtK}
-                                tick={{ fontSize: 11, fontFamily: 'Montserrat, sans-serif', opacity: 0.4 }}
+                                tick={{ fontSize: 11, opacity: 0.4 }}
                                 axisLine={false}
                                 tickLine={false}
                                 width={70}
@@ -119,21 +136,34 @@ export function GraficoComparativo({ data }: { data: any[] }) {
                                     </span>
                                 )}
                             />
-                            <Bar
-                                dataKey="BTG"
-                                name="BTG Pactual"
-                                fill={corBtgDinâmica} /* APLICANDO A COR DINÂMICA */
-                                stackId="a"
-                                animationDuration={800}
-                            />
-                            <Bar
-                                dataKey="XP"
-                                name="XP Investimentos"
-                                fill={corXpDinâmica} /* APLICANDO A COR DINÂMICA */
-                                stackId="a"
-                                radius={[4, 4, 0, 0]}
-                                animationDuration={900}
-                            />
+                            {temBtg && (
+                                <Bar
+                                    dataKey="BTG" name="BTG Pactual" fill={corBtg} stackId="a"
+                                    radius={!temXp && !temAvenue && !temAgora ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                                    animationDuration={800}
+                                />
+                            )}
+                            {temXp && (
+                                <Bar
+                                    dataKey="XP" name="XP Investimentos" fill={corXp} stackId="a"
+                                    radius={!temAvenue && !temAgora ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                                    animationDuration={900}
+                                />
+                            )}
+                            {temAvenue && (
+                                <Bar
+                                    dataKey="AVENUE" name="Avenue" fill={corAvenue} stackId="a"
+                                    radius={!temAgora ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                                    animationDuration={1000}
+                                />
+                            )}
+                            {temAgora && (
+                                <Bar
+                                    dataKey="AGORA" name="Ágora" fill={corAgora} stackId="a"
+                                    radius={[4, 4, 0, 0]}
+                                    animationDuration={1100}
+                                />
+                            )}
                         </BarChart>
                     </ResponsiveContainer>
                 )}

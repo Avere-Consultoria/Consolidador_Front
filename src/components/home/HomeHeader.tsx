@@ -8,8 +8,12 @@ interface HomeHeaderProps {
     opcoesCarteira: { label: string; value: string }[];
     dataRefBtg?: string;
     dataRefXp?: string;
-    incluirBtg: boolean; // <-- Nova prop
-    incluirXp: boolean;  // <-- Nova prop
+    dataRefAvenue?: string;
+    dataRefAgora?: string;
+    incluirBtg: boolean;
+    incluirXp: boolean;
+    incluirAvenue: boolean;
+    incluirAgora: boolean;
     onOpenGerenciarCarteiras: () => void;
 }
 
@@ -20,8 +24,12 @@ export function HomeHeader({
     opcoesCarteira,
     dataRefBtg,
     dataRefXp,
+    dataRefAvenue,
+    dataRefAgora,
     incluirBtg,
     incluirXp,
+    incluirAvenue,
+    incluirAgora,
     onOpenGerenciarCarteiras
 }: HomeHeaderProps) {
     return (
@@ -46,11 +54,13 @@ export function HomeHeader({
                 </div>
             </div>
 
-            {/* Texto dinâmico dependendo das instituições ativas */}
+            {/* Texto dinâmico com datas de referência de cada instituição ativa */}
             <Typography variant="p" style={{ opacity: 0.6 }}>
                 {cliente?.nome}
-                {incluirBtg && dataRefBtg && ` · BTG: ${fmtDate(dataRefBtg + 'T12:00:00Z')}`}
-                {incluirXp && dataRefXp && ` · XP: ${fmtDate(dataRefXp + 'T12:00:00Z')}`}
+                {incluirBtg    && dataRefBtg    && ` · BTG: ${fmtDate(dataRefBtg    + 'T12:00:00Z')}`}
+                {incluirXp     && dataRefXp     && ` · XP: ${fmtDate(dataRefXp      + 'T12:00:00Z')}`}
+                {incluirAvenue && dataRefAvenue && ` · Avenue: ${fmtDate(dataRefAvenue + 'T12:00:00Z')}`}
+                {incluirAgora  && dataRefAgora  && ` · Ágora: ${fmtDate(dataRefAgora  + 'T12:00:00Z')}`}
             </Typography>
         </header>
     );
