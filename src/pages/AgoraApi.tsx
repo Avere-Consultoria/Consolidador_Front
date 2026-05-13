@@ -13,6 +13,7 @@ import {
 import { useClient } from '../contexts/ClientContext';
 import { supabase } from '../services/supabase';
 import { DetalheItem, Secao } from '../components/shared/DrawerDetalhe';
+import { fmt, fmtDate, fmtNum } from '../utils/formatters';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interfaces (Mapeadas para o banco da Ágora)
@@ -38,17 +39,8 @@ interface AverePortfolio {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helpers de Formatação e Mapeamento
+// Mapeamento de Categorias
 // ─────────────────────────────────────────────────────────────────────────────
-
-const fmt = (v?: number | null) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
-
-const fmtDate = (d?: string | null) =>
-    d ? new Date(d).toLocaleDateString('pt-BR') : '-';
-
-const fmtNum = (v?: number | null, decimais = 2) =>
-    v != null ? v.toLocaleString('pt-BR', { minimumFractionDigits: decimais, maximumFractionDigits: decimais }) : '-';
 
 const categoryMap: Record<string, string> = {
     'FIXED_INCOME': 'Renda Fixa',

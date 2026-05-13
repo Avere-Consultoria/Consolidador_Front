@@ -185,7 +185,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                         borderColor: corInstituicao(item.instituicao),
                                                         background: `${corInstituicao(item.instituicao)}0A`
                                                     }}>
-                                                        {item.instituicao === 'BTG Pactual' ? 'BTG' : 'XP'}
+                                                        {item.instituicao === 'BTG Pactual' ? 'BTG' : item.instituicao === 'XP Investimentos' ? 'XP' : item.instituicao}
                                                     </Badge>
                                                 ),
                                             },

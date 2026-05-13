@@ -10,5 +10,10 @@ export const fmtK = (v: number) => {
 export const fmtDate = (d?: string | null) =>
     d ? new Date(d).toLocaleDateString('pt-BR') : '-';
 
+export const fmtNum = (v?: number | null, decimais = 2) =>
+    v != null
+        ? v.toLocaleString('pt-BR', { minimumFractionDigits: decimais, maximumFractionDigits: decimais })
+        : '-';
+
 export const pct = (v: number, total: number) =>
     total > 0 ? (v / total) * 100 : 0;

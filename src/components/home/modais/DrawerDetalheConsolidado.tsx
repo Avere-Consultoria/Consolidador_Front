@@ -1,35 +1,11 @@
-import React from 'react';
 import {
     Drawer, DrawerContent, DrawerHeader, DrawerBody,
     DrawerTitle, DrawerDescription, DrawerSeparator,
-    Badge, Typography
+    Badge,
 } from 'avere-ui';
 import type { ConsolidatedAtivo } from '../../../hooks/useHomeMetrics';
-
-// Helpers de formatação
-const fmt = (v?: number | null) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
-const fmtDate = (d?: string | null) => d ? new Date(d).toLocaleDateString('pt-BR') : '-';
-const fmtNum = (v?: number | null, decimais = 2) => v != null ? v.toLocaleString('pt-BR', { minimumFractionDigits: decimais, maximumFractionDigits: decimais }) : '-';
-
-function DetalheItem({ label, value, highlight = false, mono = false, fullWidth = false }: { label: string; value: string; highlight?: boolean; mono?: boolean; fullWidth?: boolean; }) {
-    return (
-        <div style={{ background: 'rgba(0,131,203,0.05)', borderRadius: '8px', padding: '10px 12px', gridColumn: fullWidth ? '1 / -1' : undefined }}>
-            <div style={{ fontSize: '11px', opacity: 0.45, marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
-            <div style={{ fontSize: '14px', fontWeight: highlight ? 700 : 500, wordBreak: 'break-all', color: highlight ? 'var(--color-primaria)' : 'inherit', fontFamily: mono ? 'monospace' : 'inherit' }}>
-                {value}
-            </div>
-        </div>
-    );
-}
-
-function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
-    return (
-        <section style={{ marginBottom: '4px' }}>
-            <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '10px', letterSpacing: '0.05em' }}>{titulo}</Typography>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>{children}</div>
-        </section>
-    );
-}
+import { fmt, fmtDate, fmtNum } from '../../../utils/formatters';
+import { DetalheItem, Secao } from '../../shared/DrawerDetalhe';
 
 interface DrawerDetalheConsolidadoProps {
     ativo: ConsolidatedAtivo;

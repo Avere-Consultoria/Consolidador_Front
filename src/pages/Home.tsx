@@ -45,7 +45,7 @@ export default function Home() {
         <PieIcon size={48} />
         <Typography variant="h2">Aguardando Sincronização</Typography>
         <Typography variant="p">
-          Acede ao BTG API ou XP API para carregar os dados de {selectedClient?.nome}.
+          Acede ao BTG, XP, Avenue ou Ágora para carregar os dados de {selectedClient?.nome}.
         </Typography>
       </div>
     );

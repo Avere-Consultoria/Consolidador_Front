@@ -13,6 +13,7 @@ import {
 import { useClient } from '../contexts/ClientContext';
 import { supabase } from '../services/supabase';
 import { DetalheItem, Secao } from '../components/shared/DrawerDetalhe';
+import { fmt, fmtDate, fmtNum } from '../utils/formatters';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Interfaces
@@ -47,20 +48,6 @@ interface AverePortfolio {
     alocacao: { classe: string; valor: number }[];
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers de formatação
-// ─────────────────────────────────────────────────────────────────────────────
-
-const fmt = (v?: number | null) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
-
-const fmtDate = (d?: string | null) =>
-    d ? new Date(d).toLocaleDateString('pt-BR') : '-';
-
-const fmtNum = (v?: number | null, decimais = 4) =>
-    v != null
-        ? v.toLocaleString('pt-BR', { minimumFractionDigits: decimais, maximumFractionDigits: decimais })
-        : '-';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Drawer de Detalhes
@@ -91,7 +78,7 @@ function DrawerDetalhes({ ativo, aberto, onClose }: {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         <Secao titulo="Valores Atuais">
                             <DetalheItem accentColor={AVENUE_COLOR} label="Valor de Mercado (BRL)" value={fmt(ativo.valorBruto)} highlight />
-                            <DetalheItem accentColor={AVENUE_COLOR} label="Quantidade" value={fmtNum(ativo.quantidade)} />
+                            <DetalheItem accentColor={AVENUE_COLOR} label="Quantidade" value={fmtNum(ativo.quantidade, 4)} />
                         </Secao>
 
                         <DrawerSeparator />
