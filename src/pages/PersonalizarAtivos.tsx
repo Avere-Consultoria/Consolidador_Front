@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Typography, Card, Button, DataTable, Spinner, Badge } from 'avere-ui';
+import { Typography, Card, Button, DataTable, Spinner, Badge, toast } from 'avere-ui';
 import { SlidersHorizontal, Plus, Edit2, Trash2 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -94,13 +94,18 @@ export default function PersonalizarAtivos() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Excluir esta regra de personalização?')) return;
-        try {
-            await supabase.from('excecoes_classificacao').delete().eq('id', id);
-            fetchData();
-        } catch (err) {
-            alert('Erro ao excluir regra.');
-        }
+        toast('Excluir esta regra de personalização?', {
+            action: { label: 'Excluir', onClick: async () => {
+                try {
+                    await supabase.from('excecoes_classificacao').delete().eq('id', id);
+                    toast.success('Regra excluída com sucesso.');
+                    fetchData();
+                } catch {
+                    toast.error('Erro ao excluir regra.');
+                }
+            }},
+            cancel: { label: 'Cancelar', onClick: () => {} },
+        });
     };
 
     const handleSaveRegra = async (payload: any, editId: string | null) => {
@@ -113,9 +118,10 @@ export default function PersonalizarAtivos() {
                 await supabase.from('excecoes_classificacao').insert([payloadFinal]);
             }
             setIsModalOpen(false);
+            toast.success(editId ? 'Regra atualizada com sucesso.' : 'Nova regra criada com sucesso.');
             fetchData();
-        } catch (err) {
-            alert('Erro ao guardar as alterações.');
+        } catch {
+            toast.error('Erro ao guardar as alterações.');
         } finally {
             setSalvando(false);
         }
@@ -124,7 +130,7 @@ export default function PersonalizarAtivos() {
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px', fontFamily: 'Montserrat, sans-serif' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
             {/* HEADER */}
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>

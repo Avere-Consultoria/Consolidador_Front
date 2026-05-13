@@ -1,74 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { Typography, Button, Spinner } from 'avere-ui';
-import { X, Save, ArrowRight, Search, ChevronDown } from 'lucide-react';
-
-// ── COMPONENTE COMBOBOX (Pesquisável) ──
-function Combobox({ options, value, onChange, placeholder }: { options: { value: string, label: string }[], value: string, onChange: (val: string) => void, placeholder: string }) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [search, setSearch] = useState('');
-    const wrapperRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) setIsOpen(false);
-        }
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const selectedOption = options.find(o => o.value === value);
-    const filteredOptions = options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
-
-    return (
-        <div ref={wrapperRef} style={{ position: 'relative', width: '100%', fontFamily: 'var(--font-family)' }}>
-            <div
-                onClick={() => setIsOpen(!isOpen)}
-                style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    width: '100%', padding: '10px 12px', borderRadius: '6px',
-                    border: '1px solid rgba(0,0,0,0.1)', background: 'var(--color-white)', cursor: 'pointer',
-                    fontFamily: 'var(--font-family)', fontSize: 'var(--text-body-m-size)',
-                    color: selectedOption ? 'var(--color-secundaria)' : '#9CA3AF',
-                    fontWeight: selectedOption ? 'var(--weight-medium)' : 'var(--weight-regular)'
-                }}
-            >
-                {selectedOption ? selectedOption.label : placeholder}
-                <ChevronDown size={16} color="#9CA3AF" />
-            </div>
-
-            {isOpen && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px', background: 'var(--color-white)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', zIndex: 50 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                        <Search size={14} color="#9CA3AF" style={{ marginRight: '8px' }} />
-                        <input
-                            autoFocus value={search} onChange={e => setSearch(e.target.value)} placeholder="Pesquisar..."
-                            style={{ border: 'none', outline: 'none', width: '100%', fontSize: 'var(--text-body-m-size)', fontFamily: 'var(--font-family)' }}
-                        />
-                    </div>
-                    <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                        {filteredOptions.length === 0 ? (
-                            <div style={{ padding: '12px', fontSize: 'var(--text-body-m-size)', color: '#9CA3AF', textAlign: 'center', fontFamily: 'var(--font-family)' }}>
-                                Nenhum resultado encontrado.
-                            </div>
-                        ) : (
-                            filteredOptions.map(opt => (
-                                <div
-                                    key={opt.value}
-                                    onClick={() => { onChange(opt.value); setIsOpen(false); setSearch(''); }}
-                                    style={{ padding: '10px 12px', fontSize: 'var(--text-body-m-size)', cursor: 'pointer', transition: 'background 0.2s', color: 'var(--color-secundaria)', fontFamily: 'var(--font-family)' }}
-                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,131,203,0.05)'}
-                                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                                >
-                                    {opt.label}
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
+import { useState, useEffect } from 'react';
+import { Typography, Button, Spinner, Combobox, toast } from 'avere-ui';
+import { X, Save, ArrowRight } from 'lucide-react';
 
 // ── MODAL PRINCIPAL ──
 
@@ -110,8 +42,8 @@ export function ModalNovaRegra({ isOpen, onClose, onSave, salvando, regraEdicao,
     if (!isOpen) return null;
 
     const handleSave = () => {
-        if (!formAtivo) return alert('Selecione um ativo para personalizar.');
-        if (formEscopo === 'CLIENTE' && !formClienteId) return alert('Selecione o Cliente.');
+        if (!formAtivo) { toast.error('Selecione um ativo para personalizar.'); return; }
+        if (formEscopo === 'CLIENTE' && !formClienteId) { toast.error('Selecione o cliente.'); return; }
 
         onSave({
             codigo_identificador: formAtivo,

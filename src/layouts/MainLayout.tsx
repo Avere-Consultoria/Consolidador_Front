@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Home, LayoutDashboard, TrendingUp, Database, Settings, SlidersHorizontal, Users, User, Building2, LineChart } from 'lucide-react';
-import { SideBar, SideBarItem, TopBar, HierarchicalCombobox, type ComboboxLevel } from 'avere-ui';
+import { SideBar, SideBarItem, TopBar, HierarchicalCombobox, Toaster, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -144,6 +144,7 @@ export default function MainLayout() {
 
   return (
     <div className={styles.shell}>
+      <Toaster position="top-right" richColors />
       <SideBar
         userName={perfil?.nome || 'Utilizador'}
         userRole={perfil?.role === 'MASTER' ? 'Administrador' : 'Consultor'}
