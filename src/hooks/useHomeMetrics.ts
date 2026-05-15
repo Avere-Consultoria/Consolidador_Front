@@ -75,7 +75,7 @@ function resolveCorClasse(keyBusca: string, colorMap: Map<string, string>): stri
 function buildExposicaoRisco(
     ativos: ConsolidatedAtivo[],
     emissorMap: Map<string, Emissor>,
-    patrimonioTotal: number,
+    _patrimonioTotal: number, // mantido por compatibilidade
 ) {
     const raw: Record<string, { nome: string; setor: string; valor: number }> = {};
     ativos.forEach(a => {
@@ -84,12 +84,15 @@ function buildExposicaoRisco(
         if (!raw[a.emissorId]) raw[a.emissorId] = { nome: emissor.nome_fantasia, setor: emissor.setor, valor: 0 };
         raw[a.emissorId].valor += a.valorLiquido;
     });
+    // Usa a soma dos activos com emissor classificado como denominador,
+    // garantindo que os % representem concentração real entre os emissores conhecidos.
+    const totalClassificado = Object.values(raw).reduce((s, e) => s + e.valor, 0);
     return Object.values(raw)
-        .map(e => ({ name: e.nome, setor: e.setor, value: e.valor, pct: pct(e.valor, patrimonioTotal) }))
+        .map(e => ({ name: e.nome, setor: e.setor, value: e.valor, pct: pct(e.valor, totalClassificado) }))
         .sort((a, b) => b.value - a.value);
 }
 
-function buildLiquidezData(ativos: ConsolidatedAtivo[], patrimonioTotal: number) {
+function buildLiquidezData(ativos: ConsolidatedAtivo[], _patrimonioTotal: number) {
     const map: Record<string, number> = {};
     ativos.forEach(a => {
         let liqKey = 'Não Classificada';
@@ -100,8 +103,10 @@ function buildLiquidezData(ativos: ConsolidatedAtivo[], patrimonioTotal: number)
         }
         map[liqKey] = (map[liqKey] || 0) + a.valorLiquido;
     });
+    // Usa a soma real dos activos como denominador para percentuais correctos.
+    const totalLiquidez = Object.values(map).reduce((s, v) => s + v, 0);
     return Object.entries(map)
-        .map(([name, value]) => ({ name, value, pct: pct(value, patrimonioTotal) }))
+        .map(([name, value]) => ({ name, value, pct: pct(value, totalLiquidez) }))
         .sort((a, b) => {
             if (a.name === 'Não Classificada') return 1;
             if (b.name === 'Não Classificada') return -1;
@@ -115,12 +120,17 @@ function buildAlocacaoData(
     alocacaoMap: Record<string, number>,
     colorMap: Map<string, string>,
     orderMap: Map<string, number>,
-    patrimonioTotal: number,
+    _patrimonioTotal: number, // mantido por compatibilidade mas não usado no pct
 ) {
+    // Usa a soma real dos activos classificados como denominador,
+    // garantindo que os percentuais somem 100% independentemente de
+    // diferenças entre o snapshot total e a soma dos activos individuais.
+    const totalAlocado = Object.values(alocacaoMap).reduce((s, v) => s + v, 0);
+
     return Object.entries(alocacaoMap)
         .map(([name, value]) => {
             const key = name.trim().toUpperCase();
-            return { name, value, pct: pct(value, patrimonioTotal), fill: resolveCorClasse(key, colorMap), ordem: orderMap.get(key) || 999 };
+            return { name, value, pct: pct(value, totalAlocado), fill: resolveCorClasse(key, colorMap), ordem: orderMap.get(key) || 999 };
         })
         .filter(d => d.value > 0)
         .sort((a, b) => a.ordem - b.ordem);
@@ -249,8 +259,12 @@ export function useHomeMetrics() {
                         .select(`
                             patrimonio_total, data_referencia,
                             posicao_agora_ativos (
-                                id, tipo, sub_tipo, emissor, ticker,
-                                valor_bruto, valor_liquido, quantidade
+                                id, tipo, sub_tipo, emissor, ticker, security_code,
+                                valor_bruto, valor_liquido, quantidade,
+                                custo_total, preco_unitario, taxa, taxa_percentual,
+                                valorizacao, percent_valorizacao,
+                                ir_descricao, ir_percentual,
+                                data_vencimento, data_aplicacao, liquidez_diaria
                             )
                         `)
                         .eq('cliente_id', selectedClient.id)
@@ -332,8 +346,13 @@ export function useHomeMetrics() {
         const agoraTotal = incluirAgora ? parseFloat(snapshotData.agora?.patrimonio_total || 0) : 0;
         const patrimonioTotal = btgTotal + xpTotal + avenueTotal + agoraTotal;
 
-        const dictMap = new Map();
-        dicionario.forEach(d => dictMap.set(d.codigo_identificador, d));
+        // Normaliza todas as chaves para UPPERCASE para evitar falhas de matching
+        const dictMap = new Map<string, DicionarioAtivo>();
+        dicionario.forEach(d => {
+            if (d.codigo_identificador) {
+                dictMap.set(d.codigo_identificador.toUpperCase(), d);
+            }
+        });
 
         const emissorMap = new Map();
         emissores.forEach(e => emissorMap.set(e.id, e));
@@ -356,24 +375,34 @@ export function useHomeMetrics() {
         // ──────────────────────────────────────────────────────────────────────────
 
         const classificar = (a: any, corretora: 'BTG' | 'XP' | 'AVENUE' | 'AGORA') => {
-            const isin = a.isin ?? null;
-            const cnpj = corretora === 'BTG' ? a.fund_cnpj : corretora === 'XP' ? a.cnpj : null;
-            const ticker = a.ticker ?? null;
+            // Normaliza todos os candidatos para UPPERCASE (dictMap também está em UPPERCASE)
+            const norm = (v: any) => v ? String(v).toUpperCase().trim() : null;
 
-            let codigoId = null;
-            if (isin && dictMap.has(isin)) codigoId = isin;
-            else if (cnpj && dictMap.has(cnpj)) codigoId = cnpj;
-            else if (ticker && dictMap.has(ticker)) codigoId = ticker;
+            const isin         = norm(a.isin);
+            const cnpj         = corretora === 'BTG' ? norm(a.fund_cnpj) : corretora === 'XP' ? norm(a.cnpj) : null;
+            const ticker       = norm(a.ticker);
+            const securityCode = norm(a.security_code);  // Ágora
+            const cetipCode    = norm(a.cetip_code);     // BTG fallback
 
-            if (!codigoId) codigoId = isin || cnpj || ticker;
+            // Tenta por prioridade: ISIN → CNPJ → SecurityCode/CETIP → Ticker
+            const candidatos = [isin, cnpj, securityCode, cetipCode, ticker].filter(Boolean) as string[];
+
+            let codigoId: string | null = null;
+            for (const c of candidatos) {
+                if (dictMap.has(c)) { codigoId = c; break; }
+            }
+            // Se não encontrou no dicionário, usa o melhor identificador disponível como fallback
+            if (!codigoId) codigoId = isin || cnpj || securityCode || cetipCode || ticker;
 
             const matchMaster = codigoId ? dictMap.get(codigoId) : null;
 
             let regraGlobal = null;
             let regraCliente = null;
             if (codigoId) {
-                regraGlobal = excecoes.find(e => e.codigo_identificador === codigoId && !e.cliente_id);
-                regraCliente = excecoes.find(e => e.codigo_identificador === codigoId && e.cliente_id === selectedClient?.id);
+                // Exceções também são comparadas em uppercase
+                const codigoIdUp = codigoId.toUpperCase();
+                regraGlobal = excecoes.find(e => e.codigo_identificador?.toUpperCase() === codigoIdUp && !e.cliente_id);
+                regraCliente = excecoes.find(e => e.codigo_identificador?.toUpperCase() === codigoIdUp && e.cliente_id === selectedClient?.id);
             }
 
             const classeFinal = regraCliente?.classe_customizada || regraGlobal?.classe_customizada || matchMaster?.classe_avere || 'Classificar';
@@ -419,7 +448,7 @@ export function useHomeMetrics() {
                 return {
                     rowId: `agora-${i}`, nome: cls.apelido || a.emissor || '-', tipo: cls.classe, subTipo: a.sub_tipo,
                     valorLiquido: parseFloat(a.valor_liquido || 0), valorBruto: parseFloat(a.valor_bruto || 0),
-                    vencimento: null, instituicao: 'Ágora' as const,
+                    vencimento: a.data_vencimento ?? null, instituicao: 'Ágora' as const,
                     emissorId: cls.emissorId, liquidez: cls.liquidez, rawData: a, benchmark: '-',
                 };
             }) : [];

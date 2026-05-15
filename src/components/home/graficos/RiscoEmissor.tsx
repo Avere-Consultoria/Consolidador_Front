@@ -53,10 +53,8 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
         { label: 'Todos', value: 'ALL' }
     ];
 
-    if (!dados || dados.length === 0) return null;
-
     return (
-        <Card style={{ marginTop: '24px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+        <Card style={{ border: '1px solid rgba(239, 68, 68, 0.2)', height: '100%' }}>
             <CardContent style={{ padding: '24px' }}>
 
                 <CardHeaderComSwitch
@@ -116,7 +114,17 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                     </div>
                 </div>
 
-                {modoTabela ? (
+                {(!dados || dados.length === 0) ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', gap: '12px', opacity: 0.4 }}>
+                        <ShieldAlert size={32} />
+                        <Typography variant="p" style={{ fontSize: '13px', fontWeight: 600, fontFamily: 'Montserrat, sans-serif', textAlign: 'center' }}>
+                            Nenhum emissor classificado
+                        </Typography>
+                        <Typography variant="p" style={{ fontSize: '11px', fontFamily: 'Montserrat, sans-serif', textAlign: 'center', lineHeight: '1.5' }}>
+                            Associe emissores aos ativos no Master para visualizar a concentração de crédito.
+                        </Typography>
+                    </div>
+                ) : modoTabela ? (
                     <div style={{ overflowX: 'auto' }}>
                         <table style={tableStyle}>
                             <thead>
@@ -183,7 +191,7 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                     </div>
                 )}
 
-                {dados.some(d => d.pct > 15) && (
+                {dados && dados.some(d => d.pct > 15) && (
                     <div style={{ marginTop: '20px', padding: '12px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', display: 'flex', gap: '8px', color: '#B45309', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
                         <ShieldAlert size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
                         <Typography variant="p" style={{ fontSize: '12px', lineHeight: '1.4', fontFamily: 'Montserrat, sans-serif' }}>

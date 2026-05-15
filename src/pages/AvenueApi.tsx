@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
     Wallet, RefreshCw, LayoutGrid, Calendar,
-    Globe, BarChart3, PieChart, ChevronRight, AlertCircle, Coins
+    Globe, BarChart3, ChevronRight
 } from 'lucide-react';
 import {
     Card, CardContent, Typography, Badge,

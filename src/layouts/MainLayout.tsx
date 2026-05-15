@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home, LayoutDashboard, TrendingUp, Database, Settings, SlidersHorizontal, Users, User, Building2, LineChart } from 'lucide-react';
+import { Home, LineChart, Database, SlidersHorizontal, Users, User, Building2, Landmark, BarChart2, Globe, Activity, BookOpen, UserPlus, UsersRound } from 'lucide-react';
 import { SideBar, SideBarItem, TopBar, HierarchicalCombobox, Toaster, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
@@ -169,20 +169,36 @@ export default function MainLayout() {
           icon={LineChart} label="Rentabilidade"
           active={location.pathname === '/rentabilidade'} onClick={() => navigate('/rentabilidade')}
         />
+        {/* ── Secção Integrações ── */}
+        <div style={{
+          padding: isCollapsed ? '24px 12px 8px' : '24px 20px 8px',
+          display: 'flex', alignItems: 'center', gap: '12px'
+        }}>
+          {!isCollapsed && (
+            <span style={{
+              fontSize: '10px', fontWeight: 700,
+              color: 'rgba(255,255,255,0.3)',
+              textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap'
+            }}>
+              Integrações
+            </span>
+          )}
+          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+        </div>
         <SideBarItem
-          icon={TrendingUp} label="BTG API"
+          icon={Landmark} label="BTG API"
           active={location.pathname === '/btg'} onClick={() => navigate('/btg')}
         />
         <SideBarItem
-          icon={TrendingUp} label="XP API"
+          icon={BarChart2} label="XP API"
           active={location.pathname === '/xp'} onClick={() => navigate('/xp')}
         />
         <SideBarItem
-          icon={TrendingUp} label="Avenue API"
+          icon={Globe} label="Avenue API"
           active={location.pathname === '/avenue'} onClick={() => navigate('/avenue')}
         />
         <SideBarItem
-          icon={TrendingUp} label="Ágora API"
+          icon={Activity} label="Ágora API"
           active={location.pathname === '/agora'} onClick={() => navigate('/agora')}
         />
         {(isMaster || isConsultor) && (
@@ -223,15 +239,15 @@ export default function MainLayout() {
               active={location.pathname === '/master'} onClick={() => navigate('/master')}
             />
             <SideBarItem
-              icon={Settings} label="Gestão Master"
+              icon={BookOpen} label="Gestão Master"
               active={location.pathname === '/gestao-master'} onClick={() => navigate('/gestao-master')}
             />
             <SideBarItem
-              icon={Settings} label="Cadastro Clientes"
+              icon={UserPlus} label="Cadastro Clientes"
               active={location.pathname === '/cadastro-clientes'} onClick={() => navigate('/cadastro-clientes')}
             />
             <SideBarItem
-              icon={Settings} label="Gestão de Equipe"
+              icon={UsersRound} label="Gestão de Equipe"
               active={location.pathname === '/gestao-equipe'} onClick={() => navigate('/gestao-equipe')}
             />
           </>

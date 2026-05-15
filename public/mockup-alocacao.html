@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mockup — Alocação por Classe</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #F3F4F6; padding: 40px; color: #1F2937; }
+  h1 { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; opacity: .4; margin-bottom: 24px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .card { background: #fff; border-radius: 14px; border: 1px solid rgba(0,0,0,0.08); overflow: hidden; }
+  .card-inner { padding: 24px; }
+
+  /* Header */
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; opacity: .45; }
+  .toggle { display: flex; gap: 4px; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 8px; }
+  .toggle button { border: none; background: transparent; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; color: #6B7280; }
+  .toggle button.active { background: #fff; color: #1F2937; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+  /* Mode label */
+  .mode-label { font-size: 13px; font-weight: 700; color: #1F2937; margin-bottom: 16px; }
+  .mode-sub { font-size: 11px; opacity: .45; margin-bottom: 20px; }
+
+  /* Horizontal bars (Consolidado) */
+  .hbar-row { display: grid; grid-template-columns: 100px 1fr 60px 56px; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+  .hbar-row:last-child { border-bottom: none; }
+  .hbar-label { font-size: 12px; font-weight: 600; opacity: .7; }
+  .hbar-track { height: 8px; background: rgba(0,0,0,0.06); border-radius: 4px; overflow: hidden; }
+  .hbar-fill { height: 100%; border-radius: 4px; }
+  .hbar-val { font-size: 11px; font-weight: 700; opacity: .65; text-align: right; }
+  .hbar-pct { font-size: 13px; font-weight: 800; text-align: right; }
+
+  /* Stacked bars (Por Instituição) */
+  .chart-wrap { position: relative; height: 220px; margin-bottom: 16px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; opacity: .7; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* Divider */
+  .divider { border: none; border-top: 2px dashed rgba(0,0,0,0.08); margin: 0 0 24px 0; }
+
+  /* Arrow annotation */
+  .annotation { font-size: 12px; font-weight: 600; color: #6366F1; background: #EEF2FF; padding: 8px 14px; border-radius: 8px; margin-bottom: 20px; display: inline-block; }
+</style>
+</head>
+<body>
+
+<h1>Mockup — Proposta de fusão: Alocação por Classe + Comparativo por Classe</h1>
+
+<div class="grid">
+
+  <!-- MODO CONSOLIDADO -->
+  <div class="card">
+    <div class="card-inner">
+      <div class="card-header">
+        <span class="card-title">Alocação por Classe</span>
+        <div class="toggle">
+          <button class="active">Consolidado</button>
+          <button>Por Instituição</button>
+          <button onclick="location.href='#'" style="font-size:18px;padding:0 6px;background:transparent;border:none;cursor:pointer;opacity:.4">⊞</button>
+        </div>
+      </div>
+      <div class="annotation">← Modo atual "Alocação por Classe"</div>
+      <div class="mode-sub">Visão total consolidada — quanto de cada classe no portfólio</div>
+
+      <div class="hbar-row">
+        <span class="hbar-label">Renda Fixa</span>
+        <div class="hbar-track"><div class="hbar-fill" style="width:68%;background:#0083CB;"></div></div>
+        <span class="hbar-val">R$ 9,2M</span>
+        <span class="hbar-pct" style="color:#0083CB">68.1%</span>
+      </div>
+      <div class="hbar-row">
+        <span class="hbar-label">Ações</span>
+        <div class="hbar-track"><div class="hbar-fill" style="width:14%;background:#6366F1;"></div></div>
+        <span class="hbar-val">R$ 1,9M</span>
+        <span class="hbar-pct" style="color:#6366F1">14.0%</span>
+      </div>
+      <div class="hbar-row">
+        <span class="hbar-label">FIIs</span>
+        <div class="hbar-track"><div class="hbar-fill" style="width:10%;background:#10B981;"></div></div>
+        <span class="hbar-val">R$ 1,4M</span>
+        <span class="hbar-pct" style="color:#10B981">10.1%</span>
+      </div>
+      <div class="hbar-row">
+        <span class="hbar-label">Fundo Multi</span>
+        <div class="hbar-track"><div class="hbar-fill" style="width:5%;background:#F59E0B;"></div></div>
+        <span class="hbar-val">R$ 680K</span>
+        <span class="hbar-pct" style="color:#F59E0B">5.0%</span>
+      </div>
+      <div class="hbar-row">
+        <span class="hbar-label">Internacional</span>
+        <div class="hbar-track"><div class="hbar-fill" style="width:3%;background:#EF4444;"></div></div>
+        <span class="hbar-val">R$ 380K</span>
+        <span class="hbar-pct" style="color:#EF4444">2.8%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODO POR INSTITUIÇÃO -->
+  <div class="card">
+    <div class="card-inner">
+      <div class="card-header">
+        <span class="card-title">Alocação por Classe</span>
+        <div class="toggle">
+          <button>Consolidado</button>
+          <button class="active">Por Instituição</button>
+          <button style="font-size:18px;padding:0 6px;background:transparent;border:none;cursor:pointer;opacity:.4">⊞</button>
+        </div>
+      </div>
+      <div class="annotation">← Modo atual "Comparativo por Classe"</div>
+      <div class="mode-sub">Onde está cada classe — distribuição por corretora</div>
+
+      <div class="chart-wrap">
+        <canvas id="stackedChart"></canvas>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#1B4F72"></div> BTG Pactual</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#F97316"></div> XP Investimentos</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div> Avenue</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8B5CF6"></div> Ágora</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const ctx = document.getElementById('stackedChart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: ['Renda Fixa', 'Ações', 'FIIs', 'Fundo Multi', 'Internacional'],
+    datasets: [
+      {
+        label: 'BTG Pactual',
+        data: [5200000, 800000, 900000, 400000, 0],
+        backgroundColor: '#1B4F72',
+        borderRadius: { topLeft: 0, topRight: 0 },
+        stack: 'a',
+      },
+      {
+        label: 'XP Investimentos',
+        data: [2800000, 900000, 500000, 280000, 0],
+        backgroundColor: '#F97316',
+        stack: 'a',
+      },
+      {
+        label: 'Avenue',
+        data: [800000, 200000, 0, 0, 380000],
+        backgroundColor: '#3B82F6',
+        stack: 'a',
+      },
+      {
+        label: 'Ágora',
+        data: [400000, 0, 0, 0, 0],
+        backgroundColor: '#8B5CF6',
+        borderRadius: { topLeft: 4, topRight: 4 },
+        stack: 'a',
+      },
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { mode: 'index' } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 11 } }, border: { display: false } },
+      y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 }, callback: v => 'R$' + (v/1000000).toFixed(1) + 'M' }, border: { display: false } }
+    }
+  }
+});
+</script>
+</body>
+</html>

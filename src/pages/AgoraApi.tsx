@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
     Wallet, RefreshCw, LayoutGrid, Calendar,
-    TrendingUp, BarChart3, ChevronRight, AlertCircle, Database
+    BarChart3, ChevronRight, AlertCircle, Database
 } from 'lucide-react';
 import {
     Card, CardContent, Typography, Badge,

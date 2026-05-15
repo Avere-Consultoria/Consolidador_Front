@@ -9,9 +9,7 @@ import { DrawerGerenciarCarteiras } from '../components/home/modais/DrawerGerenc
 import { RiscoEmissor } from '../components/home/graficos/RiscoEmissor';
 import { LiquidezVisao } from '../components/home/graficos/LiquidezVisao';
 import { NenhumClienteSelecionado } from '../components/home/NenhumClienteSelecionado';
-import { GraficoAlocacaoClasse } from '../components/home/graficos/GraficoAlocacaoClasse';
-import { GraficoComparativo } from '../components/home/graficos/GraficoComparativo';
-import { GraficoProporcao } from '../components/home/graficos/GraficoProporcao';
+import { GraficoAlocacao } from '../components/home/graficos/GraficoAlocacao';
 import { VencimentosVisao } from '../components/home/graficos/VencimentosVisao';
 
 export default function Home() {
@@ -71,20 +69,22 @@ export default function Home() {
       />
 
       <ResumoCards metrics={metrics} />
-      <GraficoProporcao data={metrics.donutData} />
-      <GraficoComparativo data={metrics.comparativoData} />
 
-      <GraficoAlocacaoClasse data={metrics.alocacaoData} />
+      <GraficoAlocacao
+        alocacaoData={metrics.alocacaoData}
+        comparativoData={metrics.comparativoData}
+      />
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', alignItems: 'stretch' }}>
+        <LiquidezVisao dados={metrics.liquidezData} />
+        <RiscoEmissor dados={metrics.exposicaoRiscoData} />
+      </div>
 
       <VencimentosVisao
         ativos={metrics.todosAtivos}
         diasVencimento={diasVencimento}
         setDiasVencimento={setDiasVencimento}
       />
-
-      <LiquidezVisao dados={metrics.liquidezData} />
-
-      <RiscoEmissor dados={metrics.exposicaoRiscoData} />
 
       <TabelaAtivos ativos={metrics.todosAtivos} patrimonioTotal={metrics.patrimonioTotal} />
 
