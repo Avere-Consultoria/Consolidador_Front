@@ -9,11 +9,12 @@ interface AtivoMaster {
     codigo_identificador: string;
     tipo_identificador: string;
     nome_ativo: string;
-    benchmark: string; // Coluna recém-criada no banco
+    benchmark: string;
     instituicao_origem: string;
     classe_original: string;
     classe_avere: string;
     liquidez_avere: string;
+    data_vencimento: string;
     emissor_id: string;
     status: 'PENDENTE' | 'CLASSIFICADO';
 }
@@ -26,6 +27,7 @@ interface Emissor {
 interface ClasseDinamica {
     nome: string;
 }
+
 
 export default function MasterAtivos() {
     const [ativos, setAtivos] = useState<AtivoMaster[]>([]);
@@ -59,6 +61,7 @@ export default function MasterAtivos() {
                     ...row,
                     classe_avere: row.classe_avere || '',
                     liquidez_avere: row.liquidez_avere || '',
+                    data_vencimento: row.data_vencimento || '',
                     emissor_id: row.emissor_id || '',
                     benchmark: row.benchmark || '',
                     instituicao_origem: row.instituicao_origem || 'Desconhecida',
@@ -81,7 +84,7 @@ export default function MasterAtivos() {
         fetchData();
     }, []);
 
-    const handleAtualizarAtivo = (id: string, campo: 'classe_avere' | 'liquidez_avere' | 'emissor_id', valor: string) => {
+    const handleAtualizarAtivo = (id: string, campo: 'classe_avere' | 'liquidez_avere' | 'data_vencimento' | 'emissor_id', valor: string) => {
         setAtivos(prev => prev.map(ativo => {
             if (ativo.id !== id) return ativo;
             const novoAtivo = { ...ativo, [campo]: valor };
@@ -103,6 +106,7 @@ export default function MasterAtivos() {
                     .update({
                         classe_avere: ativo.classe_avere,
                         liquidez_avere: ativo.liquidez_avere,
+                        data_vencimento: ativo.data_vencimento || null,
                         emissor_id: ativo.emissor_id || null,
                         atualizado_em: new Date().toISOString()
                     })
@@ -260,18 +264,32 @@ export default function MasterAtivos() {
                             header: 'Liquidez',
                             accessorKey: 'liquidez_avere',
                             cell: (item: AtivoMaster) => (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '80px' }}>
-                                    <Typography variant="p" style={{ fontSize: '12px', fontWeight: 700, opacity: 0.5 }}>D+</Typography>
-                                    <input
-                                        type="number" min="0"
-                                        value={item.liquidez_avere}
-                                        onChange={(e) => handleAtualizarAtivo(item.id, 'liquidez_avere', e.target.value)}
-                                        style={{
-                                            width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
-                                            fontSize: '12px', fontFamily: 'Montserrat, sans-serif', outline: 'none'
-                                        }}
-                                    />
-                                </div>
+                                <input
+                                    type="number" min="0"
+                                    value={item.liquidez_avere}
+                                    onChange={(e) => handleAtualizarAtivo(item.id, 'liquidez_avere', e.target.value)}
+                                    placeholder="D+"
+                                    style={{
+                                        width: '80px', padding: '6px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
+                                        fontSize: '12px', fontFamily: 'var(--font-family)', outline: 'none'
+                                    }}
+                                />
+                            ),
+                        },
+                        {
+                            header: 'Vencimento',
+                            accessorKey: 'data_vencimento',
+                            cell: (item: AtivoMaster) => (
+                                <input
+                                    type="date"
+                                    value={item.data_vencimento}
+                                    onChange={(e) => handleAtualizarAtivo(item.id, 'data_vencimento', e.target.value)}
+                                    style={{
+                                        width: '130px', padding: '6px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
+                                        fontSize: '12px', fontFamily: 'var(--font-family)', outline: 'none',
+                                        background: item.data_vencimento ? '#fff' : 'transparent'
+                                    }}
+                                />
                             ),
                         },
                         {

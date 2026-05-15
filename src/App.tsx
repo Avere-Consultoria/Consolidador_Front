@@ -21,6 +21,7 @@ import CadastroClientes from './pages/Cadastroclientes';
 import GestaoEquipe from './pages/GestaoEquipe';
 import AvenueApi from './pages/AvenueApi';
 import AgoraApi from './pages/AgoraApi';
+import Relatorio from './pages/Relatorio';
 
 
 export default function App() {
@@ -33,6 +34,11 @@ export default function App() {
 
             {/* Rota Pública (Livre de Login) */}
             <Route path="/login" element={<Login />} />
+
+            {/* ROTA DE RELATÓRIO (sem MainLayout) */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/relatorio" element={<Relatorio />} />
+            </Route>
 
             {/* ROTAS PRIVADAS (Exigem Login Básico) */}
             <Route element={<ProtectedRoute />}>

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import {
-    Typography, Card, Button, Spinner, toast,
+    Typography, Card, Button, Spinner, toast, Combobox,
     Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter,
     TextField
 } from 'avere-ui';
-import { Save, Plus, Trash2, Pencil } from 'lucide-react';
+import { Save, Plus, Trash2, Pencil, Search } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
 interface Consultor { id: string; nome: string; }
@@ -20,6 +20,36 @@ interface Cliente {
     codigo_agora: string | null;
 }
 interface LinhaTabela extends Cliente { modificado: boolean; }
+
+// Estilos compartilhados da tabela
+const thStyle: React.CSSProperties = {
+    padding: '12px 16px',
+    fontSize: '11px',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    color: '#9CA3AF',
+    textAlign: 'left',
+    whiteSpace: 'nowrap',
+};
+
+const inlineInputStyle: React.CSSProperties = {
+    border: 'none',
+    background: 'transparent',
+    width: '100%',
+    fontFamily: 'var(--font-family)',
+    fontSize: '13px',
+    color: 'var(--color-secundaria)',
+    outline: 'none',
+    lineHeight: '1.5',
+    padding: 0,
+    margin: 0,
+};
+
+const tdStyle: React.CSSProperties = {
+    padding: '12px 16px',
+    verticalAlign: 'middle',
+};
 
 export default function CadastroClientes() {
     const [loading, setLoading] = useState(true);
@@ -62,21 +92,19 @@ export default function CadastroClientes() {
 
     const cleanPayload = (data: Partial<Cliente>) => ({
         nome: data.nome,
-        consultor_id: data.consultor_id,
-        codigo_avere: data.codigo_avere,
-        codigo_btg: data.codigo_btg,
-        codigo_xp: data.codigo_xp,
-        codigo_avenue: data.codigo_avenue,
-        cpf: data.cpf,
-        codigo_agora: data.codigo_agora,
+        consultor_id: data.consultor_id || null,
+        codigo_avere: data.codigo_avere || null,
+        codigo_btg: data.codigo_btg || null,
+        codigo_xp: data.codigo_xp || null,
+        codigo_avenue: data.codigo_avenue || null,
+        cpf: data.cpf || null,
+        codigo_agora: data.codigo_agora || null,
     });
 
     const handleSalvarModal = async () => {
         if (!formCliente.nome) { toast.error('Nome é obrigatório.'); return; }
         setSalvando(true);
-
         const payload = cleanPayload(formCliente);
-
         try {
             if (clienteEmEdicao) {
                 const { error } = await supabase.from('clientes').update(payload).eq('id', clienteEmEdicao);
@@ -117,12 +145,10 @@ export default function CadastroClientes() {
         if (modificadas.length === 0) return;
         setSalvando(true);
         try {
-            const upsertData = modificadas.map(l => ({
-                id: l.id,
-                ...cleanPayload(l)
-            }));
+            const upsertData = modificadas.map(l => ({ id: l.id, ...cleanPayload(l) }));
             const { error } = await supabase.from('clientes').upsert(upsertData);
             if (error) throw error;
+            toast.success('Alterações salvas.');
             fetchData();
         } catch (err) {
             console.error(err);
@@ -130,85 +156,113 @@ export default function CadastroClientes() {
         } finally { setSalvando(false); }
     };
 
+    if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
+
+    const opcoesConsultores = [
+        { value: '', label: 'Sem consultor' },
+        ...consultores.map(c => ({ value: c.id, label: c.nome }))
+    ];
+
+    const nomeConsultor = (id: string | null) =>
+        consultores.find(c => c.id === id)?.nome || '—';
+
+    const linhasFiltradas = linhas.filter(l => l.nome.toLowerCase().includes(busca.toLowerCase()));
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '32px' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
                 <div>
-                    <Typography variant="h1">Base de Clientes</Typography>
+                    <Typography variant="h1" style={{ fontWeight: 700 }}>Base de Clientes</Typography>
                     <Typography variant="p" style={{ opacity: 0.6 }}>Gestão de vínculos e APIs externas.</Typography>
                 </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
-                    <input
-                        className="avere-input"
-                        style={{ width: '280px' }}
-                        placeholder="Pesquisar..."
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <TextField
+                        leftIcon={Search}
+                        placeholder="Pesquisar cliente..."
                         value={busca}
                         onChange={e => setBusca(e.target.value)}
+                        style={{ width: '260px' }}
                     />
-                    <Button onClick={handleNovoCliente}>
-                        <Plus size={20} style={{ marginRight: 8 }} /> Novo Cliente
+                    <Button variant="solid" onClick={handleNovoCliente}>
+                        <Plus size={16} style={{ marginRight: 8 }} /> Novo Cliente
                     </Button>
                 </div>
             </header>
 
-            <Card style={{ padding: '0', overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1000px' }}>
+            <Card style={{ padding: 0, overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                        <tr style={{ textAlign: 'left', background: '#F9FAFB', borderBottom: '1px solid #EEE' }}>
-                            <th style={{ padding: '16px' }}>Nome</th>
-                            <th style={{ padding: '16px' }}>CPF</th>
-                            <th style={{ padding: '16px' }}>Consultor</th>
-                            <th style={{ padding: '16px' }}>BTG</th>
-                            <th style={{ padding: '16px' }}>XP</th>
-                            <th style={{ padding: '16px' }}>Avenue</th>
-                            <th style={{ padding: '16px' }}>Agora</th>
-                            <th style={{ padding: '16px', textAlign: 'center' }}>Ações</th>
+                        <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #EEEEEE' }}>
+                            <th style={thStyle}>Nome</th>
+                            <th style={thStyle}>CPF</th>
+                            <th style={thStyle}>Consultor</th>
+                            <th style={thStyle}>BTG</th>
+                            <th style={thStyle}>XP</th>
+                            <th style={thStyle}>Avenue</th>
+                            <th style={thStyle}>Ágora</th>
+                            <th style={{ ...thStyle, textAlign: 'center' }}>Ações</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {linhas.filter(l => l.nome.toLowerCase().includes(busca.toLowerCase())).map(l => (
-                            <tr key={l.id} style={{ borderBottom: '1px solid #F3F4F6', background: l.modificado ? 'rgba(255, 251, 235, 0.5)' : 'transparent' }}>
-                                <td style={{ padding: '12px 16px' }}>
-                                    <input
-                                        style={{ border: 'none', background: 'transparent', width: '100%', fontWeight: 500 }}
-                                        value={l.nome}
-                                        onChange={e => handleChangeTabela(l.id, 'nome', e.target.value)}
-                                    />
-                                </td>
-                                <td style={{ padding: '12px 16px' }}>
-                                    <input style={{ border: 'none', background: 'transparent', width: '110px' }} value={l.cpf || ''} onChange={e => handleChangeTabela(l.id, 'cpf', e.target.value)} />
-                                </td>
-                                <td style={{ padding: '12px 16px' }}>
-                                    <select
-                                        style={{ border: 'none', background: 'transparent' }}
-                                        value={l.consultor_id || ''}
-                                        onChange={e => handleChangeTabela(l.id, 'consultor_id', e.target.value)}
-                                    >
-                                        <option value="">Selecione...</option>
-                                        {consultores.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                                    </select>
-                                </td>
-                                <td style={{ padding: '12px 16px' }}><input style={{ border: 'none', background: 'transparent', width: '80px' }} value={l.codigo_btg || ''} onChange={e => handleChangeTabela(l.id, 'codigo_btg', e.target.value)} /></td>
-                                <td style={{ padding: '12px 16px' }}><input style={{ border: 'none', background: 'transparent', width: '80px' }} value={l.codigo_xp || ''} onChange={e => handleChangeTabela(l.id, 'codigo_xp', e.target.value)} /></td>
-                                <td style={{ padding: '12px 16px' }}><input style={{ border: 'none', background: 'transparent', width: '80px' }} value={l.codigo_avenue || ''} onChange={e => handleChangeTabela(l.id, 'codigo_avenue', e.target.value)} /></td>
-                                <td style={{ padding: '12px 16px' }}><input style={{ border: 'none', background: 'transparent', width: '80px' }} value={l.codigo_agora || ''} onChange={e => handleChangeTabela(l.id, 'codigo_agora', e.target.value)} /></td>
-                                <td style={{ padding: '12px 16px', display: 'flex', justifyContent: 'center', gap: '12px' }}>
-                                    <button onClick={() => handleEditarNoModal(l)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-primaria)' }}>
-                                        <Pencil size={18} />
-                                    </button>
-                                    <button onClick={() => handleExcluirCliente(l.id, l.nome)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444' }}>
-                                        <Trash2 size={18} />
-                                    </button>
+                        {linhasFiltradas.map(l => (
+                                <tr key={l.id} style={{ borderBottom: '1px solid #F3F4F6', background: l.modificado ? 'rgba(255, 251, 235, 0.6)' : 'transparent' }}>
+                                    <td style={{ ...tdStyle, minWidth: '160px' }}>
+                                        <input
+                                            style={{ ...inlineInputStyle, fontWeight: 600 }}
+                                            value={l.nome}
+                                            onChange={e => handleChangeTabela(l.id, 'nome', e.target.value)}
+                                        />
+                                    </td>
+                                    <td style={{ ...tdStyle, minWidth: '120px' }}>
+                                        <input
+                                            style={{ ...inlineInputStyle, color: 'var(--color-primaria)' }}
+                                            value={l.cpf || ''}
+                                            onChange={e => handleChangeTabela(l.id, 'cpf', e.target.value)}
+                                        />
+                                    </td>
+                                    <td style={{ ...tdStyle, minWidth: '160px' }}>
+                                        <span style={{ fontSize: '13px', fontFamily: 'var(--font-family)', color: 'var(--color-secundaria)', lineHeight: '1.5' }}>
+                                            {nomeConsultor(l.consultor_id)}
+                                        </span>
+                                    </td>
+                                    <td style={tdStyle}>
+                                        <input style={{ ...inlineInputStyle, width: '90px' }} value={l.codigo_btg || ''} onChange={e => handleChangeTabela(l.id, 'codigo_btg', e.target.value)} />
+                                    </td>
+                                    <td style={tdStyle}>
+                                        <input style={{ ...inlineInputStyle, width: '90px' }} value={l.codigo_xp || ''} onChange={e => handleChangeTabela(l.id, 'codigo_xp', e.target.value)} />
+                                    </td>
+                                    <td style={tdStyle}>
+                                        <input style={{ ...inlineInputStyle, width: '90px' }} value={l.codigo_avenue || ''} onChange={e => handleChangeTabela(l.id, 'codigo_avenue', e.target.value)} />
+                                    </td>
+                                    <td style={tdStyle}>
+                                        <input style={{ ...inlineInputStyle, width: '90px' }} value={l.codigo_agora || ''} onChange={e => handleChangeTabela(l.id, 'codigo_agora', e.target.value)} />
+                                    </td>
+                                    <td style={tdStyle}>
+                                        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
+                                            <Pencil size={16} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={() => handleEditarNoModal(l)} />
+                                            <Trash2 size={16} color="#EF4444" style={{ cursor: 'pointer', opacity: 0.8 }} onClick={() => handleExcluirCliente(l.id, l.nome)} />
+                                        </div>
+                                    </td>
+                                </tr>
+                        ))}
+                        {linhasFiltradas.length === 0 && (
+                            <tr>
+                                <td colSpan={8} style={{ padding: '40px', textAlign: 'center', opacity: 0.4 }}>
+                                    Nenhum cliente encontrado.
                                 </td>
                             </tr>
-                        ))}
+                        )}
                     </tbody>
                 </table>
             </Card>
 
             {linhas.some(l => l.modificado) && (
                 <div style={{ position: 'fixed', bottom: '32px', right: '32px' }}>
-                    <Button onClick={handleSalvarEdicoesTabela}><Save size={20} style={{ marginRight: 8 }} /> Salvar Alterações Tabela</Button>
+                    <Button variant="solid" onClick={handleSalvarEdicoesTabela} disabled={salvando}>
+                        {salvando ? <Spinner size="sm" /> : <Save size={16} style={{ marginRight: 8 }} />}
+                        Salvar Alterações
+                    </Button>
                 </div>
             )}
 
@@ -233,30 +287,30 @@ export default function CadastroClientes() {
                             />
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase' }}>Consultor Responsável</label>
-                            <select
-                                className="avere-input"
-                                value={formCliente.consultor_id || ""}
-                                onChange={(e) => setFormCliente(prev => ({ ...prev, consultor_id: e.target.value || null }))}
-                            >
-                                <option value="">Selecione um consultor...</option>
-                                {consultores.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                            </select>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                                Consultor Responsável
+                            </label>
+                            <Combobox
+                                options={opcoesConsultores}
+                                value={formCliente.consultor_id || ''}
+                                onChange={(val) => setFormCliente(p => ({ ...p, consultor_id: val || null }))}
+                                placeholder="Selecione um consultor..."
+                            />
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                             <TextField label="Cód. BTG" value={formCliente.codigo_btg || ''} onChange={e => setFormCliente(p => ({ ...p, codigo_btg: e.target.value }))} />
                             <TextField label="Cód. XP" value={formCliente.codigo_xp || ''} onChange={e => setFormCliente(p => ({ ...p, codigo_xp: e.target.value }))} />
                             <TextField label="Cód. Avenue" value={formCliente.codigo_avenue || ''} onChange={e => setFormCliente(p => ({ ...p, codigo_avenue: e.target.value }))} />
-                            <TextField label="Cód. Agora" value={formCliente.codigo_agora || ''} onChange={e => setFormCliente(p => ({ ...p, codigo_agora: e.target.value }))} />
+                            <TextField label="Cód. Ágora" value={formCliente.codigo_agora || ''} onChange={e => setFormCliente(p => ({ ...p, codigo_agora: e.target.value }))} />
                             <TextField label="Cód. Avere" value={formCliente.codigo_avere || ''} onChange={e => setFormCliente(p => ({ ...p, codigo_avere: e.target.value }))} />
                         </div>
                     </div>
 
                     <ModalFooter>
-                        <Button variant="ghost" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleSalvarModal} disabled={salvando}>
+                        <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+                        <Button variant="solid" onClick={handleSalvarModal} disabled={salvando}>
                             {salvando ? <Spinner size="sm" /> : 'Confirmar'}
                         </Button>
                     </ModalFooter>

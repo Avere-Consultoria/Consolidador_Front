@@ -1,4 +1,6 @@
 import { Typography, Select, Button } from 'avere-ui';
+import { FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { fmtDate } from '../../utils/formatters';
 
 interface HomeHeaderProps {
@@ -17,6 +19,7 @@ interface HomeHeaderProps {
     onOpenGerenciarCarteiras: () => void;
 }
 
+
 export function HomeHeader({
     cliente,
     carteiraAtiva,
@@ -32,6 +35,8 @@ export function HomeHeader({
     incluirAgora,
     onOpenGerenciarCarteiras
 }: HomeHeaderProps) {
+    const navigate = useNavigate();
+
     return (
         <header>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
@@ -47,7 +52,11 @@ export function HomeHeader({
                         options={opcoesCarteira}
                     />
                 </div>
-                <div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <Button variant="outline" onClick={() => navigate('/relatorio')}>
+                        <FileText size={15} style={{ marginRight: 6 }} />
+                        Exportar PDF
+                    </Button>
                     <Button variant="solid" onClick={onOpenGerenciarCarteiras}>
                         + Gerir Carteiras
                     </Button>

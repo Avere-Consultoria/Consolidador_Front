@@ -120,9 +120,9 @@ export function DrawerDetalheConsolidado({ ativo, aberto, onClose, patrimonioTot
                             <>
                                 <DrawerSeparator />
                                 <section>
-                                    <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '12px' }}>
+                                    <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '12px' }}>
                                         Janelas de Liquidez Antecipada
-                                    </Typography>
+                                    </span>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         {schedules.map((s: any, i: number) => (
                                             <div key={i} style={{ background: 'rgba(0,131,203,0.05)', borderRadius: '8px', padding: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
@@ -149,9 +149,9 @@ export function DrawerDetalheConsolidado({ ativo, aberto, onClose, patrimonioTot
                             <>
                                 <DrawerSeparator />
                                 <section>
-                                    <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '12px' }}>
+                                    <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '12px' }}>
                                         Histórico de Aquisições ({acquisitions.length})
-                                    </Typography>
+                                    </span>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                         {acquisitions.map((acq: any, i: number) => (
                                             <div key={i} style={{ background: 'rgba(0,131,203,0.05)', border: '1px solid rgba(0,131,203,0.1)', borderRadius: '10px', padding: '14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>

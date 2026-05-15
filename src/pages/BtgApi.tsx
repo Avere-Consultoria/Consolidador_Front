@@ -581,11 +581,6 @@ export default function BtgApi() {
         })),
       });
 
-      // 2. A MÁGICA ACONTECE AQUI: 
-      // Manda o banco de dados processar os ativos novos e jogar no Dicionário!
-      const { error: rpcError } = await supabase.rpc('alimentar_dicionario');
-      if (rpcError) console.error('Erro ao alimentar dicionário:', rpcError);
-
     } catch (err) {
       console.error(err);
     } finally {

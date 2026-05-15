@@ -206,7 +206,6 @@ export default function AvenueApi() {
                 })),
             });
 
-            await supabase.rpc('alimentar_dicionario');
         } catch (err) {
             console.error("Erro no handleFetch:", err);
         } finally {

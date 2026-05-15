@@ -25,9 +25,21 @@ interface AvereAtivo {
     subTipo?: string;
     emissor?: string;
     ticker?: string;
+    securityCode?: string;
     valorLiquido: number;
     valorBruto: number;
+    custoTotal?: number | null;
+    precoUnitario?: number | null;
     quantidade?: number | null;
+    taxa?: string | null;
+    taxaPercentual?: number | null;
+    valorizacao?: number | null;
+    percentValorizacao?: number | null;
+    irDescricao?: string | null;
+    irPercentual?: string | null;
+    dataVencimento?: string | null;
+    dataAplicacao?: string | null;
+    liquidezDiaria?: boolean;
     _uniqueId?: string;
 }
 
@@ -77,23 +89,57 @@ function DrawerDetalhes({ ativo, aberto, onClose }: {
 
                 <DrawerBody>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        <Secao titulo="Valores Atuais">
-                            <DetalheItem accentColor={AGORA_COLOR} label="Valor Bruto (BRL)" value={fmt(ativo.valorBruto)} highlight />
-                            <DetalheItem accentColor={AGORA_COLOR} label="Valor Líquido (BRL)" value={fmt(ativo.valorLiquido)} />
+
+                        <Secao titulo="Posição Financeira">
+                            <DetalheItem accentColor={AGORA_COLOR} label="Valor Bruto" value={fmt(ativo.valorBruto)} highlight />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Valor Líquido" value={fmt(ativo.valorLiquido)} />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Custo Total" value={ativo.custoTotal != null ? fmt(ativo.custoTotal) : '—'} />
+                            {ativo.valorizacao != null && (
+                                <DetalheItem
+                                    accentColor={ativo.valorizacao >= 0 ? '#16a34a' : '#ef4444'}
+                                    label="Valorização"
+                                    value={`${ativo.valorizacao >= 0 ? '+' : ''}${fmt(ativo.valorizacao)} (${ativo.percentValorizacao?.toFixed(2)}%)`}
+                                />
+                            )}
                         </Secao>
 
                         <DrawerSeparator />
 
-                        <Secao titulo="Informações do Produto">
-                            <DetalheItem accentColor={AGORA_COLOR} label="Classe de Ativo" value={categoryMap[ativo.tipo || ''] || ativo.tipo || '-'} />
-                            <DetalheItem accentColor={AGORA_COLOR} label="Quantidade" value={fmtNum(ativo.quantidade)} />
+                        <Secao titulo="Produto">
+                            <DetalheItem accentColor={AGORA_COLOR} label="Classe" value={categoryMap[ativo.tipo || ''] || ativo.tipo || '—'} />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Subtipo" value={ativo.subTipo || '—'} />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Quantidade" value={ativo.quantidade != null ? fmtNum(ativo.quantidade) : '—'} />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Preço Unitário" value={ativo.precoUnitario != null ? fmt(ativo.precoUnitario) : '—'} />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Liquidez Diária" value={ativo.liquidezDiaria ? 'Sim' : 'Não'} />
+                        </Secao>
+
+                        <DrawerSeparator />
+
+                        <Secao titulo="Taxa & Rentabilidade">
+                            <DetalheItem accentColor={AGORA_COLOR} label="Taxa" value={ativo.taxa || '—'} fullWidth />
+                        </Secao>
+
+                        <DrawerSeparator />
+
+                        <Secao titulo="Tributação">
+                            <DetalheItem accentColor={AGORA_COLOR} label="IR" value={ativo.irDescricao || '—'} />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Alíquota IR" value={ativo.irPercentual || '—'} />
+                        </Secao>
+
+                        <DrawerSeparator />
+
+                        <Secao titulo="Datas">
+                            <DetalheItem accentColor={AGORA_COLOR} label="Data de Aplicação" value={ativo.dataAplicacao ? fmtDate(ativo.dataAplicacao) : '—'} />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Data de Vencimento" value={ativo.dataVencimento ? fmtDate(ativo.dataVencimento) : '—'} />
                         </Secao>
 
                         <DrawerSeparator />
 
                         <Secao titulo="Identificação">
-                            <DetalheItem accentColor={AGORA_COLOR} label="Ticker / Tipo" value={ativo.ticker || '-'} mono fullWidth />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Código (Security)" value={ativo.securityCode || '—'} mono fullWidth />
+                            <DetalheItem accentColor={AGORA_COLOR} label="Ticker" value={ativo.ticker || '—'} mono />
                         </Secao>
+
                     </div>
                 </DrawerBody>
             </DrawerContent>
@@ -125,8 +171,11 @@ export default function AgoraApi() {
                     id, patrimonio_total, data_referencia, 
                     saldo_caixa, saldo_rf, saldo_rv, saldo_fundos, saldo_outros,
                     posicao_agora_ativos (
-                        id, tipo, sub_tipo, emissor, ticker, 
-                        valor_bruto, valor_liquido, quantidade
+                        id, tipo, sub_tipo, emissor, ticker, security_code,
+                        valor_bruto, valor_liquido, custo_total, preco_unitario, quantidade,
+                        taxa, taxa_percentual, valorizacao, percent_valorizacao,
+                        ir_descricao, ir_percentual,
+                        data_vencimento, data_aplicacao, liquidez_diaria
                     )
                 `)
                 .eq('cliente_id', selectedClient.id)
@@ -157,9 +206,21 @@ export default function AgoraApi() {
                     subTipo: a.sub_tipo,
                     emissor: a.emissor,
                     ticker: a.ticker,
+                    securityCode: a.security_code,
                     valorBruto: Number(a.valor_bruto || 0),
                     valorLiquido: Number(a.valor_liquido || 0),
-                    quantidade: Number(a.quantidade || 0),
+                    custoTotal: a.custo_total != null ? Number(a.custo_total) : null,
+                    precoUnitario: a.preco_unitario != null ? Number(a.preco_unitario) : null,
+                    quantidade: a.quantidade != null ? Number(a.quantidade) : null,
+                    taxa: a.taxa ?? null,
+                    taxaPercentual: a.taxa_percentual != null ? Number(a.taxa_percentual) : null,
+                    valorizacao: a.valorizacao != null ? Number(a.valorizacao) : null,
+                    percentValorizacao: a.percent_valorizacao != null ? Number(a.percent_valorizacao) : null,
+                    irDescricao: a.ir_descricao ?? null,
+                    irPercentual: a.ir_percentual ?? null,
+                    dataVencimento: a.data_vencimento ?? null,
+                    dataAplicacao: a.data_aplicacao ?? null,
+                    liquidezDiaria: a.liquidez_diaria ?? false,
                     _uniqueId: `db-ago-${idx}`,
                 })),
             });
@@ -181,6 +242,7 @@ export default function AgoraApi() {
         setErrorMsg(null);
         try {
             console.log("Disparando Edge Function da Ágora...");
+            console.log("selectedClient completo:", JSON.stringify(selectedClient))
             const { error: funcError } = await supabase.functions.invoke('get-agora-position', {
                 body: {
                     clientId: selectedClient.id,
@@ -299,28 +361,57 @@ export default function AgoraApi() {
                                         data={ativosDoTipo}
                                         columns={[
                                             {
-                                                header: 'Símbolo / Tipo',
-                                                accessorKey: 'ticker',
-                                                cell: (item: AvereAtivo) => <strong>{item.ticker || '—'}</strong>,
+                                                header: 'Código',
+                                                accessorKey: 'securityCode',
+                                                cell: (item: AvereAtivo) => (
+                                                    <Typography variant="p" style={{ fontWeight: 700, fontSize: '12px', fontFamily: 'monospace' }}>
+                                                        {item.securityCode || item.ticker || '—'}
+                                                    </Typography>
+                                                ),
                                             },
                                             {
-                                                header: 'Descrição',
-                                                accessorKey: 'subTipo',
+                                                header: 'Emissor',
+                                                accessorKey: 'emissor',
                                                 cell: (item: AvereAtivo) => (
-                                                    <div style={{ maxWidth: '350px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '13px' }}>
-                                                        {item.subTipo}
+                                                    <div style={{ maxWidth: '280px' }}>
+                                                        <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                            {item.emissor || '—'}
+                                                        </Typography>
+                                                        <Typography variant="p" style={{ fontSize: '11px', opacity: 0.5 }}>{item.subTipo}</Typography>
                                                     </div>
                                                 ),
                                             },
                                             {
-                                                header: 'Qtd',
-                                                accessorKey: 'quantidade',
-                                                cell: (item: AvereAtivo) => fmtNum(item.quantidade) || '1',
+                                                header: 'Taxa',
+                                                accessorKey: 'taxa',
+                                                cell: (item: AvereAtivo) => (
+                                                    <Typography variant="p" style={{ fontSize: '12px', fontWeight: 600, color: '#16a34a' }}>
+                                                        {item.taxa || '—'}
+                                                    </Typography>
+                                                ),
+                                            },
+                                            {
+                                                header: 'Vencimento',
+                                                accessorKey: 'dataVencimento',
+                                                cell: (item: AvereAtivo) => (
+                                                    <Typography variant="p" style={{ fontSize: '12px' }}>
+                                                        {item.dataVencimento ? fmtDate(item.dataVencimento) : '—'}
+                                                    </Typography>
+                                                ),
                                             },
                                             {
                                                 header: 'Valor Bruto',
                                                 accessorKey: 'valorBruto',
-                                                cell: (item: AvereAtivo) => <strong>{fmt(item.valorBruto)}</strong>,
+                                                cell: (item: AvereAtivo) => (
+                                                    <div>
+                                                        <Typography variant="p" style={{ fontWeight: 700, fontSize: '13px' }}>{fmt(item.valorBruto)}</Typography>
+                                                        {item.valorizacao != null && (
+                                                            <Typography variant="p" style={{ fontSize: '11px', color: item.valorizacao >= 0 ? '#16a34a' : '#ef4444' }}>
+                                                                {item.valorizacao >= 0 ? '+' : ''}{fmt(item.valorizacao)} ({item.percentValorizacao?.toFixed(2)}%)
+                                                            </Typography>
+                                                        )}
+                                                    </div>
+                                                ),
                                             },
                                             {
                                                 header: '',

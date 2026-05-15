@@ -68,16 +68,13 @@ export default function EmissoresTab() {
     return (
         <>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <div style={{ position: 'relative' }}>
-                    <Search size={16} style={{ position: 'absolute', left: 12, top: 12, opacity: 0.4 }} />
-                    <input
-                        className="avere-input"
-                        style={{ paddingLeft: 40, width: 280 }}
-                        placeholder="Buscar emissor..."
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                    />
-                </div>
+                <TextField
+                    leftIcon={Search}
+                    placeholder="Buscar emissor..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    style={{ width: 280 }}
+                />
                 <Button variant="solid" onClick={() => {
                     setEditId(null);
                     setFormData({ nome_fantasia: '', cnpj_raiz: '', setor: '', ticker_referencia: '' });

@@ -625,6 +625,8 @@ export default function XpApi() {
       console.error('Erro ao salvar ativos XP:', ativosError.message);
     } else {
       console.log(`XP: ${ativosBulk.length} ativos salvos no Supabase`);
+      const { error: dicError } = await supabase.rpc('alimentar_dicionario');
+      if (dicError) console.error('Erro ao alimentar dicionário (XP):', dicError);
     }
   }
 
