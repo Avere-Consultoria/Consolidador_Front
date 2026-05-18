@@ -517,120 +517,83 @@ export default function XpApi() {
   const { selectedClient } = useClient();
   const [portfolioData, setPortfolioData] = useState<XpPortfolio | null>(null);
   const [loading, setLoading] = useState(false);
+  const [erro, setErro] = useState<'ip_bloqueado' | 'sem_conta' | 'token_invalido' | 'generico' | null>(null);
   const [ativoSelecionado, setAtivoSelecionado] = useState<XpAtivo | null>(null);
   const [drawerAberto, setDrawerAberto] = useState(false);
 
-  // ── Carregar mock ─────────────────────────────────────────────────────────
-  async function carregarMock() {
+  // ── Carregar dados via Edge Function ─────────────────────────────────────
+  async function carregarDadosXp() {
     if (!selectedClient) return;
+
+    if (!selectedClient.codigoXp) {
+      setErro('sem_conta');
+      return;
+    }
+
     setLoading(true);
+    setErro(null);
+
     try {
-      const res = await fetch('/mocks/xp-consolidated-position.json');
-      const raw = await res.json();
-      const portfolio = parsePosicaoXp(raw);
+      const { data, error } = await supabase.functions.invoke('get-xp-position', {
+        body: {
+          account: selectedClient.codigoXp,
+          clientId: selectedClient.id,
+        },
+      });
+
+      if (error) throw error;
+      if (!data) throw new Error('Resposta vazia da Edge Function');
+
+      // Mapeia a resposta normalizada da Edge Function para XpPortfolio (para exibição)
+      const portfolio: XpPortfolio = {
+        codigoCliente: parseInt(selectedClient.codigoXp || '0'),
+        dataAtualizacao: data.dataReferencia,
+        patrimonioTotal: data.patrimonioTotal,
+        patrimonioTotalLiquido: data.patrimonioTotalLiquido,
+        valorDisponivel: 0,
+        alocacao: (data.alocacao || []).map((a: any) => ({
+          classe: a.classe,
+          valor: a.valor,
+          icone: '',
+        })),
+        ativos: (data.ativos || []).map((a: any, i: number) => ({
+          tipo: a.tipo,
+          subTipo: a.subTipo,
+          nome: a.emissor || a.tipo || '-',
+          emissor: a.emissor ?? null,
+          codigoAtivo: a.ticker ?? null,
+          valorAplicado: a.valorBruto ?? 0,
+          valorBruto: a.valorBruto ?? 0,
+          valorLiquido: a.valorLiquido ?? 0,
+          valorImpostoRenda: a.ir ?? 0,
+          isIsentoIR: a.isLiquidity ?? false,
+          dataVencimento: a.vencimento ?? null,
+          indexador: a.benchmark ?? null,
+          _uniqueId: `xp-${i}`,
+        })),
+      };
+
       setPortfolioData(portfolio);
-      await persistirNoSupabase(portfolio);
-    } catch (err) {
-      console.error('Erro ao carregar mock XP:', err);
+    } catch (err: any) {
+      const msg = err?.message || JSON.stringify(err) || '';
+      const status = err?.status ?? err?.context?.status;
+      const is502 = status === 502 || msg.includes('502') || msg.toLowerCase().includes('bad gateway') || msg.toLowerCase().includes('upstream');
+      const isUnauthorized = msg.includes('XP_UNAUTHORIZED') || msg.includes('UNAUTHORIZED') || status === 401 || status === 403;
+
+      if (isUnauthorized) {
+        setErro('token_invalido');
+      } else if (is502) {
+        setErro('ip_bloqueado');
+      } else {
+        setErro('generico');
+        console.error('Erro ao carregar dados XP:', err);
+      }
     } finally {
       setLoading(false);
     }
   }
 
-  async function persistirNoSupabase(portfolio: XpPortfolio) {
-    if (!selectedClient?.id) return;
-    const hoje = new Date().toISOString().split('T')[0];
-
-    // Totais por classe
-    const saldos = portfolio.alocacao.reduce((acc, a) => {
-      acc[a.classe] = a.valor;
-      return acc;
-    }, {} as Record<string, number>);
-
-    // 1. Upsert snapshot
-    const { data: snapshot, error: snapError } = await supabase
-      .from('posicao_xp_snapshots')
-      .upsert({
-        cliente_id: selectedClient.id,
-        data_referencia: hoje,
-        patrimonio_total: portfolio.patrimonioTotal,
-        patrimonio_total_liquido: portfolio.patrimonioTotalLiquido,
-        valor_disponivel: portfolio.valorDisponivel,
-        saldo_acoes: saldos['Renda Variável'] ?? 0,
-        saldo_fundos: saldos['Fundos'] ?? 0,
-        saldo_renda_fixa: saldos['Renda Fixa'] ?? 0,
-        saldo_tesouro_direto: saldos['Tesouro Direto'] ?? 0,
-        saldo_previdencia: saldos['Previdência'] ?? 0,
-        saldo_coe: saldos['COE'] ?? 0,
-        saldo_fii: 0,
-        saldo_outros: saldos['Disponível'] ?? 0,
-        dado_atualizado: true,
-        source: 'XP_MOCK',
-      }, { onConflict: 'cliente_id,data_referencia' })
-      .select('id')
-      .single();
-
-    if (snapError || !snapshot) {
-      console.error('Erro ao salvar snapshot XP:', snapError?.message);
-      return;
-    }
-
-    // 2. Limpa ativos do dia e reinserere
-    await supabase
-      .from('posicao_xp_ativos')
-      .delete()
-      .eq('snapshot_id', snapshot.id);
-
-    const ativosBulk = portfolio.ativos.map(a => ({
-      snapshot_id: snapshot.id,
-      tipo: a.tipo,
-      sub_tipo: a.subTipo,
-      nome: a.nome,
-      codigo_ativo: a.codigoAtivo ?? null,
-      cnpj: a.cnpj ?? null,
-      emissor: a.emissor ?? null,
-      valor_aplicado: a.valorAplicado,
-      valor_bruto: a.valorBruto,
-      valor_liquido: a.valorLiquido,
-      valor_imposto_renda: a.valorImpostoRenda ?? 0,
-      valor_iof: a.valorIof ?? 0,
-      valor_rendimento: a.valorRendimento ?? null,
-      is_isento_ir: a.isIsentoIR ?? false,
-      resultado: a.resultado ?? null,
-      resultado_percentual: a.resultadoPercentual ?? null,
-      quantidade: a.quantidade ?? null,
-      preco_unitario: a.precoUnitario ?? null,
-      preco_medio: a.precoMedio ?? null,
-      valor_cota: a.valorCota ?? null,
-      quantidade_cotas: a.quantidadeCotas ?? null,
-      indexador: a.indexador ?? null,
-      percentual_indexador: a.percentualIndexador ?? null,
-      data_vencimento: a.dataVencimento ? a.dataVencimento.split('T')[0] : null,
-      data_aplicacao: a.dataAplicacao ? a.dataAplicacao.split('T')[0] : null,
-      data_adesao: a.dataAdesao ? a.dataAdesao.split('T')[0] : null,
-      data_posicao: a.dataPosicao ? a.dataPosicao.split('T')[0] : null,
-      periodo_cotizacao: a.periodoCotizacaoResgate ?? null,
-      periodo_liquidacao: a.periodoLiquidacaoResgate ?? null,
-      cenario_base: a.cenarioBase ?? null,
-      cenario_pessimista: a.cenarioPessimista ?? null,
-      barreira_crescimento: a.barreiraCrescimento ?? null,
-      tipo_certificado: a.tipo === 'Previdência' ? a.subTipo : null,
-    }));
-
-    const { error: ativosError } = await supabase
-      .from('posicao_xp_ativos')
-      .insert(ativosBulk);
-
-    if (ativosError) {
-      console.error('Erro ao salvar ativos XP:', ativosError.message);
-    } else {
-      console.log(`XP: ${ativosBulk.length} ativos salvos no Supabase`);
-      const { error: dicError } = await supabase.rpc('alimentar_dicionario');
-      if (dicError) console.error('Erro ao alimentar dicionário (XP):', dicError);
-    }
-  }
-
-  useEffect(() => { carregarMock(); }, [selectedClient]);
+  useEffect(() => { carregarDadosXp(); }, [selectedClient]);
 
   const getAlocVal = (classe: string) =>
     portfolioData?.alocacao.find(a => a.classe === classe)?.valor || 0;
@@ -664,18 +627,82 @@ export default function XpApi() {
                 Ref: {fmtDate(portfolioData.dataAtualizacao)}
               </Badge>
             )}
-            <Badge variant="ghost" style={{ fontSize: '11px', opacity: 0.6 }}>
-              🔧 Mock
-            </Badge>
           </div>
           <Typography variant="p" style={{ opacity: 0.6 }}>Posição Consolidada XP Investimentos</Typography>
         </div>
         {selectedClient && (
-          <Button onClick={carregarMock} disabled={loading}>
+          <Button onClick={carregarDadosXp} disabled={loading}>
             {loading ? <Spinner size="sm" /> : <RefreshCw size={18} />} Atualizar Posição
           </Button>
         )}
       </header>
+
+      {/* ── Banner de erro ── */}
+      {erro === 'token_invalido' && (
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 12,
+          padding: '16px 20px', borderRadius: 10,
+          background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.25)',
+          color: '#991B1B',
+        }}>
+          <span style={{ fontSize: 20 }}>🔑</span>
+          <div>
+            <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Token XP inválido ou expirado</p>
+            <p style={{ fontSize: 13, opacity: 0.8 }}>
+              Verifique as variáveis de ambiente <code style={{ background: 'rgba(0,0,0,0.08)', padding: '1px 5px', borderRadius: 4 }}>XP_CLIENT_ID</code> e <code style={{ background: 'rgba(0,0,0,0.08)', padding: '1px 5px', borderRadius: 4 }}>XP_CLIENT_SECRET</code> no Railway e faça o redeploy.
+            </p>
+          </div>
+        </div>
+      )}
+      {erro === 'ip_bloqueado' && (
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 12,
+          padding: '16px 20px', borderRadius: 10,
+          background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)',
+          color: '#92400E',
+        }}>
+          <span style={{ fontSize: 20 }}>⏳</span>
+          <div>
+            <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Dados XP indisponíveis no momento</p>
+            <p style={{ fontSize: 13, opacity: 0.8 }}>
+              Aguardando liberação de acesso por IP junto ao suporte da XP Investimentos.
+              Os dados exibidos na Home correspondem ao último snapshot sincronizado.
+            </p>
+          </div>
+        </div>
+      )}
+      {erro === 'sem_conta' && (
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 12,
+          padding: '16px 20px', borderRadius: 10,
+          background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.2)',
+          color: '#3730A3',
+        }}>
+          <span style={{ fontSize: 20 }}>ℹ️</span>
+          <div>
+            <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Conta XP não configurada</p>
+            <p style={{ fontSize: 13, opacity: 0.8 }}>
+              Este cliente não possui código XP cadastrado. Acesse o Cadastro de Clientes para adicionar.
+            </p>
+          </div>
+        </div>
+      )}
+      {erro === 'generico' && (
+        <div style={{
+          display: 'flex', alignItems: 'flex-start', gap: 12,
+          padding: '16px 20px', borderRadius: 10,
+          background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)',
+          color: '#991B1B',
+        }}>
+          <span style={{ fontSize: 20 }}>❌</span>
+          <div>
+            <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>Erro ao sincronizar XP</p>
+            <p style={{ fontSize: 13, opacity: 0.8 }}>
+              Ocorreu um erro inesperado. Tente novamente ou verifique os logs do Supabase.
+            </p>
+          </div>
+        </div>
+      )}
 
       {portfolioData ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
