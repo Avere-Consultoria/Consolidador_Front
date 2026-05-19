@@ -3,6 +3,12 @@ import { Typography, Card, Badge, Button, DataTable, Spinner, toast } from 'aver
 import { Filter, Save } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
+// ── Helpers ───────────────────────────────────────────────────────────────
+function formatarDataBR(iso: string): string {
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+}
+
 // ── Tipos ─────────────────────────────────────────────────────────────────
 interface AtivoMaster {
     id: string;
@@ -16,6 +22,8 @@ interface AtivoMaster {
     liquidez_avere: string;
     data_vencimento: string;
     emissor_id: string;
+    liquidez_api_original: string | null;
+    vencimento_api_original: string | null;
     status: 'PENDENTE' | 'CLASSIFICADO';
 }
 
@@ -66,6 +74,8 @@ export default function MasterAtivos() {
                     benchmark: row.benchmark || '',
                     instituicao_origem: row.instituicao_origem || 'Desconhecida',
                     classe_original: row.classe_original || '—',
+                    liquidez_api_original: row.liquidez_api_original ?? null,
+                    vencimento_api_original: row.vencimento_api_original ?? null,
                     status: estaClassificado ? 'CLASSIFICADO' : 'PENDENTE'
                 };
             });
@@ -192,7 +202,6 @@ export default function MasterAtivos() {
                                     </Typography>
                                     <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
                                         <Badge variant="ghost" style={{ fontSize: '9px' }}>{item.instituicao_origem}</Badge>
-                                        <Badge variant="ghost" style={{ fontSize: '9px', opacity: 0.6 }}>Origem: {item.classe_original}</Badge>
                                     </div>
                                 </div>
                             ),
@@ -242,7 +251,7 @@ export default function MasterAtivos() {
                             header: 'Classe Avere',
                             accessorKey: 'classe_avere',
                             cell: (item: AtivoMaster) => (
-                                <div style={{ width: '160px' }}>
+                                <div style={{ width: '160px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
                                     <select
                                         value={item.classe_avere}
                                         onChange={(e) => handleAtualizarAtivo(item.id, 'classe_avere', e.target.value)}
@@ -257,6 +266,9 @@ export default function MasterAtivos() {
                                             <option key={opt.nome} value={opt.nome}>{opt.nome}</option>
                                         ))}
                                     </select>
+                                    <Badge intent="neutro" variant="ghost" style={{ fontSize: '9px', width: 'fit-content' }}>
+                                        Origem: {item.classe_original}
+                                    </Badge>
                                 </div>
                             ),
                         },
@@ -264,32 +276,46 @@ export default function MasterAtivos() {
                             header: 'Liquidez',
                             accessorKey: 'liquidez_avere',
                             cell: (item: AtivoMaster) => (
-                                <input
-                                    type="number" min="0"
-                                    value={item.liquidez_avere}
-                                    onChange={(e) => handleAtualizarAtivo(item.id, 'liquidez_avere', e.target.value)}
-                                    placeholder="D+"
-                                    style={{
-                                        width: '80px', padding: '6px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
-                                        fontSize: '12px', fontFamily: 'var(--font-family)', outline: 'none'
-                                    }}
-                                />
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                    <input
+                                        type="number" min="0"
+                                        value={item.liquidez_avere}
+                                        onChange={(e) => handleAtualizarAtivo(item.id, 'liquidez_avere', e.target.value)}
+                                        placeholder="D+"
+                                        style={{
+                                            width: '80px', padding: '6px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
+                                            fontSize: '12px', fontFamily: 'var(--font-family)', outline: 'none'
+                                        }}
+                                    />
+                                    {item.liquidez_api_original != null && (
+                                        <Badge intent="neutro" variant="ghost" style={{ fontSize: '9px', width: 'fit-content' }}>
+                                            API: D+{item.liquidez_api_original}
+                                        </Badge>
+                                    )}
+                                </div>
                             ),
                         },
                         {
                             header: 'Vencimento',
                             accessorKey: 'data_vencimento',
                             cell: (item: AtivoMaster) => (
-                                <input
-                                    type="date"
-                                    value={item.data_vencimento}
-                                    onChange={(e) => handleAtualizarAtivo(item.id, 'data_vencimento', e.target.value)}
-                                    style={{
-                                        width: '130px', padding: '6px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
-                                        fontSize: '12px', fontFamily: 'var(--font-family)', outline: 'none',
-                                        background: item.data_vencimento ? '#fff' : 'transparent'
-                                    }}
-                                />
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                                    <input
+                                        type="date"
+                                        value={item.data_vencimento}
+                                        onChange={(e) => handleAtualizarAtivo(item.id, 'data_vencimento', e.target.value)}
+                                        style={{
+                                            width: '130px', padding: '6px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
+                                            fontSize: '12px', fontFamily: 'var(--font-family)', outline: 'none',
+                                            background: item.data_vencimento ? '#fff' : 'transparent'
+                                        }}
+                                    />
+                                    {item.vencimento_api_original && (
+                                        <Badge intent="neutro" variant="ghost" style={{ fontSize: '9px', width: 'fit-content' }}>
+                                            API: {formatarDataBR(item.vencimento_api_original)}
+                                        </Badge>
+                                    )}
+                                </div>
                             ),
                         },
                         {

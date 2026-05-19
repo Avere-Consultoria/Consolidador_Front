@@ -75,10 +75,13 @@ export default function Home() {
         comparativoData={metrics.comparativoData}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', alignItems: 'stretch' }}>
-        <LiquidezVisao dados={metrics.liquidezData} />
-        <RiscoEmissor dados={metrics.exposicaoRiscoData} />
-      </div>
+      <LiquidezVisao
+        dados={metrics.liquidezData}
+        dadosPrev={metrics.liquidezDataPrev}
+        dadosRV={metrics.liquidezDataRV}
+      />
+
+      <RiscoEmissor dados={metrics.exposicaoRiscoData} />
 
       <VencimentosVisao
         ativos={metrics.todosAtivos}

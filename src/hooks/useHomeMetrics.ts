@@ -75,7 +75,7 @@ function resolveCorClasse(keyBusca: string, colorMap: Map<string, string>): stri
 function buildExposicaoRisco(
     ativos: ConsolidatedAtivo[],
     emissorMap: Map<string, Emissor>,
-    _patrimonioTotal: number, // mantido por compatibilidade
+    patrimonioTotal: number,
 ) {
     const raw: Record<string, { nome: string; setor: string; valor: number }> = {};
     ativos.forEach(a => {
@@ -84,11 +84,10 @@ function buildExposicaoRisco(
         if (!raw[a.emissorId]) raw[a.emissorId] = { nome: emissor.nome_fantasia, setor: emissor.setor, valor: 0 };
         raw[a.emissorId].valor += a.valorLiquido;
     });
-    // Usa a soma dos activos com emissor classificado como denominador,
-    // garantindo que os % representem concentração real entre os emissores conhecidos.
-    const totalClassificado = Object.values(raw).reduce((s, e) => s + e.valor, 0);
+    // Percentual calculado sobre o patrimônio total do cliente,
+    // para refletir a concentração real dentro da carteira inteira.
     return Object.values(raw)
-        .map(e => ({ name: e.nome, setor: e.setor, value: e.valor, pct: pct(e.valor, totalClassificado) }))
+        .map(e => ({ name: e.nome, setor: e.setor, value: e.valor, pct: pct(e.valor, patrimonioTotal) }))
         .sort((a, b) => b.value - a.value);
 }
 
@@ -208,7 +207,7 @@ export function useHomeMetrics() {
                         .select(`
                             patrimonio_total, data_referencia, saldo_cc, saldo_cripto,
                             posicao_btg_ativos (
-                                id, emissor, sub_tipo, tipo, valor_liquido, maturity_date, isin, ticker, fund_cnpj,
+                                id, emissor, sub_tipo, tipo, asset_class, valor_liquido, maturity_date, isin, ticker, fund_cnpj,
                                 valor_bruto, ir, quantidade, preco_mercado, rentabilidade, benchmark,
                                 tax_free, is_liquidity, cetip_code, selic_code, issue_date, yield_avg, iof_tax,
                                 posicao_btg_aquisicoes (
@@ -230,7 +229,7 @@ export function useHomeMetrics() {
                         .select(`
                             patrimonio_total, patrimonio_total_liquido, data_referencia, saldo_coe,
                             posicao_xp_ativos (
-                                id, nome, sub_tipo, tipo, valor_liquido, data_vencimento, isin, ticker, cnpj
+                                id, nome, sub_tipo, tipo, asset_class, valor_liquido, data_vencimento, isin, ticker, cnpj
                             )
                         `)
                         .eq('cliente_id', selectedClient.id)
@@ -259,7 +258,7 @@ export function useHomeMetrics() {
                         .select(`
                             patrimonio_total, data_referencia,
                             posicao_agora_ativos (
-                                id, tipo, sub_tipo, emissor, ticker, security_code,
+                                id, tipo, sub_tipo, asset_class, emissor, ticker, security_code,
                                 valor_bruto, valor_liquido, quantidade,
                                 custo_total, preco_unitario, taxa, taxa_percentual,
                                 valorizacao, percent_valorizacao,
@@ -466,7 +465,16 @@ export function useHomeMetrics() {
         const todosAtivos = [...totalAtivos].sort((a, b) => b.valorLiquido - a.valorLiquido);
 
         const exposicaoRiscoData = buildExposicaoRisco(totalAtivos, emissorMap, patrimonioTotal);
-        const liquidezData = buildLiquidezData(totalAtivos, patrimonioTotal);
+
+        // ── Helpers de segmentação de liquidez ───────────────────────────────
+        const CLASSES_RV = ['Renda Variável', 'FII-FIAgro', 'Internacional - Renda Variável'];
+        const isPrevidencia = (a: ConsolidatedAtivo) => a.rawData?.asset_class === 'PENSION';
+        const isRV          = (a: ConsolidatedAtivo) => CLASSES_RV.includes(a.tipo);
+        const isGeral       = (a: ConsolidatedAtivo) => !isPrevidencia(a) && !isRV(a);
+
+        const liquidezData      = buildLiquidezData(totalAtivos.filter(isGeral),  patrimonioTotal);
+        const liquidezDataPrev  = buildLiquidezData(totalAtivos.filter(isPrevidencia), patrimonioTotal);
+        const liquidezDataRV    = buildLiquidezData(totalAtivos.filter(isRV),     patrimonioTotal);
 
         const btgClasses: Record<string, number> = {};
         const xpClasses: Record<string, number> = {};
@@ -500,7 +508,8 @@ export function useHomeMetrics() {
         return {
             patrimonioTotal, btgTotal, xpTotal, avenueTotal, agoraTotal,
             vencimentosProx, todosAtivos,
-            donutData, alocacaoData, comparativoData, exposicaoRiscoData, liquidezData,
+            donutData, alocacaoData, comparativoData, exposicaoRiscoData,
+            liquidezData, liquidezDataPrev, liquidezDataRV,
             hasData: patrimonioTotal > 0,
             dataRefBtg: snapshotData.btg?.data_referencia,
             dataRefXp: snapshotData.xp?.data_referencia,
