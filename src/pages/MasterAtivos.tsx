@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Typography, Card, Badge, Button, DataTable, Spinner, toast } from 'avere-ui';
 import { Filter, Save } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { formatarTaxa } from '../utils/formatters';
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function formatarDataBR(iso: string): string {
@@ -209,21 +210,24 @@ export default function MasterAtivos() {
                         {
                             header: 'Taxa',
                             accessorKey: 'benchmark',
-                            cell: (item: AtivoMaster) => (
-                                <div style={{
-                                    background: 'rgba(107, 114, 128, 0.08)',
-                                    padding: '4px 10px',
-                                    borderRadius: '6px',
-                                    display: 'inline-block',
-                                    minWidth: '80px',
-                                    textAlign: 'center',
-                                    border: '1px solid rgba(0,0,0,0.03)'
-                                }}>
-                                    <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, color: '#4B5563' }}>
-                                        {item.benchmark}
-                                    </Typography>
-                                </div>
-                            ),
+                            cell: (item: AtivoMaster) => {
+                                const taxa = formatarTaxa(item.benchmark, item.benchmark, null);
+                                return (
+                                    <div style={{
+                                        background: 'rgba(107, 114, 128, 0.08)',
+                                        padding: '4px 10px',
+                                        borderRadius: '6px',
+                                        display: 'inline-block',
+                                        minWidth: '80px',
+                                        textAlign: 'center',
+                                        border: '1px solid rgba(0,0,0,0.03)'
+                                    }}>
+                                        <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, color: '#4B5563', whiteSpace: 'nowrap' }}>
+                                            {taxa || '—'}
+                                        </Typography>
+                                    </div>
+                                );
+                            },
                         },
                         {
                             header: 'Emissor (Risco)',

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, Typography, Badge, DataTable } from 'avere-ui';
 import { LayoutGrid, ChevronRight, List } from 'lucide-react';
 import { fmt, fmtDate } from '../../utils/formatters';
@@ -135,15 +135,23 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                     borderTop: '1px solid rgba(0,0,0,0.03)',
                                     paddingBottom: '8px'
                                 }}>
+                                    <style>{`
+                                        .tabela-carteira td { vertical-align: middle; }
+                                    `}</style>
+                                    <div className="tabela-carteira">
                                     <DataTable
                                         data={itens}
                                         columns={[
                                             {
                                                 header: 'Tipo',
                                                 accessorKey: 'subTipo',
-                                                cell: (item: ConsolidatedAtivo) => item.subTipo
-                                                    ? <Badge intent="primaria" variant="ghost" style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(0,131,203,0.05)', fontFamily: 'Montserrat, sans-serif' }}>{item.subTipo}</Badge>
-                                                    : <span style={{ opacity: 0.3 }}>—</span>,
+                                                cell: (item: ConsolidatedAtivo) => (
+                                                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                                                        {item.subTipo
+                                                            ? <Badge intent="primaria" variant="ghost" style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(0,131,203,0.05)', fontFamily: 'Montserrat, sans-serif' }}>{item.subTipo}</Badge>
+                                                            : <span style={{ opacity: 0.3 }}>—</span>}
+                                                    </div>
+                                                ),
                                             },
                                             {
                                                 header: 'Emissor / Ativo',
@@ -168,67 +176,88 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                             },
                                             {
                                                 header: 'Taxa',
-                                                accessorKey: 'benchmark' as any,
-                                                cell: (item: ConsolidatedAtivo) => (
-                                                    <Typography variant="p" style={{ fontSize: '11px', fontWeight: 600, color: '#6B7280', fontFamily: 'Montserrat, sans-serif' }}>
-                                                        {item.benchmark || '—'}
-                                                    </Typography>
-                                                ),
+                                                accessorKey: 'taxa' as any,
+                                                cell: (item: ConsolidatedAtivo) => {
+                                                    const valor = item.taxa || item.benchmark;
+                                                    return (
+                                                        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                                                            {(!valor || valor === '-')
+                                                                ? <span style={{ opacity: 0.3 }}>—</span>
+                                                                : <Typography variant="p" style={{ fontSize: '11px', fontWeight: 600, color: '#6B7280', fontFamily: 'Montserrat, sans-serif', whiteSpace: 'nowrap' }}>{valor}</Typography>
+                                                            }
+                                                        </div>
+                                                    );
+                                                },
                                             },
                                             {
                                                 header: 'Instituição',
                                                 accessorKey: 'instituicao',
                                                 cell: (item: ConsolidatedAtivo) => (
-                                                    <Badge variant="ghost" style={{
-                                                        fontSize: '10px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif',
-                                                        color: corInstituicao(item.instituicao),
-                                                        borderColor: corInstituicao(item.instituicao),
-                                                        background: `${corInstituicao(item.instituicao)}0A`
-                                                    }}>
-                                                        {item.instituicao === 'BTG Pactual' ? 'BTG' : item.instituicao === 'XP Investimentos' ? 'XP' : item.instituicao}
-                                                    </Badge>
+                                                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                                                        <Badge variant="ghost" style={{
+                                                            fontSize: '10px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif',
+                                                            color: corInstituicao(item.instituicao),
+                                                            borderColor: corInstituicao(item.instituicao),
+                                                            background: `${corInstituicao(item.instituicao)}0A`
+                                                        }}>
+                                                            {item.instituicao === 'BTG Pactual' ? 'BTG' : item.instituicao === 'XP Investimentos' ? 'XP' : item.instituicao}
+                                                        </Badge>
+                                                    </div>
                                                 ),
                                             },
                                             {
                                                 header: 'Vencimento/Liquidez',
                                                 accessorKey: 'vencimento',
-                                                cell: (item: ConsolidatedAtivo) => item.vencimento
-                                                    ? <Typography variant="p" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 500, fontFamily: 'Montserrat, sans-serif' }}>{fmtDate(item.vencimento)}</Typography>
-                                                    : <span style={{ opacity: 0.3 }}>—</span>,
+                                                cell: (item: ConsolidatedAtivo) => {
+                                                    let conteudo: React.ReactNode = <span style={{ opacity: 0.3 }}>—</span>;
+                                                    if (item.vencimento) {
+                                                        conteudo = <Typography variant="p" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 500, fontFamily: 'Montserrat, sans-serif' }}>{fmtDate(item.vencimento)}</Typography>;
+                                                    } else if (item.liquidez !== null && item.liquidez !== undefined && item.liquidez !== '') {
+                                                        conteudo = <Typography variant="p" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 500, fontFamily: 'Montserrat, sans-serif' }}>D+{item.liquidez}</Typography>;
+                                                    }
+                                                    return <div style={{ display: 'flex', justifyContent: 'flex-start' }}>{conteudo}</div>;
+                                                },
                                             },
                                             {
                                                 header: 'Valor Bruto',
                                                 accessorKey: 'valorBruto',
-                                                cell: (item: ConsolidatedAtivo) => <strong style={{ fontFamily: 'Montserrat, sans-serif' }}>{fmt(item.valorBruto ?? item.valorLiquido)}</strong>,
+                                                cell: (item: ConsolidatedAtivo) => (
+                                                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                                                        <strong style={{ fontFamily: 'Montserrat, sans-serif' }}>{fmt(item.valorBruto ?? item.valorLiquido)}</strong>
+                                                    </div>
+                                                ),
                                             },
                                             {
                                                 header: '',
                                                 accessorKey: 'rowId',
                                                 cell: (item: ConsolidatedAtivo) => (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setAtivoSelecionado(item);
-                                                            setDrawerAberto(true);
-                                                        }}
-                                                        style={{
-                                                            background: 'none', border: 'none', cursor: 'pointer',
-                                                            padding: '4px 8px', borderRadius: '6px',
-                                                            display: 'flex', alignItems: 'center',
-                                                            color: 'var(--color-primaria)',
-                                                            opacity: 0.5, transition: 'opacity 0.15s',
-                                                        }}
-                                                        onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                                                        onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
-                                                    >
-                                                        <ChevronRight size={18} />
-                                                    </button>
+                                                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setAtivoSelecionado(item);
+                                                                setDrawerAberto(true);
+                                                            }}
+                                                            style={{
+                                                                background: 'none', border: 'none', cursor: 'pointer',
+                                                                padding: '4px 8px', borderRadius: '6px',
+                                                                display: 'flex', alignItems: 'center',
+                                                                color: 'var(--color-primaria)',
+                                                                opacity: 0.5, transition: 'opacity 0.15s',
+                                                            }}
+                                                            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                                                            onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
+                                                        >
+                                                            <ChevronRight size={18} />
+                                                        </button>
+                                                    </div>
                                                 ),
                                             },
                                         ]}
                                         keyExtractor={(item: ConsolidatedAtivo) => item.rowId}
                                         selectable={false}
                                     />
+                                    </div>
                                 </div>
                             )}
                         </div>

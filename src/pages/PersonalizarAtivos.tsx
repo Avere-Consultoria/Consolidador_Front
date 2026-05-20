@@ -9,8 +9,13 @@ import { ModalNovaRegra } from '../components/personalizarAtivos/ModalNovaRegra'
 interface DicionarioMaster {
     codigo_identificador: string;
     nome_ativo: string;
+    instituicao_origem: string | null;
     classe_avere: string;
     liquidez_avere: string;
+    data_vencimento: string | null;
+    classe_original: string | null;
+    liquidez_api_original: string | null;
+    vencimento_api_original: string | null;
 }
 
 interface Excecao {
@@ -20,9 +25,12 @@ interface Excecao {
     apelido_ativo: string | null;
     classe_customizada: string | null;
     liquidez_customizada: string | null;
+    vencimento_customizado: string | null;
+    emissor_customizado_id: string | null;
     master_nome?: string;
     master_classe?: string;
     master_liquidez?: string;
+    master_vencimento?: string | null;
 }
 
 interface Cliente {
@@ -51,7 +59,7 @@ export default function PersonalizarAtivos() {
         try {
             const [clientesRes, dictRes, classRes, regrasRes] = await Promise.all([
                 supabase.from('clientes').select('id, nome').order('nome'),
-                supabase.from('dicionario_ativos').select('codigo_identificador, nome_ativo, classe_avere, liquidez_avere'),
+                supabase.from('dicionario_ativos').select('codigo_identificador, nome_ativo, instituicao_origem, classe_avere, liquidez_avere, data_vencimento, classe_original, liquidez_api_original, vencimento_api_original'),
                 supabase.from('dicionario_classes').select('nome').order('ordem_exibicao'),
                 supabase.from('excecoes_classificacao').select('*').eq('consultor_id', perfil.id)
             ]);
@@ -67,7 +75,8 @@ export default function PersonalizarAtivos() {
                         ...regra,
                         master_nome: master?.nome_ativo || 'Desconhecido',
                         master_classe: master?.classe_avere || 'Não classificado',
-                        master_liquidez: master?.liquidez_avere || 'N/A'
+                        master_liquidez: master?.liquidez_avere || 'N/A',
+                        master_vencimento: master?.data_vencimento || null
                     };
                 });
                 setRegras(regrasCompletas);

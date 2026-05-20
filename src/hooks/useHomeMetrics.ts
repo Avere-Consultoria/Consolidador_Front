@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useClient } from '../contexts/ClientContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
-import { pct } from '../utils/formatters';
+import { pct, formatarTaxa } from '../utils/formatters';
 import { CORES } from '../utils/colors';
 
 export interface ConsolidatedAtivo {
@@ -18,6 +18,7 @@ export interface ConsolidatedAtivo {
     liquidez?: string | null;
     rawData?: any;
     benchmark?: string | null;
+    taxa?: string | null;
 }
 
 export interface CarteiraPersonalizada {
@@ -418,6 +419,7 @@ export function useHomeMetrics() {
                 rowId: `btg-${i}`, nome: cls.apelido || a.emissor || '-', tipo: cls.classe, subTipo: a.sub_tipo,
                 valorLiquido: parseFloat(a.valor_liquido || 0), valorBruto: parseFloat(a.valor_bruto || 0), vencimento: a.maturity_date,
                 instituicao: 'BTG Pactual', emissorId: cls.emissorId, liquidez: cls.liquidez, rawData: a, benchmark: a.benchmark || '-',
+                taxa: formatarTaxa(a.rentabilidade, a.benchmark, a.yield_avg),
             };
         }) : [];
 
@@ -427,6 +429,7 @@ export function useHomeMetrics() {
                 rowId: `xp-${i}`, nome: cls.apelido || a.nome || '-', tipo: cls.classe, subTipo: a.sub_tipo,
                 valorLiquido: parseFloat(a.valor_liquido || 0), valorBruto: parseFloat(a.valor_bruto || 0), vencimento: a.data_vencimento,
                 instituicao: 'XP Investimentos', emissorId: cls.emissorId, liquidez: cls.liquidez, rawData: a, benchmark: a.benchmark || '-',
+                taxa: null,
             };
         }) : [];
 
@@ -438,6 +441,7 @@ export function useHomeMetrics() {
                     valorLiquido: parseFloat(a.valor_bruto_brl || 0), valorBruto: parseFloat(a.valor_bruto_brl || 0),
                     vencimento: a.maturity_date ?? null, instituicao: 'Avenue' as const,
                     emissorId: cls.emissorId, liquidez: a.is_liquidity ? '0' : cls.liquidez, rawData: a, benchmark: '-',
+                    taxa: null,
                 };
             }) : [];
 
@@ -449,6 +453,7 @@ export function useHomeMetrics() {
                     valorLiquido: parseFloat(a.valor_liquido || 0), valorBruto: parseFloat(a.valor_bruto || 0),
                     vencimento: a.data_vencimento ?? null, instituicao: 'Ágora' as const,
                     emissorId: cls.emissorId, liquidez: cls.liquidez, rawData: a, benchmark: '-',
+                    taxa: a.taxa || null,
                 };
             }) : [];
 

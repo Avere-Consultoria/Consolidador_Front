@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import {
     Typography, Card, Button, Spinner, toast, Combobox,
     Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter,
-    TextField
+    TextField, Tooltip, TooltipTrigger, TooltipContent, TooltipProvider
 } from 'avere-ui';
-import { Save, Plus, Trash2, Pencil, Search } from 'lucide-react';
+import { Save, Plus, Trash2, Pencil, Search, Info } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
 interface Consultor { id: string; nome: string; }
@@ -20,6 +20,23 @@ interface Cliente {
     codigo_agora: string | null;
 }
 interface LinhaTabela extends Cliente { modificado: boolean; }
+
+// ── Helper: cabeçalho com tooltip ────────────────────────────────────────────
+function ColHeader({ label, tip }: { label: string; tip: string }) {
+    return (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'default' }}>
+                        {label}
+                        <Info size={11} style={{ opacity: 0.35, flexShrink: 0 }} />
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent>{tip}</TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
+}
 
 // Estilos compartilhados da tabela
 const thStyle: React.CSSProperties = {
@@ -57,6 +74,7 @@ export default function CadastroClientes() {
     const [consultores, setConsultores] = useState<Consultor[]>([]);
     const [linhas, setLinhas] = useState<LinhaTabela[]>([]);
     const [busca, setBusca] = useState('');
+    const [filtroConsultor, setFiltroConsultor] = useState('');
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [clienteEmEdicao, setClienteEmEdicao] = useState<string | null>(null);
@@ -166,7 +184,14 @@ export default function CadastroClientes() {
     const nomeConsultor = (id: string | null) =>
         consultores.find(c => c.id === id)?.nome || '—';
 
-    const linhasFiltradas = linhas.filter(l => l.nome.toLowerCase().includes(busca.toLowerCase()));
+    const linhasFiltradas = linhas.filter(l => {
+        const termo = busca.toLowerCase();
+        const matchBusca = !termo ||
+            l.nome.toLowerCase().includes(termo) ||
+            (l.codigo_avere?.toLowerCase().includes(termo) ?? false);
+        const matchConsultor = !filtroConsultor || l.consultor_id === filtroConsultor;
+        return matchBusca && matchConsultor;
+    });
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -179,11 +204,34 @@ export default function CadastroClientes() {
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <TextField
                         leftIcon={Search}
-                        placeholder="Pesquisar cliente..."
+                        placeholder="Pesquisar por nome ou cód. Avere..."
                         value={busca}
                         onChange={e => setBusca(e.target.value)}
-                        style={{ width: '260px' }}
+                        style={{ width: '280px' }}
                     />
+                    <select
+                        value={filtroConsultor}
+                        onChange={e => setFiltroConsultor(e.target.value)}
+                        style={{
+                            height: '40px',
+                            padding: '0 12px',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(0,0,0,0.12)',
+                            fontSize: '13px',
+                            fontFamily: 'var(--font-family)',
+                            color: filtroConsultor ? 'var(--color-secundaria)' : '#9CA3AF',
+                            background: '#fff',
+                            outline: 'none',
+                            cursor: 'pointer',
+                            minWidth: '200px',
+                            appearance: 'auto',
+                        }}
+                    >
+                        <option value="">Todos os consultores</option>
+                        {consultores.map(c => (
+                            <option key={c.id} value={c.id}>{c.nome}</option>
+                        ))}
+                    </select>
                     <Button variant="solid" onClick={handleNovoCliente}>
                         <Plus size={16} style={{ marginRight: 8 }} /> Novo Cliente
                     </Button>
@@ -196,11 +244,12 @@ export default function CadastroClientes() {
                         <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #EEEEEE' }}>
                             <th style={thStyle}>Nome</th>
                             <th style={thStyle}>CPF</th>
+                            <th style={thStyle}><ColHeader label="Cód. Avere" tip="Informação disponibilizada pela instituição." /></th>
                             <th style={thStyle}>Consultor</th>
-                            <th style={thStyle}>BTG</th>
-                            <th style={thStyle}>XP</th>
-                            <th style={thStyle}>Avenue</th>
-                            <th style={thStyle}>Ágora</th>
+                            <th style={thStyle}><ColHeader label="BTG" tip="Informação disponibilizada pela instituição." /></th>
+                            <th style={thStyle}><ColHeader label="XP" tip="Informação disponibilizada pela instituição." /></th>
+                            <th style={thStyle}><ColHeader label="Avenue" tip="Informação disponibilizada pela instituição." /></th>
+                            <th style={thStyle}><ColHeader label="Ágora" tip="CLBC, sem o Ultimo dígito, do cliente." /></th>
                             <th style={{ ...thStyle, textAlign: 'center' }}>Ações</th>
                         </tr>
                     </thead>
@@ -219,6 +268,13 @@ export default function CadastroClientes() {
                                             style={{ ...inlineInputStyle, color: 'var(--color-primaria)' }}
                                             value={l.cpf || ''}
                                             onChange={e => handleChangeTabela(l.id, 'cpf', e.target.value)}
+                                        />
+                                    </td>
+                                    <td style={{ ...tdStyle, minWidth: '120px' }}>
+                                        <input
+                                            style={{ ...inlineInputStyle, fontFamily: 'monospace', fontSize: '12px', fontWeight: 600, color: 'var(--color-primaria)' }}
+                                            value={l.codigo_avere || ''}
+                                            onChange={e => handleChangeTabela(l.id, 'codigo_avere', e.target.value)}
                                         />
                                     </td>
                                     <td style={{ ...tdStyle, minWidth: '160px' }}>
@@ -248,7 +304,7 @@ export default function CadastroClientes() {
                         ))}
                         {linhasFiltradas.length === 0 && (
                             <tr>
-                                <td colSpan={8} style={{ padding: '40px', textAlign: 'center', opacity: 0.4 }}>
+                                <td colSpan={9} style={{ padding: '40px', textAlign: 'center', opacity: 0.4 }}>
                                     Nenhum cliente encontrado.
                                 </td>
                             </tr>
