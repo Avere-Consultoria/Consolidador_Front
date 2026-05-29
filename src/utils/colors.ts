@@ -1,3 +1,6 @@
+export const isValidHex = (hex: string | null | undefined): boolean =>
+    /^#[0-9A-Fa-f]{6}$/.test(hex ?? '');
+
 export const CORES = {
     btg: '#0083CB',
     xp: '#FF6B00',

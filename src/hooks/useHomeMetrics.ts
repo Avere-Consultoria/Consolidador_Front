@@ -15,6 +15,7 @@ export interface ConsolidatedAtivo {
     vencimento?: string | null;
     instituicao: 'BTG Pactual' | 'XP Investimentos' | 'Avenue' | 'Ágora';
     emissorId?: string | null;
+    ativoCanonicoId?: string | null;
     liquidez?: string | null;
     rawData?: any;
     benchmark?: string | null;
@@ -28,11 +29,18 @@ export interface CarteiraPersonalizada {
     criada_em: string;
 }
 
-interface DicionarioAtivo {
-    codigo_identificador: string;
+interface AtivoCanonico {
+    id: string;
+    nome_canonico: string;
     classe_avere: string | null;
     liquidez_avere: string | null;
     emissor_id: string | null;
+    data_vencimento: string | null;
+    taxa_canonica: string | null;
+    benchmark_canonico: string | null;
+    sub_tipo_canonico: string | null;
+    is_fii: boolean;
+    is_coe: boolean;
 }
 
 interface Emissor {
@@ -53,11 +61,13 @@ interface InstituicaoDb {
 }
 
 interface ExcecaoClassificacao {
-    codigo_identificador: string;
+    ativo_canonico_id: string;
     cliente_id: string | null;
     consultor_id: string;
     classe_customizada: string | null;
     liquidez_customizada: string | null;
+    vencimento_customizado: string | null;
+    emissor_customizado_id: string | null;
     apelido_ativo: string | null;
 }
 
@@ -85,8 +95,6 @@ function buildExposicaoRisco(
         if (!raw[a.emissorId]) raw[a.emissorId] = { nome: emissor.nome_fantasia, setor: emissor.setor, valor: 0 };
         raw[a.emissorId].valor += a.valorLiquido;
     });
-    // Percentual calculado sobre o patrimônio total do cliente,
-    // para refletir a concentração real dentro da carteira inteira.
     return Object.values(raw)
         .map(e => ({ name: e.nome, setor: e.setor, value: e.valor, pct: pct(e.valor, patrimonioTotal) }))
         .sort((a, b) => b.value - a.value);
@@ -103,7 +111,6 @@ function buildLiquidezData(ativos: ConsolidatedAtivo[], _patrimonioTotal: number
         }
         map[liqKey] = (map[liqKey] || 0) + a.valorLiquido;
     });
-    // Usa a soma real dos activos como denominador para percentuais correctos.
     const totalLiquidez = Object.values(map).reduce((s, v) => s + v, 0);
     return Object.entries(map)
         .map(([name, value]) => ({ name, value, pct: pct(value, totalLiquidez) }))
@@ -120,11 +127,8 @@ function buildAlocacaoData(
     alocacaoMap: Record<string, number>,
     colorMap: Map<string, string>,
     orderMap: Map<string, number>,
-    _patrimonioTotal: number, // mantido por compatibilidade mas não usado no pct
+    _patrimonioTotal: number,
 ) {
-    // Usa a soma real dos activos classificados como denominador,
-    // garantindo que os percentuais somem 100% independentemente de
-    // diferenças entre o snapshot total e a soma dos activos individuais.
     const totalAlocado = Object.values(alocacaoMap).reduce((s, v) => s + v, 0);
 
     return Object.entries(alocacaoMap)
@@ -182,7 +186,7 @@ export function useHomeMetrics() {
     const [loading, setLoading] = useState(false);
     const [snapshotData, setSnapshotData] = useState<{ btg: any; xp: any; avenue: any; agora: any }>({ btg: null, xp: null, avenue: null, agora: null });
 
-    const [dicionario, setDicionario] = useState<DicionarioAtivo[]>([]);
+    const [canonicos, setCanonicos] = useState<AtivoCanonico[]>([]);
     const [emissores, setEmissores] = useState<Emissor[]>([]);
     const [classesMaster, setClassesMaster] = useState<ClasseMaster[]>([]);
     const [instituicoesDb, setInstituicoesDb] = useState<InstituicaoDb[]>([]);
@@ -198,8 +202,7 @@ export function useHomeMetrics() {
             if (!selectedClient?.id) return;
             setLoading(true);
             try {
-                // Montando as queries
-                // Índices fixos: 0=BTG, 1=XP, 2=Avenue, 3=Ágora, 4=dicionario, 5=emissores, 6=classes, 7=instituicoes
+                // Índices fixos: 0=BTG, 1=XP, 2=Avenue, 3=Ágora, 4=canonicos, 5=emissores, 6=classes, 7=instituicoes
                 // Índice 8 (opcional): excecoes
                 const queries: any[] = [
                     // 0: BTG
@@ -208,8 +211,9 @@ export function useHomeMetrics() {
                         .select(`
                             patrimonio_total, data_referencia, saldo_cc, saldo_cripto,
                             posicao_btg_ativos (
-                                id, emissor, sub_tipo, tipo, asset_class, valor_liquido, maturity_date, isin, ticker, fund_cnpj,
-                                valor_bruto, ir, quantidade, preco_mercado, rentabilidade, benchmark,
+                                id, ativo_canonico_id, emissor, sub_tipo, tipo, asset_class,
+                                valor_liquido, valor_bruto, maturity_date, isin, ticker, fund_cnpj,
+                                ir, quantidade, preco_mercado, rentabilidade, benchmark,
                                 tax_free, is_liquidity, cetip_code, selic_code, issue_date, yield_avg, iof_tax,
                                 posicao_btg_aquisicoes (
                                     acquisition_date, quantity, initial_investment_value, cost_price, gross_value, net_value, income_tax, yield_to_maturity, index_yield_rate
@@ -230,7 +234,17 @@ export function useHomeMetrics() {
                         .select(`
                             patrimonio_total, patrimonio_total_liquido, data_referencia, saldo_coe,
                             posicao_xp_ativos (
-                                id, nome, sub_tipo, tipo, asset_class, valor_liquido, data_vencimento, isin, ticker, cnpj
+                                id, ativo_canonico_id, nome, sub_tipo, tipo, asset_class,
+                                codigo_ativo, isin, ticker, cnpj, emissor,
+                                valor_aplicado, valor_bruto, valor_liquido,
+                                valor_imposto_renda, valor_iof, valor_rendimento,
+                                is_isento_ir, resultado, resultado_percentual,
+                                quantidade, preco_unitario, preco_medio, valor_cota, quantidade_cotas,
+                                indexador, percentual_indexador, benchmark,
+                                data_vencimento, data_aplicacao, data_adesao, data_posicao,
+                                periodo_cotizacao, periodo_liquidacao,
+                                cenario_base, cenario_pessimista, barreira_crescimento, tipo_certificado,
+                                is_liquidity
                             )
                         `)
                         .eq('cliente_id', selectedClient.id)
@@ -244,8 +258,9 @@ export function useHomeMetrics() {
                         .select(`
                             patrimonio_total, data_referencia,
                             posicao_avenue_ativos (
-                                id, tipo, sub_tipo, nome, ticker,
-                                valor_bruto_brl, quantidade, maturity_date, is_liquidity
+                                id, ativo_canonico_id, asset_class, tipo, sub_tipo, nome, ticker,
+                                cusip, isin, product_type, office_name,
+                                valor_bruto_brl, valor_bruto_usd, quantidade, maturity_date, is_liquidity
                             )
                         `)
                         .eq('cliente_id', selectedClient.id)
@@ -259,12 +274,21 @@ export function useHomeMetrics() {
                         .select(`
                             patrimonio_total, data_referencia,
                             posicao_agora_ativos (
-                                id, tipo, sub_tipo, asset_class, emissor, ticker, security_code,
-                                valor_bruto, valor_liquido, quantidade,
-                                custo_total, preco_unitario, taxa, taxa_percentual,
+                                id, ativo_canonico_id, tipo, sub_tipo, asset_class, instrument_type,
+                                emissor, ticker, security_code,
+                                valor_bruto, valor_liquido, custo, custo_total,
+                                quantidade, preco_mercado, preco_unitario,
+                                percentual_patrimonio, valorizacao_reais, valorizacao_pct,
+                                taxa, taxa_percentual, indexer_percentual,
                                 valorizacao, percent_valorizacao,
-                                ir_descricao, ir_percentual,
-                                data_vencimento, data_aplicacao, liquidez_diaria
+                                ir_valor, iof_valor, ir_descricao, ir_percentual,
+                                data_vencimento, data_aplicacao, liquidez_diaria,
+                                posicao_agora_aquisicoes (
+                                    tipo_aquisicao, application_date, reference_date,
+                                    quantity, gross_value, net_value, ir_value, iof_value,
+                                    operation_status, purchase_price, market_price, profit_value,
+                                    tax_rate, days, market_type, issuer_name, bond_name, index_name
+                                )
                             )
                         `)
                         .eq('cliente_id', selectedClient.id)
@@ -273,23 +297,22 @@ export function useHomeMetrics() {
                         .maybeSingle(),
 
                     // 4, 5, 6, 7: Infraestrutura
-                    supabase.from('dicionario_ativos').select('codigo_identificador, classe_avere, liquidez_avere, emissor_id'),
+                    supabase.from('ativos_canonicos').select('id, nome_canonico, classe_avere, liquidez_avere, emissor_id, data_vencimento, taxa_canonica, benchmark_canonico, sub_tipo_canonico, is_fii, is_coe'),
                     supabase.from('dicionario_emissores').select('id, nome_fantasia, setor'),
                     supabase.from('dicionario_classes').select('*').order('ordem_exibicao'),
                     supabase.from('instituicoes').select('*'),
                 ];
 
-                // 8: Exceções do consultor (Opcional)
+                // 8: Exceções do consultor (opcional)
                 if (perfil?.id) {
                     queries.push(supabase.from('excecoes_classificacao').select('*').eq('consultor_id', perfil.id));
                 }
 
-                // Resolvendo todas as requisições juntas
                 const results = await Promise.all(queries);
 
                 setSnapshotData({ btg: results[0].data, xp: results[1].data, avenue: results[2].data, agora: results[3].data });
 
-                if (results[4].data) setDicionario(results[4].data);
+                if (results[4].data) setCanonicos(results[4].data);
                 if (results[5].data) setEmissores(results[5].data);
                 if (results[6].data) setClassesMaster(results[6].data);
                 if (results[7].data) setInstituicoesDb(results[7].data);
@@ -346,116 +369,150 @@ export function useHomeMetrics() {
         const agoraTotal = incluirAgora ? parseFloat(snapshotData.agora?.patrimonio_total || 0) : 0;
         const patrimonioTotal = btgTotal + xpTotal + avenueTotal + agoraTotal;
 
-        // Normaliza todas as chaves para UPPERCASE para evitar falhas de matching
-        const dictMap = new Map<string, DicionarioAtivo>();
-        dicionario.forEach(d => {
-            if (d.codigo_identificador) {
-                dictMap.set(d.codigo_identificador.toUpperCase(), d);
+        // ── Maps de resolução ────────────────────────────────────────────────
+        const canonicoMap = new Map<string, AtivoCanonico>();
+        canonicos.forEach(c => canonicoMap.set(c.id, c));
+
+        const excecaoGlobalMap = new Map<string, ExcecaoClassificacao>();
+        const excecaoClienteMap = new Map<string, ExcecaoClassificacao>();
+        excecoes.forEach(e => {
+            if (!e.ativo_canonico_id) return;
+            if (e.cliente_id === null || e.cliente_id === undefined) {
+                excecaoGlobalMap.set(e.ativo_canonico_id, e);
+            } else if (e.cliente_id === selectedClient?.id) {
+                excecaoClienteMap.set(e.ativo_canonico_id, e);
             }
         });
 
-        const emissorMap = new Map();
+        const emissorMap = new Map<string, Emissor>();
         emissores.forEach(e => emissorMap.set(e.id, e));
 
-        // ── MAPA DE CORES BLINDADO ────────────────────────────────────────────────
+        // ── Cores ───────────────────────────────────────────────────────────
         const colorMap = new Map();
         const orderMap = new Map();
         classesMaster.forEach(c => {
-            // Ignora maiúsculas e espaços extras para evitar quebra de cor
             const keyFormatada = c.nome.trim().toUpperCase();
             colorMap.set(keyFormatada, c.cor_hex);
             orderMap.set(keyFormatada, c.ordem_exibicao);
         });
 
-        // Cores Dinâmicas das Instituições (com fallback para utils/colors)
         const corBtgDb = instituicoesDb.find(i => i.nome.toUpperCase().includes('BTG'))?.cor_primaria || CORES.btg;
         const corXpDb = instituicoesDb.find(i => i.nome.toUpperCase().includes('XP'))?.cor_primaria || CORES.xp;
         const corAvenueDb = instituicoesDb.find(i => i.nome.toUpperCase().includes('AVENUE'))?.cor_primaria || CORES.avenue;
         const corAgoraDb = instituicoesDb.find(i => i.nome.toUpperCase().includes('AGORA') || i.nome.toUpperCase().includes('ÁGORA'))?.cor_primaria || CORES.agora;
-        // ──────────────────────────────────────────────────────────────────────────
 
-        const classificar = (a: any, corretora: 'BTG' | 'XP' | 'AVENUE' | 'AGORA') => {
-            // Normaliza todos os candidatos para UPPERCASE (dictMap também está em UPPERCASE)
-            const norm = (v: any) => v ? String(v).toUpperCase().trim() : null;
-
-            const isin         = norm(a.isin);
-            const cnpj         = corretora === 'BTG' ? norm(a.fund_cnpj) : corretora === 'XP' ? norm(a.cnpj) : null;
-            const ticker       = norm(a.ticker);
-            const securityCode = norm(a.security_code);  // Ágora
-            const cetipCode    = norm(a.cetip_code);     // BTG fallback
-
-            // Tenta por prioridade: ISIN → CNPJ → SecurityCode/CETIP → Ticker
-            const candidatos = [isin, cnpj, securityCode, cetipCode, ticker].filter(Boolean) as string[];
-
-            let codigoId: string | null = null;
-            for (const c of candidatos) {
-                if (dictMap.has(c)) { codigoId = c; break; }
+        // ── Resolução canônico + exceções (lookup O(1)) ──────────────────────
+        const classificar = (ativoCanonicoId: string | null | undefined) => {
+            if (!ativoCanonicoId) {
+                return { classe: 'Classificar', liquidez: null, apelido: null, emissorId: null, vencimento: null, taxa: null, subTipo: null };
             }
-            // Se não encontrou no dicionário, usa o melhor identificador disponível como fallback
-            if (!codigoId) codigoId = isin || cnpj || securityCode || cetipCode || ticker;
+            const canonico = canonicoMap.get(ativoCanonicoId) ?? null;
+            const eCliente = excecaoClienteMap.get(ativoCanonicoId);
+            const eGlobal  = excecaoGlobalMap.get(ativoCanonicoId);
 
-            const matchMaster = codigoId ? dictMap.get(codigoId) : null;
-
-            let regraGlobal = null;
-            let regraCliente = null;
-            if (codigoId) {
-                // Exceções também são comparadas em uppercase
-                const codigoIdUp = codigoId.toUpperCase();
-                regraGlobal = excecoes.find(e => e.codigo_identificador?.toUpperCase() === codigoIdUp && !e.cliente_id);
-                regraCliente = excecoes.find(e => e.codigo_identificador?.toUpperCase() === codigoIdUp && e.cliente_id === selectedClient?.id);
-            }
-
-            const classeFinal = regraCliente?.classe_customizada || regraGlobal?.classe_customizada || matchMaster?.classe_avere || 'Classificar';
-            const liquidezFinal = regraCliente?.liquidez_customizada || regraGlobal?.liquidez_customizada || matchMaster?.liquidez_avere || null;
-            const apelidoFinal = regraCliente?.apelido_ativo || regraGlobal?.apelido_ativo || null;
-            const emissorIdFinal = matchMaster?.emissor_id || null;
-
-            return { classe: classeFinal, liquidez: liquidezFinal, apelido: apelidoFinal, emissorId: emissorIdFinal };
+            return {
+                classe:     eCliente?.classe_customizada     ?? eGlobal?.classe_customizada     ?? canonico?.classe_avere       ?? 'Classificar',
+                liquidez:   eCliente?.liquidez_customizada   ?? eGlobal?.liquidez_customizada   ?? canonico?.liquidez_avere     ?? null,
+                apelido:    eCliente?.apelido_ativo           ?? eGlobal?.apelido_ativo           ?? null,
+                emissorId:  eCliente?.emissor_customizado_id  ?? eGlobal?.emissor_customizado_id  ?? canonico?.emissor_id         ?? null,
+                vencimento: eCliente?.vencimento_customizado  ?? eGlobal?.vencimento_customizado  ?? canonico?.data_vencimento    ?? null,
+                taxa:       canonico?.taxa_canonica ?? null,
+                subTipo:    canonico?.sub_tipo_canonico ?? null,
+            };
         };
 
+        // ── Mapeamento de ativos por instituição ─────────────────────────────
+        // Helper: ativos CASH (Conta Corrente) sem canônico → auto-classifica
+        const isCash = (a: any) => a?.asset_class === 'CASH';
+        const classeComFallback = (a: any, cls: any) =>
+            (isCash(a) && cls.classe === 'Classificar') ? 'Conta Corrente' : cls.classe;
+        const liquidezComFallback = (a: any, cls: any) =>
+            (isCash(a) && !cls.liquidez) ? '0' : cls.liquidez;
+        // Esconde ativos zerados (valor bruto e líquido = 0)
+        const naoZerado = (a: ConsolidatedAtivo) =>
+            (a.valorLiquido && a.valorLiquido > 0) || (a.valorBruto && a.valorBruto > 0);
+
         const btgAtivos: ConsolidatedAtivo[] = incluirBtg ? (snapshotData.btg?.posicao_btg_ativos || []).map((a: any, i: number) => {
-            const cls = classificar(a, 'BTG');
+            const cls = classificar(a.ativo_canonico_id);
             return {
-                rowId: `btg-${i}`, nome: cls.apelido || a.emissor || '-', tipo: cls.classe, subTipo: a.sub_tipo,
-                valorLiquido: parseFloat(a.valor_liquido || 0), valorBruto: parseFloat(a.valor_bruto || 0), vencimento: a.maturity_date,
-                instituicao: 'BTG Pactual', emissorId: cls.emissorId, liquidez: cls.liquidez, rawData: a, benchmark: a.benchmark || '-',
-                taxa: formatarTaxa(a.rentabilidade, a.benchmark, a.yield_avg),
+                rowId: `btg-${i}`,
+                nome: cls.apelido || a.emissor || '-',
+                tipo: classeComFallback(a, cls),
+                subTipo: cls.subTipo ?? a.sub_tipo,
+                valorLiquido: parseFloat(a.valor_liquido || 0),
+                valorBruto: parseFloat(a.valor_bruto || 0),
+                vencimento: cls.vencimento || a.maturity_date,
+                instituicao: 'BTG Pactual',
+                emissorId: cls.emissorId,
+                ativoCanonicoId: a.ativo_canonico_id,
+                liquidez: liquidezComFallback(a, cls),
+                rawData: a,
+                benchmark: a.benchmark || '-',
+                taxa: formatarTaxa(a.rentabilidade, a.benchmark, a.yield_avg) || cls.taxa,
             };
-        }) : [];
+        }).filter(naoZerado) : [];
 
         const xpAtivos: ConsolidatedAtivo[] = incluirXp ? (snapshotData.xp?.posicao_xp_ativos || []).map((a: any, i: number) => {
-            const cls = classificar(a, 'XP');
+            const cls = classificar(a.ativo_canonico_id);
             return {
-                rowId: `xp-${i}`, nome: cls.apelido || a.nome || '-', tipo: cls.classe, subTipo: a.sub_tipo,
-                valorLiquido: parseFloat(a.valor_liquido || 0), valorBruto: parseFloat(a.valor_bruto || 0), vencimento: a.data_vencimento,
-                instituicao: 'XP Investimentos', emissorId: cls.emissorId, liquidez: cls.liquidez, rawData: a, benchmark: a.benchmark || '-',
-                taxa: null,
+                rowId: `xp-${i}`,
+                nome: cls.apelido || a.nome || a.emissor || '-',
+                tipo: classeComFallback(a, cls),
+                subTipo: cls.subTipo ?? a.sub_tipo,
+                valorLiquido: parseFloat(a.valor_liquido || 0),
+                valorBruto: parseFloat(a.valor_bruto || 0),
+                vencimento: cls.vencimento || a.data_vencimento,
+                instituicao: 'XP Investimentos',
+                emissorId: cls.emissorId,
+                ativoCanonicoId: a.ativo_canonico_id,
+                liquidez: liquidezComFallback(a, cls),
+                rawData: a,
+                benchmark: a.benchmark || '-',
+                taxa: cls.taxa,
             };
-        }) : [];
+        }).filter(naoZerado) : [];
 
         const avenueAtivos: ConsolidatedAtivo[] = incluirAvenue
             ? (snapshotData.avenue?.posicao_avenue_ativos || []).map((a: any, i: number) => {
-                const cls = classificar(a, 'AVENUE');
+                const cls = classificar(a.ativo_canonico_id);
                 return {
-                    rowId: `avenue-${i}`, nome: cls.apelido || a.nome || '-', tipo: cls.classe, subTipo: a.sub_tipo,
-                    valorLiquido: parseFloat(a.valor_bruto_brl || 0), valorBruto: parseFloat(a.valor_bruto_brl || 0),
-                    vencimento: a.maturity_date ?? null, instituicao: 'Avenue' as const,
-                    emissorId: cls.emissorId, liquidez: a.is_liquidity ? '0' : cls.liquidez, rawData: a, benchmark: '-',
-                    taxa: null,
+                    rowId: `avenue-${i}`,
+                    nome: cls.apelido || a.nome || '-',
+                    tipo: classeComFallback(a, cls),
+                    subTipo: cls.subTipo ?? a.sub_tipo,
+                    valorLiquido: parseFloat(a.valor_bruto_brl || 0),
+                    valorBruto: parseFloat(a.valor_bruto_brl || 0),
+                    vencimento: cls.vencimento || a.maturity_date,
+                    instituicao: 'Avenue' as const,
+                    emissorId: cls.emissorId,
+                    ativoCanonicoId: a.ativo_canonico_id,
+                    liquidez: a.is_liquidity ? '0' : liquidezComFallback(a, cls),
+                    rawData: a,
+                    benchmark: '-',
+                    taxa: cls.taxa,
                 };
-            }) : [];
+            }).filter(naoZerado) : [];
 
         const agoraAtivos: ConsolidatedAtivo[] = incluirAgora
             ? (snapshotData.agora?.posicao_agora_ativos || []).map((a: any, i: number) => {
-                const cls = classificar(a, 'AGORA');
+                const cls = classificar(a.ativo_canonico_id);
                 return {
-                    rowId: `agora-${i}`, nome: cls.apelido || a.emissor || '-', tipo: cls.classe, subTipo: a.sub_tipo,
-                    valorLiquido: parseFloat(a.valor_liquido || 0), valorBruto: parseFloat(a.valor_bruto || 0),
-                    vencimento: a.data_vencimento ?? null, instituicao: 'Ágora' as const,
-                    emissorId: cls.emissorId, liquidez: cls.liquidez, rawData: a, benchmark: '-',
-                    taxa: a.taxa || null,
+                    rowId: `agora-${i}`,
+                    nome: cls.apelido || a.emissor || '-',
+                    tipo: classeComFallback(a, cls),
+                    subTipo: cls.subTipo ?? a.sub_tipo,
+                    valorLiquido: parseFloat(a.valor_liquido || 0),
+                    valorBruto: parseFloat(a.valor_bruto || 0),
+                    vencimento: cls.vencimento || a.data_vencimento,
+                    instituicao: 'Ágora' as const,
+                    emissorId: cls.emissorId,
+                    ativoCanonicoId: a.ativo_canonico_id,
+                    liquidez: liquidezComFallback(a, cls),
+                    rawData: a,
+                    benchmark: '-',
+                    taxa: a.taxa || cls.taxa || null,
                 };
-            }) : [];
+            }).filter(naoZerado) : [];
 
         const totalAtivos = [...btgAtivos, ...xpAtivos, ...avenueAtivos, ...agoraAtivos];
 
@@ -471,7 +528,21 @@ export function useHomeMetrics() {
 
         const exposicaoRiscoData = buildExposicaoRisco(totalAtivos, emissorMap, patrimonioTotal);
 
-        // ── Helpers de segmentação de liquidez ───────────────────────────────
+        // Distribuição setorial — agrega exposicaoRiscoData por setor
+        const setorMap: Record<string, number> = {};
+        exposicaoRiscoData.forEach(e => {
+            const s = e.setor && e.setor.trim() !== '' ? e.setor : 'Sem setor';
+            setorMap[s] = (setorMap[s] || 0) + e.value;
+        });
+        const totalClassificadoSetor = Object.values(setorMap).reduce((s, v) => s + v, 0);
+        const setorialData = Object.entries(setorMap)
+            .map(([setor, valor]) => ({
+                setor,
+                valor,
+                pct: totalClassificadoSetor > 0 ? (valor / totalClassificadoSetor) * 100 : 0,
+            }))
+            .sort((a, b) => b.valor - a.valor);
+
         const CLASSES_RV = ['Renda Variável', 'FII-FIAgro', 'Internacional - Renda Variável'];
         const isPrevidencia = (a: ConsolidatedAtivo) => a.rawData?.asset_class === 'PENSION';
         const isRV          = (a: ConsolidatedAtivo) => CLASSES_RV.includes(a.tipo);
@@ -513,7 +584,7 @@ export function useHomeMetrics() {
         return {
             patrimonioTotal, btgTotal, xpTotal, avenueTotal, agoraTotal,
             vencimentosProx, todosAtivos,
-            donutData, alocacaoData, comparativoData, exposicaoRiscoData,
+            donutData, alocacaoData, comparativoData, exposicaoRiscoData, setorialData,
             liquidezData, liquidezDataPrev, liquidezDataRV,
             hasData: patrimonioTotal > 0,
             dataRefBtg: snapshotData.btg?.data_referencia,
@@ -523,7 +594,7 @@ export function useHomeMetrics() {
             incluirBtg, incluirXp, incluirAvenue, incluirAgora,
             coresInstituicoes: { btg: corBtgDb, xp: corXpDb, avenue: corAvenueDb, agora: corAgoraDb },
         };
-    }, [snapshotData, diasVencimento, carteiraAtiva, carteirasPersonalizadas, dicionario, emissores, classesMaster, instituicoesDb, excecoes, selectedClient]);
+    }, [snapshotData, diasVencimento, carteiraAtiva, carteirasPersonalizadas, canonicos, emissores, classesMaster, instituicoesDb, excecoes, selectedClient]);
 
     return { selectedClient, loading, metrics, snapshotData, diasVencimento, setDiasVencimento, drawerCarteirasAberto, setDrawerCarteirasAberto, carteiraAtiva, setCarteiraAtiva, opcoesCarteira };
 }

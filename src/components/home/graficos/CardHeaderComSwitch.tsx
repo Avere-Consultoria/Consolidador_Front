@@ -5,12 +5,14 @@ interface CardHeaderComSwitchProps {
     titulo: string;
     modoTabela: boolean;
     setModoTabela: (v: boolean) => void;
+    mostrarSwitch?: boolean;
 }
 
 export function CardHeaderComSwitch({
     titulo,
     modoTabela,
-    setModoTabela
+    setModoTabela,
+    mostrarSwitch = true
 }: CardHeaderComSwitchProps) {
     return (
         <div style={{
@@ -34,7 +36,7 @@ export function CardHeaderComSwitch({
             </Typography>
 
             {/* Novo Seletor de Modo (Botões) */}
-            <div style={{
+            {mostrarSwitch && <div style={{
                 display: 'flex',
                 gap: '4px',
                 background: 'rgba(0,0,0,0.05)',
@@ -70,7 +72,7 @@ export function CardHeaderComSwitch({
                 >
                     <List size={16} />
                 </Button>
-            </div>
+            </div>}
         </div>
     );
 }

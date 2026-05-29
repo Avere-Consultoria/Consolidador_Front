@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Typography, Button, Spinner, Combobox, Badge, toast } from 'avere-ui';
 import { X, Save } from 'lucide-react';
+import type { AtivoCanonicoOption } from '../../pages/PersonalizarAtivos';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function formatarDataBR(iso: string): string {
@@ -15,17 +16,8 @@ export interface ModalNovaRegraProps {
     onSave: (payload: any, editId: string | null) => Promise<void>;
     salvando: boolean;
     regraEdicao: any | null;
-    dicionario: {
-        codigo_identificador: string;
-        nome_ativo: string;
-        instituicao_origem: string | null;
-        classe_avere: string;
-        liquidez_avere: string;
-        data_vencimento: string | null;
-        classe_original: string | null;
-        liquidez_api_original: string | null;
-        vencimento_api_original: string | null;
-    }[];
+    canonicos: AtivoCanonicoOption[];
+    emissores: { id: string; nome_fantasia: string }[];
     classesDisponiveis: string[];
     clientes: { id: string; nome: string }[];
 }
@@ -57,60 +49,64 @@ const inputStyle: React.CSSProperties = {
 // ── Componente ────────────────────────────────────────────────────────────────
 export function ModalNovaRegra({
     isOpen, onClose, onSave, salvando, regraEdicao,
-    dicionario, classesDisponiveis, clientes
+    canonicos, emissores, classesDisponiveis, clientes
 }: ModalNovaRegraProps) {
 
-    const [formAtivo,     setFormAtivo]     = useState('');
-    const [formApelido,   setFormApelido]   = useState('');
-    const [formClasse,    setFormClasse]    = useState('');
-    const [formLiquidez,  setFormLiquidez]  = useState('');
-    const [formVencimento,setFormVencimento]= useState('');
-    const [formEscopo,    setFormEscopo]    = useState<'GLOBAL' | 'CLIENTE'>('GLOBAL');
-    const [formClienteId, setFormClienteId] = useState('');
+    const [formCanonicoId, setFormCanonicoId] = useState('');
+    const [formApelido,    setFormApelido]    = useState('');
+    const [formClasse,     setFormClasse]     = useState('');
+    const [formLiquidez,   setFormLiquidez]   = useState('');
+    const [formVencimento, setFormVencimento] = useState('');
+    const [formEmissorId,  setFormEmissorId]  = useState('');
+    const [formEscopo,     setFormEscopo]     = useState<'GLOBAL' | 'CLIENTE'>('GLOBAL');
+    const [formClienteId,  setFormClienteId]  = useState('');
 
     useEffect(() => {
         if (!isOpen) return;
         if (regraEdicao) {
-            setFormAtivo(regraEdicao.codigo_identificador);
+            setFormCanonicoId(regraEdicao.ativo_canonico_id);
             setFormApelido(regraEdicao.apelido_ativo || '');
             setFormClasse(regraEdicao.classe_customizada || '');
             setFormLiquidez(regraEdicao.liquidez_customizada || '');
             setFormVencimento(regraEdicao.vencimento_customizado || '');
+            setFormEmissorId(regraEdicao.emissor_customizado_id || '');
             setFormEscopo(regraEdicao.cliente_id ? 'CLIENTE' : 'GLOBAL');
             setFormClienteId(regraEdicao.cliente_id || '');
         } else {
-            setFormAtivo(''); setFormApelido(''); setFormClasse('');
-            setFormLiquidez(''); setFormVencimento('');
+            setFormCanonicoId(''); setFormApelido(''); setFormClasse('');
+            setFormLiquidez(''); setFormVencimento(''); setFormEmissorId('');
             setFormEscopo('GLOBAL'); setFormClienteId('');
         }
     }, [isOpen, regraEdicao]);
 
     if (!isOpen) return null;
 
-    const ativo = dicionario.find(d => d.codigo_identificador === formAtivo);
+    const canonicoSelecionado = canonicos.find(c => c.id === formCanonicoId);
 
     const handleSave = () => {
-        if (!formAtivo) { toast.error('Selecione um ativo para personalizar.'); return; }
+        if (!formCanonicoId) { toast.error('Selecione um ativo para personalizar.'); return; }
         if (formEscopo === 'CLIENTE' && !formClienteId) { toast.error('Selecione o cliente.'); return; }
         onSave({
-            codigo_identificador:  formAtivo,
-            cliente_id:            formEscopo === 'CLIENTE' ? formClienteId : null,
-            apelido_ativo:         formApelido   || null,
-            classe_customizada:    formClasse    || null,
-            liquidez_customizada:  formLiquidez  || null,
+            ativo_canonico_id:      formCanonicoId,
+            cliente_id:             formEscopo === 'CLIENTE' ? formClienteId : null,
+            apelido_ativo:          formApelido    || null,
+            classe_customizada:     formClasse     || null,
+            liquidez_customizada:   formLiquidez   || null,
             vencimento_customizado: formVencimento || null,
-            emissor_customizado_id: null,
+            emissor_customizado_id: formEmissorId  || null,
         }, regraEdicao?.id || null);
     };
 
-    const opcoesAtivos = dicionario.map(d => {
-        const partes = [d.codigo_identificador, d.nome_ativo];
-        if (d.classe_avere)       partes.push(d.classe_avere);
-        if (d.instituicao_origem) partes.push(d.instituicao_origem);
-        return { value: d.codigo_identificador, label: partes.join(' — ') };
+    const opcoesAtivos = canonicos.map(c => {
+        const partes = [c.nome_canonico];
+        if (c.identificador_exibicao) partes.push(c.identificador_exibicao);
+        if (c.instituicoes_visoes.length > 0) partes.push(c.instituicoes_visoes.join('/'));
+        return { value: c.id, label: partes.join(' — ') };
     });
-    const opcoesClasses  = [{ value: '', label: 'Manter original' }, ...classesDisponiveis.map(c => ({ value: c, label: c }))];
-    const opcoesClientes = clientes.map(c => ({ value: c.id, label: c.nome }));
+
+    const opcoesClasses   = [{ value: '', label: 'Manter original' }, ...classesDisponiveis.map(c => ({ value: c, label: c }))];
+    const opcoesEmissores = [{ value: '', label: 'Manter original' }, ...emissores.map(e => ({ value: e.id, label: e.nome_fantasia }))];
+    const opcoesClientes  = clientes.map(c => ({ value: c.id, label: c.nome }));
 
     return (
         <div
@@ -129,20 +125,29 @@ export function ModalNovaRegra({
                     <X size={20} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={onClose} />
                 </div>
 
-                {/* ── Corpo com scroll ── */}
+                {/* ── Corpo ── */}
                 <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '22px', overflowY: 'auto' }}>
 
-                    {/* Seleção do Ativo */}
+                    {/* Seleção do Ativo Canônico */}
                     <div style={{ position: 'relative', zIndex: 50 }}>
-                        <label style={labelStyle}>Ativo (ISIN, CNPJ ou Ticker)</label>
+                        <label style={labelStyle}>Ativo</label>
                         {regraEdicao ? (
                             <input
                                 disabled
-                                value={`${formAtivo}${ativo ? ` — ${ativo.nome_ativo}` : ''}`}
+                                value={canonicoSelecionado ? `${canonicoSelecionado.nome_canonico} (${canonicoSelecionado.instituicoes_visoes.join(', ') || '—'})` : '—'}
                                 style={{ ...inputStyle, background: '#F3F4F6', color: '#6B7280' }}
                             />
                         ) : (
-                            <Combobox options={opcoesAtivos} value={formAtivo} onChange={setFormAtivo} placeholder="Pesquise o ativo na base Avere..." />
+                            <Combobox options={opcoesAtivos} value={formCanonicoId} onChange={setFormCanonicoId} placeholder="Pesquise o ativo canônico..." />
+                        )}
+                        {canonicoSelecionado && canonicoSelecionado.instituicoes_visoes.length > 0 && (
+                            <div style={{ display: 'flex', gap: '4px', marginTop: '6px', flexWrap: 'wrap' }}>
+                                {canonicoSelecionado.instituicoes_visoes.map(inst => (
+                                    <Badge key={inst} intent="neutro" variant="ghost" style={{ fontSize: '9px' }}>
+                                        {inst}
+                                    </Badge>
+                                ))}
+                            </div>
                         )}
                     </div>
 
@@ -167,18 +172,11 @@ export function ModalNovaRegra({
                             <div style={{ position: 'relative', zIndex: 20 }}>
                                 <label style={labelStyle}>Nova Classe (Opcional)</label>
                                 <Combobox options={opcoesClasses} value={formClasse} onChange={setFormClasse} placeholder="Manter original" />
-                                {ativo && (
+                                {canonicoSelecionado?.classe_avere && (
                                     <div style={{ display: 'flex', gap: '4px', marginTop: '5px', flexWrap: 'wrap' }}>
-                                        {ativo.classe_original && (
-                                            <Badge intent="neutro" variant="ghost" style={{ fontSize: '9px' }}>
-                                                API: {ativo.classe_original}
-                                            </Badge>
-                                        )}
-                                        {ativo.classe_avere && (
-                                            <Badge intent="neutro" variant="ghost" style={{ fontSize: '9px' }}>
-                                                Master: {ativo.classe_avere}
-                                            </Badge>
-                                        )}
+                                        <Badge intent="neutro" variant="ghost" style={{ fontSize: '9px' }}>
+                                            Master: {canonicoSelecionado.classe_avere}
+                                        </Badge>
                                     </div>
                                 )}
                             </div>
@@ -193,6 +191,11 @@ export function ModalNovaRegra({
                                     onFocus={e => e.currentTarget.style.borderColor = 'var(--color-primaria)'}
                                     onBlur={e => e.currentTarget.style.borderColor = 'rgba(0,0,0,0.1)'}
                                 />
+                                {canonicoSelecionado?.liquidez_avere && (
+                                    <Badge intent="neutro" variant="ghost" style={{ fontSize: '9px', marginTop: '5px', display: 'inline-block' }}>
+                                        Master: D+{canonicoSelecionado.liquidez_avere}
+                                    </Badge>
+                                )}
                             </div>
                         </div>
 
@@ -207,38 +210,31 @@ export function ModalNovaRegra({
                                 onFocus={e => e.currentTarget.style.borderColor = 'var(--color-primaria)'}
                                 onBlur={e => e.currentTarget.style.borderColor = 'rgba(0,0,0,0.1)'}
                             />
-                            {ativo && (
+                            {canonicoSelecionado?.data_vencimento && (
                                 <div style={{ display: 'flex', gap: '4px', marginTop: '5px', flexWrap: 'wrap' }}>
-                                    {ativo.vencimento_api_original && (
-                                        <Badge intent="neutro" variant="ghost" style={{ fontSize: '9px' }}>
-                                            API: {formatarDataBR(ativo.vencimento_api_original)}
-                                        </Badge>
-                                    )}
-                                    {ativo.data_vencimento && (
-                                        <Badge intent="neutro" variant="ghost" style={{ fontSize: '9px' }}>
-                                            Master: {formatarDataBR(ativo.data_vencimento)}
-                                        </Badge>
-                                    )}
+                                    <Badge intent="neutro" variant="ghost" style={{ fontSize: '9px' }}>
+                                        Master: {formatarDataBR(canonicoSelecionado.data_vencimento)}
+                                    </Badge>
                                 </div>
                             )}
                         </div>
 
-                        {/* Emissor — reservado */}
-                        <div style={{ position: 'relative' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                                <label style={{ ...labelStyle, margin: 0 }}>Emissor</label>
-                                <Badge intent="alerta" variant="ghost" style={{ fontSize: '9px' }}>Em breve</Badge>
-                            </div>
-                            <input
-                                disabled
-                                placeholder="Override de emissor em desenvolvimento"
-                                style={{ ...inputStyle, background: '#F9FAFB', color: '#9CA3AF', cursor: 'not-allowed' }}
-                            />
+                        {/* Emissor */}
+                        <div style={{ position: 'relative', zIndex: 10 }}>
+                            <label style={labelStyle}>Novo Emissor (Opcional)</label>
+                            <Combobox options={opcoesEmissores} value={formEmissorId} onChange={setFormEmissorId} placeholder="Manter original" />
+                            {canonicoSelecionado?.emissor_id && (
+                                <div style={{ display: 'flex', gap: '4px', marginTop: '5px', flexWrap: 'wrap' }}>
+                                    <Badge intent="neutro" variant="ghost" style={{ fontSize: '9px' }}>
+                                        Master: {emissores.find(e => e.id === canonicoSelecionado.emissor_id)?.nome_fantasia ?? '—'}
+                                    </Badge>
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     {/* ── Escopo da Regra ── */}
-                    <div style={{ background: 'rgba(245,158,11,0.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(245,158,11,0.15)', position: 'relative', zIndex: 10 }}>
+                    <div style={{ background: 'rgba(245,158,11,0.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(245,158,11,0.15)', position: 'relative', zIndex: 5 }}>
                         <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
                             Alcance da Regra
                         </Typography>
@@ -253,7 +249,7 @@ export function ModalNovaRegra({
                             </label>
                         </div>
                         {formEscopo === 'CLIENTE' && (
-                            <div style={{ position: 'relative', zIndex: 10 }}>
+                            <div style={{ position: 'relative', zIndex: 5 }}>
                                 <Combobox options={opcoesClientes} value={formClienteId} onChange={setFormClienteId} placeholder="Pesquise o cliente..." />
                             </div>
                         )}

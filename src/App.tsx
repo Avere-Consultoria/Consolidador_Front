@@ -22,6 +22,9 @@ import GestaoEquipe from './pages/GestaoEquipe';
 import AvenueApi from './pages/AvenueApi';
 import AgoraApi from './pages/AgoraApi';
 import Relatorio from './pages/Relatorio';
+import FechamentoMes from './pages/FechamentoMes';
+import HistoricoMensal from './pages/HistoricoMensal';
+import Manutencao from './pages/Manutencao';
 
 
 export default function App() {
@@ -51,6 +54,8 @@ export default function App() {
                 <Route path="/agora" element={<AgoraApi />} />
                 <Route path="/dev" element={<EmDesenvolvimento />} />
                 <Route path="/personalizar" element={<PersonalizarAtivos />} />
+                <Route path="/fechamento" element={<FechamentoMes />} />
+                <Route path="/historico" element={<HistoricoMensal />} />
               </Route>
             </Route>
 
@@ -61,6 +66,7 @@ export default function App() {
                 <Route path="/gestao-master" element={<GestaoMaster />} />
                 <Route path="/cadastro-clientes" element={<CadastroClientes />} />
                 <Route path="/gestao-equipe" element={<GestaoEquipe />} />
+                <Route path="/manutencao" element={<Manutencao />} />
               </Route>
             </Route>
 

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Card, Button, Typography, Spinner, Modal, ModalContent, ModalHeader, ModalTitle, ModalFooter, TextField, toast } from 'avere-ui';
+import { Card, Button, Typography, Spinner, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, TextField, toast } from 'avere-ui';
 import { Plus, Edit2, Trash2, GripVertical, Save } from 'lucide-react';
 import { supabase } from '../../services/supabase';
+import { isValidHex } from '../../utils/colors';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -151,8 +152,7 @@ export default function ClassesTab() {
             if (error) throw error;
 
             setIsModalOpen(false);
-            // Pequeno delay para garantir sincronia do banco antes do reload
-            setTimeout(() => loadData(), 200);
+            loadData();
 
         } catch (err) {
             console.error('Erro ao salvar:', err);
@@ -198,7 +198,8 @@ export default function ClassesTab() {
                                     onDelete={(id) => {
                                         toast('Excluir esta classe?', {
                                             action: { label: 'Excluir', onClick: async () => {
-                                                await supabase.from('dicionario_classes').delete().eq('id', id);
+                                                const { error } = await supabase.from('dicionario_classes').delete().eq('id', id);
+                                                if (error) { toast.error('Falha ao excluir classe.'); return; }
                                                 toast.success('Classe excluída.');
                                                 loadData();
                                             }},
@@ -216,6 +217,7 @@ export default function ClassesTab() {
                 <ModalContent>
                     <ModalHeader>
                         <ModalTitle>{editId ? 'Editar Classe' : 'Nova Classe'}</ModalTitle>
+                        <ModalDescription>Defina o nome e a cor de identificação da classe.</ModalDescription>
                     </ModalHeader>
 
                     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -233,7 +235,7 @@ export default function ClassesTab() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <input
                                     type="color"
-                                    value={formData.cor_hex?.startsWith('#') ? formData.cor_hex : '#000000'}
+                                    value={isValidHex(formData.cor_hex) ? formData.cor_hex! : '#000000'}
                                     onChange={e => setFormData({ ...formData, cor_hex: e.target.value.toUpperCase() })}
                                     style={{ border: 'none', width: '42px', height: '42px', cursor: 'pointer', background: 'none', padding: 0 }}
                                 />

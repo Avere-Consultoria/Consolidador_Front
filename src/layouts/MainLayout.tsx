@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home, LineChart, Database, SlidersHorizontal, Users, User, Building2, Landmark, BarChart2, Globe, Activity, BookOpen, UserPlus, UsersRound } from 'lucide-react';
+import { Home, LineChart, Database, SlidersHorizontal, Users, User, Building2, Landmark, BarChart2, Globe, Activity, BookOpen, UserPlus, UsersRound, Lock, History, Wrench } from 'lucide-react';
 import { SideBar, SideBarItem, TopBar, HierarchicalCombobox, Toaster, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
@@ -207,6 +207,18 @@ export default function MainLayout() {
             active={location.pathname === '/personalizar'} onClick={() => navigate('/personalizar')}
           />
         )}
+        {(isMaster || isConsultor) && (
+          <SideBarItem
+            icon={Lock} label="Fechamento de Mês"
+            active={location.pathname === '/fechamento'} onClick={() => navigate('/fechamento')}
+          />
+        )}
+        {(isMaster || isConsultor) && (
+          <SideBarItem
+            icon={History} label="Histórico Mensal"
+            active={location.pathname === '/historico'} onClick={() => navigate('/historico')}
+          />
+        )}
 
         {isMaster && (
           <>
@@ -249,6 +261,10 @@ export default function MainLayout() {
             <SideBarItem
               icon={UsersRound} label="Gestão de Equipe"
               active={location.pathname === '/gestao-equipe'} onClick={() => navigate('/gestao-equipe')}
+            />
+            <SideBarItem
+              icon={Wrench} label="Manutenção"
+              active={location.pathname === '/manutencao'} onClick={() => navigate('/manutencao')}
             />
           </>
         )}

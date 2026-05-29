@@ -7,6 +7,7 @@ import { ResumoCards } from '../components/home/graficos/ResumoCards';
 import { TabelaAtivos } from '../components/home/TabelaAtivos';
 import { DrawerGerenciarCarteiras } from '../components/home/modais/DrawerGerenciarCarteiras';
 import { RiscoEmissor } from '../components/home/graficos/RiscoEmissor';
+import { DistribuicaoSetorial } from '../components/home/graficos/DistribuicaoSetorial';
 import { LiquidezVisao } from '../components/home/graficos/LiquidezVisao';
 import { NenhumClienteSelecionado } from '../components/home/NenhumClienteSelecionado';
 import { GraficoAlocacao } from '../components/home/graficos/GraficoAlocacao';
@@ -82,6 +83,8 @@ export default function Home() {
       />
 
       <RiscoEmissor dados={metrics.exposicaoRiscoData} />
+
+      <DistribuicaoSetorial dados={metrics.setorialData} />
 
       <VencimentosVisao
         ativos={metrics.todosAtivos}

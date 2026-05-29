@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Typography, Card, Button, DataTable, Spinner, Badge, toast } from 'avere-ui';
 import { SlidersHorizontal, Plus, Edit2, Trash2 } from 'lucide-react';
 import { supabase } from '../services/supabase';
@@ -6,31 +6,33 @@ import { useAuth } from '../contexts/AuthContext';
 import { ModalNovaRegra } from '../components/personalizarAtivos/ModalNovaRegra';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────
-interface DicionarioMaster {
-    codigo_identificador: string;
-    nome_ativo: string;
-    instituicao_origem: string | null;
-    classe_avere: string;
-    liquidez_avere: string;
+
+export interface AtivoCanonicoOption {
+    id: string;
+    nome_canonico: string;
+    classe_avere: string | null;
+    liquidez_avere: string | null;
     data_vencimento: string | null;
-    classe_original: string | null;
-    liquidez_api_original: string | null;
-    vencimento_api_original: string | null;
+    emissor_id: string | null;
+    instituicoes_visoes: string[];     // ex: ['BTG','XP']
+    identificador_exibicao: string;    // primeiro código (ex: ISIN ou ticker) pra busca
 }
 
 interface Excecao {
     id: string;
     cliente_id: string | null;
-    codigo_identificador: string;
+    ativo_canonico_id: string;
     apelido_ativo: string | null;
     classe_customizada: string | null;
     liquidez_customizada: string | null;
     vencimento_customizado: string | null;
     emissor_customizado_id: string | null;
-    master_nome?: string;
-    master_classe?: string;
-    master_liquidez?: string;
-    master_vencimento?: string | null;
+    // Campos derivados (do canônico) para exibição
+    canonico_nome?:        string;
+    canonico_classe?:      string | null;
+    canonico_liquidez?:    string | null;
+    canonico_vencimento?:  string | null;
+    canonico_emissor_id?:  string | null;
 }
 
 interface Cliente {
@@ -40,43 +42,69 @@ interface Cliente {
 
 export default function PersonalizarAtivos() {
     const { perfil } = useAuth();
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading]   = useState(true);
     const [salvando, setSalvando] = useState(false);
 
     // Dados
-    const [regras, setRegras] = useState<Excecao[]>([]);
-    const [dicionario, setDicionario] = useState<DicionarioMaster[]>([]);
-    const [classesDisponiveis, setClassesDisponiveis] = useState<string[]>([]);
-    const [clientes, setClientes] = useState<Cliente[]>([]);
+    const [regras, setRegras]                           = useState<Excecao[]>([]);
+    const [canonicos, setCanonicos]                     = useState<AtivoCanonicoOption[]>([]);
+    const [classesDisponiveis, setClassesDisponiveis]   = useState<string[]>([]);
+    const [clientes, setClientes]                       = useState<Cliente[]>([]);
+    const [emissores, setEmissores]                     = useState<{ id: string; nome_fantasia: string }[]>([]);
 
     // Controlo do Modal
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [regraEdicao, setRegraEdicao] = useState<Excecao | null>(null);
+    const [isModalOpen, setIsModalOpen]   = useState(false);
+    const [regraEdicao, setRegraEdicao]   = useState<Excecao | null>(null);
 
     const fetchData = async () => {
         if (!perfil) return;
         setLoading(true);
         try {
-            const [clientesRes, dictRes, classRes, regrasRes] = await Promise.all([
+            const [clientesRes, canonicosRes, dicionarioRes, classRes, regrasRes, emissoresRes] = await Promise.all([
                 supabase.from('clientes').select('id, nome').order('nome'),
-                supabase.from('dicionario_ativos').select('codigo_identificador, nome_ativo, instituicao_origem, classe_avere, liquidez_avere, data_vencimento, classe_original, liquidez_api_original, vencimento_api_original'),
+                supabase.from('ativos_canonicos').select('id, nome_canonico, classe_avere, liquidez_avere, data_vencimento, emissor_id').order('nome_canonico'),
+                supabase.from('dicionario_ativos').select('ativo_canonico_id, instituicao_origem, codigo_identificador'),
                 supabase.from('dicionario_classes').select('nome').order('ordem_exibicao'),
-                supabase.from('excecoes_classificacao').select('*').eq('consultor_id', perfil.id)
+                supabase.from('excecoes_classificacao').select('*').eq('consultor_id', perfil.id),
+                supabase.from('dicionario_emissores').select('id, nome_fantasia').order('nome_fantasia'),
             ]);
 
-            if (clientesRes.data) setClientes(clientesRes.data);
-            if (dictRes.data) setDicionario(dictRes.data);
-            if (classRes.data) setClassesDisponiveis(classRes.data.map(c => c.nome));
+            if (clientesRes.data)  setClientes(clientesRes.data);
+            if (classRes.data)     setClassesDisponiveis(classRes.data.map(c => c.nome));
+            if (emissoresRes.data) setEmissores(emissoresRes.data);
 
-            if (regrasRes.data && dictRes.data) {
-                const regrasCompletas = regrasRes.data.map(regra => {
-                    const master = dictRes.data.find(d => d.codigo_identificador === regra.codigo_identificador);
+            // Agrega visões institucionais por canonico (pra exibir busca + badges)
+            const visoesPorCanonico = new Map<string, { instituicoes: Set<string>; primeiroCodigo: string | null }>();
+            (dicionarioRes.data || []).forEach((d: any) => {
+                if (!d.ativo_canonico_id) return;
+                const atual = visoesPorCanonico.get(d.ativo_canonico_id) ?? { instituicoes: new Set<string>(), primeiroCodigo: null };
+                atual.instituicoes.add(d.instituicao_origem);
+                if (!atual.primeiroCodigo) atual.primeiroCodigo = d.codigo_identificador;
+                visoesPorCanonico.set(d.ativo_canonico_id, atual);
+            });
+
+            const canonicosLista: AtivoCanonicoOption[] = (canonicosRes.data || []).map((c: any) => {
+                const v = visoesPorCanonico.get(c.id);
+                return {
+                    ...c,
+                    instituicoes_visoes:    v ? Array.from(v.instituicoes) : [],
+                    identificador_exibicao: v?.primeiroCodigo ?? '',
+                };
+            });
+            setCanonicos(canonicosLista);
+
+            // Enriquece exceções com dados do canônico
+            if (regrasRes.data) {
+                const canonicosMap = new Map(canonicosLista.map(c => [c.id, c]));
+                const regrasCompletas = regrasRes.data.map(r => {
+                    const c = canonicosMap.get(r.ativo_canonico_id);
                     return {
-                        ...regra,
-                        master_nome: master?.nome_ativo || 'Desconhecido',
-                        master_classe: master?.classe_avere || 'Não classificado',
-                        master_liquidez: master?.liquidez_avere || 'N/A',
-                        master_vencimento: master?.data_vencimento || null
+                        ...r,
+                        canonico_nome:       c?.nome_canonico ?? 'Canônico não encontrado',
+                        canonico_classe:     c?.classe_avere  ?? null,
+                        canonico_liquidez:   c?.liquidez_avere ?? null,
+                        canonico_vencimento: c?.data_vencimento ?? null,
+                        canonico_emissor_id: c?.emissor_id ?? null,
                     };
                 });
                 setRegras(regrasCompletas);
@@ -88,9 +116,9 @@ export default function PersonalizarAtivos() {
         }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, [perfil?.id]);
+    useEffect(() => { fetchData(); }, [perfil?.id]);
+
+    const emissoresMap = useMemo(() => new Map(emissores.map(e => [e.id, e.nome_fantasia])), [emissores]);
 
     const openNewModal = () => {
         setRegraEdicao(null);
@@ -105,13 +133,10 @@ export default function PersonalizarAtivos() {
     const handleDelete = async (id: string) => {
         toast('Excluir esta regra de personalização?', {
             action: { label: 'Excluir', onClick: async () => {
-                try {
-                    await supabase.from('excecoes_classificacao').delete().eq('id', id);
-                    toast.success('Regra excluída com sucesso.');
-                    fetchData();
-                } catch {
-                    toast.error('Erro ao excluir regra.');
-                }
+                const { error } = await supabase.from('excecoes_classificacao').delete().eq('id', id);
+                if (error) { toast.error('Erro ao excluir regra.'); return; }
+                toast.success('Regra excluída com sucesso.');
+                fetchData();
             }},
             cancel: { label: 'Cancelar', onClick: () => {} },
         });
@@ -122,14 +147,17 @@ export default function PersonalizarAtivos() {
         try {
             const payloadFinal = { ...payload, consultor_id: perfil!.id };
             if (editId) {
-                await supabase.from('excecoes_classificacao').update(payloadFinal).eq('id', editId);
+                const { error } = await supabase.from('excecoes_classificacao').update(payloadFinal).eq('id', editId);
+                if (error) throw error;
             } else {
-                await supabase.from('excecoes_classificacao').insert([payloadFinal]);
+                const { error } = await supabase.from('excecoes_classificacao').insert([payloadFinal]);
+                if (error) throw error;
             }
             setIsModalOpen(false);
             toast.success(editId ? 'Regra atualizada com sucesso.' : 'Nova regra criada com sucesso.');
             fetchData();
-        } catch {
+        } catch (err: any) {
+            console.error(err);
             toast.error('Erro ao guardar as alterações.');
         } finally {
             setSalvando(false);
@@ -141,7 +169,6 @@ export default function PersonalizarAtivos() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-            {/* HEADER */}
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
@@ -159,27 +186,17 @@ export default function PersonalizarAtivos() {
                 </Button>
             </header>
 
-            {/* TABELA DE REGRAS */}
             <Card style={{ padding: 0, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', background: '#fff' }}>
                 <DataTable
                     data={regras}
                     columns={[
                         {
-                            header: 'Identificador',
-                            accessorKey: 'codigo_identificador',
-                            cell: (item: Excecao) => (
-                                <Typography variant="p" style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '12px', color: '#6B7280' }}>
-                                    {item.codigo_identificador}
-                                </Typography>
-                            )
-                        },
-                        {
-                            header: 'Ativo (Original / Personalizado)',
+                            header: 'Ativo (Master / Personalizado)',
                             accessorKey: 'apelido_ativo',
                             cell: (item: Excecao) => (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', padding: '4px 0' }}>
                                     <Typography variant="p" style={{ fontSize: '11px', color: '#9CA3AF', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-                                        {item.master_nome}
+                                        {item.canonico_nome}
                                     </Typography>
                                     <Typography variant="p" style={{ fontSize: '14px', color: 'var(--color-primaria)', fontWeight: 700 }}>
                                         {item.apelido_ativo || <span style={{ opacity: 0.4, fontWeight: 500, fontStyle: 'italic' }}>Nome original mantido</span>}
@@ -193,7 +210,7 @@ export default function PersonalizarAtivos() {
                             cell: (item: Excecao) => (
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <Typography variant="p" style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' }}>
-                                        {item.master_classe}
+                                        {item.canonico_classe || '—'}
                                     </Typography>
                                     <Typography variant="p" style={{ fontSize: '13px', color: item.classe_customizada ? 'var(--color-secundaria)' : '#9CA3AF', fontWeight: 600 }}>
                                         {item.classe_customizada || 'Sem alteração'}
@@ -207,13 +224,31 @@ export default function PersonalizarAtivos() {
                             cell: (item: Excecao) => (
                                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                                     <Typography variant="p" style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 600 }}>
-                                        D+{item.master_liquidez}
+                                        {item.canonico_liquidez ? `D+${item.canonico_liquidez}` : '—'}
                                     </Typography>
                                     <Typography variant="p" style={{ fontSize: '13px', color: item.liquidez_customizada ? 'var(--color-secundaria)' : '#9CA3AF', fontWeight: 700 }}>
                                         {item.liquidez_customizada ? `D+${item.liquidez_customizada}` : '—'}
                                     </Typography>
                                 </div>
                             )
+                        },
+                        {
+                            header: 'Emissor',
+                            accessorKey: 'emissor_customizado_id',
+                            cell: (item: Excecao) => {
+                                const original = item.canonico_emissor_id ? emissoresMap.get(item.canonico_emissor_id) : null;
+                                const custom = item.emissor_customizado_id ? emissoresMap.get(item.emissor_customizado_id) : null;
+                                return (
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                        <Typography variant="p" style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 600 }}>
+                                            {original || '—'}
+                                        </Typography>
+                                        <Typography variant="p" style={{ fontSize: '13px', color: custom ? 'var(--color-secundaria)' : '#9CA3AF', fontWeight: 700 }}>
+                                            {custom || '—'}
+                                        </Typography>
+                                    </div>
+                                );
+                            }
                         },
                         {
                             header: 'Escopo',
@@ -244,19 +279,8 @@ export default function PersonalizarAtivos() {
                             header: '',
                             cell: (item: Excecao) => (
                                 <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end', paddingRight: '16px' }}>
-                                    <Edit2
-                                        size={16}
-                                        color="#9CA3AF"
-                                        style={{ cursor: 'pointer', transition: 'color 0.2s' }}
-                                        className="hover:text-blue-500"
-                                        onClick={() => openEditModal(item)}
-                                    />
-                                    <Trash2
-                                        size={16}
-                                        color="#EF4444"
-                                        style={{ cursor: 'pointer', opacity: 0.7 }}
-                                        onClick={() => handleDelete(item.id)}
-                                    />
+                                    <Edit2 size={16} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={() => openEditModal(item)} />
+                                    <Trash2 size={16} color="#EF4444" style={{ cursor: 'pointer', opacity: 0.7 }} onClick={() => handleDelete(item.id)} />
                                 </div>
                             )
                         }
@@ -272,7 +296,8 @@ export default function PersonalizarAtivos() {
                 onSave={handleSaveRegra}
                 salvando={salvando}
                 regraEdicao={regraEdicao}
-                dicionario={dicionario}
+                canonicos={canonicos}
+                emissores={emissores}
                 classesDisponiveis={classesDisponiveis}
                 clientes={clientes}
             />

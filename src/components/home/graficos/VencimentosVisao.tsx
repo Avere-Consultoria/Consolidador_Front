@@ -104,6 +104,12 @@ export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: 
         ativosFiltrados.reduce((acc, curr) => acc + (curr.valorLiquido || 0), 0)
         , [ativosFiltrados]);
 
+    // Patrimônio total da carteira (todos os ativos, não só os filtrados)
+    // — usado como denominador dos percentuais para refletir o todo
+    const patrimonioTotal = useMemo(() =>
+        (ativos ?? []).reduce((acc, curr) => acc + (curr.valorLiquido || 0), 0)
+        , [ativos]);
+
     // 3. Agrupamento por faixas de vencimento
     const faixasAgregadas = useMemo(() => {
         const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
@@ -122,9 +128,10 @@ export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: 
         return FAIXAS_VENC.map(f => ({
             ...f,
             value: acc[f.id],
-            pct: totalFinanceiro > 0 ? (acc[f.id] / totalFinanceiro) * 100 : 0,
+            // Percentual sobre patrimônio total (não sobre o subconjunto filtrado)
+            pct: patrimonioTotal > 0 ? (acc[f.id] / patrimonioTotal) * 100 : 0,
         })).filter(f => f.value > 0);
-    }, [ativosFiltrados, totalFinanceiro]);
+    }, [ativosFiltrados, patrimonioTotal]);
 
     // 4. Handler de Seleção (Força a reatividade)
     const handleSelectChange = (value: string) => {

@@ -1,43 +1,129 @@
 import { useState, useMemo } from 'react';
-import { Card, CardContent, Typography, Badge, Button, Select } from 'avere-ui';
+import { Card, CardContent, Typography, Badge, Button } from 'avere-ui';
 import { ShieldAlert } from 'lucide-react';
+import { Treemap, ResponsiveContainer, Tooltip } from 'recharts';
 import { CardHeaderComSwitch } from './CardHeaderComSwitch';
 import { fmt } from '../../../utils/formatters';
+import { useMediaQuery } from '../../../hooks/useMediaQuery';
 
 interface RiscoEmissorProps {
     dados: { name: string; setor: string; value: number; pct: number }[];
 }
 
-// ── Estilos de Tabela (Padronizados) ──────────────────────────────────────────
+// ── Estilos de Tabela ────────────────────────────────────────────────────────
 const tableStyle: React.CSSProperties = {
-    width: '100%',
-    borderCollapse: 'collapse',
-    fontSize: '12px',
-    marginTop: '8px',
-    fontFamily: 'Montserrat, sans-serif'
+    width: '100%', borderCollapse: 'collapse', fontSize: '12px',
+    fontFamily: 'Montserrat, sans-serif',
 };
-
 const thStyle: React.CSSProperties = {
-    textAlign: 'left',
-    padding: '8px 4px',
-    borderBottom: '1px solid rgba(0,0,0,0.06)',
-    opacity: 0.4,
-    textTransform: 'uppercase',
-    fontWeight: 700,
-    fontSize: '10px',
-    letterSpacing: '0.05em'
+    textAlign: 'left', padding: '8px 4px',
+    borderBottom: '1px solid rgba(0,0,0,0.06)', opacity: 0.4,
+    textTransform: 'uppercase', fontWeight: 700, fontSize: '10px', letterSpacing: '0.05em',
 };
-
 const tdStyle: React.CSSProperties = {
-    padding: '12px 4px',
-    borderBottom: '1px solid rgba(0,0,0,0.04)',
-    fontWeight: 500,
-    color: 'var(--color-secundaria)'
+    padding: '12px 4px', borderBottom: '1px solid rgba(0,0,0,0.04)',
+    fontWeight: 500, color: 'var(--color-secundaria)',
 };
 
+// ── Cor por concentração ─────────────────────────────────────────────────────
+function corPorPct(pct: number): string {
+    if (pct > 25) return '#EF4444';  // vermelho
+    if (pct > 15) return '#F59E0B';  // amarelo
+    return '#10B981';                // verde
+}
+
+// ── Tooltip customizado ─────────────────────────────────────────────────────
+function TooltipTreemap({ active, payload }: any) {
+    if (!active || !payload || !payload.length) return null;
+    const p = payload[0].payload;
+    if (!p?.name) return null;
+    return (
+        <div style={{
+            background: '#fff',
+            border: '1px solid rgba(0,0,0,0.08)',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            fontFamily: 'Montserrat, sans-serif',
+            maxWidth: '280px',
+        }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-secundaria)', marginBottom: '4px' }}>
+                {p.name}
+            </div>
+            {p.setor && p.setor !== 'Sem setor' && (
+                <div style={{ fontSize: '10px', opacity: 0.5, marginBottom: '6px' }}>
+                    {p.setor}
+                </div>
+            )}
+            <div style={{ fontSize: '15px', fontWeight: 800, color: corPorPct(p.pct ?? 0) }}>
+                {(p.pct ?? 0).toFixed(1)}%
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--color-secundaria)', opacity: 0.7, marginTop: '2px' }}>
+                {fmt(p.value ?? 0)}
+            </div>
+        </div>
+    );
+}
+
+// ── Cell customizada do Treemap ─────────────────────────────────────────────
+function CustomTreemapCell(props: any) {
+    const { x, y, width, height, name, pct, cor } = props;
+    if (width < 1 || height < 1) return null;
+
+    const showName = width > 50 && height > 28;
+    const showPct  = width > 40 && height > 18;
+    const nameFontSize = Math.min(width / 10, 14);
+
+    return (
+        <g>
+            <rect
+                x={x}
+                y={y}
+                width={width}
+                height={height}
+                fill={cor}
+                stroke="#fff"
+                strokeWidth={2}
+                style={{ cursor: 'default' }}
+            />
+            {showName && (
+                <text
+                    x={x + 8}
+                    y={y + 18}
+                    fill="#fff"
+                    fontSize={Math.max(10, Math.min(13, nameFontSize))}
+                    fontWeight={700}
+                    fontFamily="Montserrat, sans-serif"
+                    style={{ pointerEvents: 'none' }}
+                >
+                    {name.length > Math.floor(width / 7)
+                        ? name.slice(0, Math.floor(width / 7)) + '…'
+                        : name}
+                </text>
+            )}
+            {showPct && (
+                <text
+                    x={x + 8}
+                    y={y + (showName ? 36 : 18)}
+                    fill="#fff"
+                    fontSize={11}
+                    fontWeight={600}
+                    opacity={0.9}
+                    fontFamily="Montserrat, sans-serif"
+                    style={{ pointerEvents: 'none' }}
+                >
+                    {(pct ?? 0).toFixed(1)}%
+                </text>
+            )}
+        </g>
+    );
+}
+
+// ── Componente principal ─────────────────────────────────────────────────────
 export function RiscoEmissor({ dados }: RiscoEmissorProps) {
+    const isWide = useMediaQuery('(min-width: 1280px)');
     const [modoTabela, setModoTabela] = useState(false);
-    const [viewMode, setViewMode] = useState<string>('5'); // Alterado para string para alinhar com o Select raiz
+    const [viewMode, setViewMode] = useState<string>('5');
 
     const dadosFiltrados = useMemo(() => {
         if (!dados) return [];
@@ -47,29 +133,95 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
         return sorted;
     }, [dados, viewMode]);
 
+    const treemapData = useMemo(() =>
+        dadosFiltrados.map(d => ({
+            name:  d.name,
+            value: d.value,
+            pct:   d.pct,
+            setor: d.setor,
+            cor:   corPorPct(d.pct),
+        }))
+    , [dadosFiltrados]);
+
     const opcoesVisualizacao = [
         { label: 'Top 5', value: '5' },
         { label: 'Top 10', value: '10' },
-        { label: 'Todos', value: 'ALL' }
+        { label: 'Todos', value: 'ALL' },
     ];
 
+    // ── Renderizadores ───────────────────────────────────────────────────────
+
+    const renderTreemap = () => (
+        treemapData.length === 0 ? null : (
+            <ResponsiveContainer width="100%" height={300}>
+                <Treemap
+                    data={treemapData}
+                    dataKey="value"
+                    aspectRatio={4 / 3}
+                    stroke="#fff"
+                    content={<CustomTreemapCell />}
+                    isAnimationActive={true}
+                    animationDuration={700}
+                >
+                    <Tooltip content={<TooltipTreemap />} />
+                </Treemap>
+            </ResponsiveContainer>
+        )
+    );
+
+    const renderTabela = () => (
+        <div style={{ overflowX: 'auto' }}>
+            <table style={tableStyle}>
+                <thead>
+                    <tr>
+                        <th style={thStyle}>Emissor</th>
+                        <th style={thStyle}>Setor</th>
+                        <th style={{ ...thStyle, textAlign: 'right' }}>Valor</th>
+                        <th style={{ ...thStyle, textAlign: 'right' }}>% Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {dadosFiltrados.map((emissor, i) => (
+                        <tr key={i}>
+                            <td style={tdStyle}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{ width: 8, height: 8, borderRadius: '2px', background: corPorPct(emissor.pct), flexShrink: 0 }} />
+                                    {emissor.name}
+                                </div>
+                            </td>
+                            <td style={tdStyle}>
+                                <Badge variant="ghost" style={{ fontSize: '10px', fontFamily: 'Montserrat, sans-serif' }}>
+                                    {emissor.setor || 'N/A'}
+                                </Badge>
+                            </td>
+                            <td style={{ ...tdStyle, fontWeight: 700, textAlign: 'right' }}>{fmt(emissor.value)}</td>
+                            <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 800, color: corPorPct(emissor.pct) }}>
+                                {emissor.pct.toFixed(1)}%
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+
     return (
-        <Card style={{ border: '1px solid rgba(239, 68, 68, 0.2)', height: '100%' }}>
+        <Card style={{ border: '1px solid rgba(239, 68, 68, 0.2)' }}>
             <CardContent style={{ padding: '24px' }}>
 
                 <CardHeaderComSwitch
                     titulo="Exposição por Emissor"
                     modoTabela={modoTabela}
                     setModoTabela={setModoTabela}
+                    mostrarSwitch={!isWide}
                 />
 
+                {/* ── Sub-header: ícone + segmented control ── */}
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     marginBottom: '20px',
-                    padding: '8px',
-                    borderRadius: '8px'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '8px', borderRadius: '8px', color: '#EF4444' }}>
@@ -80,40 +232,37 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                         </Typography>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-
-                        {/* Opção 1: Segmented Control */}
-                        <div style={{
-                            display: 'flex',
-                            gap: '4px',
-                            background: 'rgba(0,0,0,0.05)',
-                            padding: '4px',
-                            borderRadius: '8px'
-                        }}>
-                            {opcoesVisualizacao.map((opt) => (
-                                <Button
-                                    key={opt.value}
-                                    variant={viewMode === opt.value ? 'solid' : 'ghost'}
-                                    onClick={() => setViewMode(opt.value)}
-                                    style={{
-                                        height: '28px',
-                                        padding: '0 10px',
-                                        borderRadius: '6px',
-                                        fontSize: '11px',
-                                        fontWeight: 600,
-                                        fontFamily: 'Montserrat, sans-serif',
-                                        background: viewMode === opt.value ? '#fff' : 'transparent',
-                                        color: viewMode === opt.value ? 'var(--color-secundaria)' : '#6B7280',
-                                        boxShadow: viewMode === opt.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                                    }}
-                                >
-                                    {opt.label}
-                                </Button>
-                            ))}
-                        </div>
+                    <div style={{
+                        display: 'flex',
+                        gap: '4px',
+                        background: 'rgba(0,0,0,0.05)',
+                        padding: '4px',
+                        borderRadius: '8px',
+                    }}>
+                        {opcoesVisualizacao.map(opt => (
+                            <Button
+                                key={opt.value}
+                                variant={viewMode === opt.value ? 'solid' : 'ghost'}
+                                onClick={() => setViewMode(opt.value)}
+                                style={{
+                                    height: '28px',
+                                    padding: '0 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '11px',
+                                    fontWeight: 600,
+                                    fontFamily: 'Montserrat, sans-serif',
+                                    background: viewMode === opt.value ? '#fff' : 'transparent',
+                                    color: viewMode === opt.value ? 'var(--color-secundaria)' : '#6B7280',
+                                    boxShadow: viewMode === opt.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                                }}
+                            >
+                                {opt.label}
+                            </Button>
+                        ))}
                     </div>
                 </div>
 
+                {/* ── Conteúdo ── */}
                 {(!dados || dados.length === 0) ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', gap: '12px', opacity: 0.4 }}>
                         <ShieldAlert size={32} />
@@ -124,71 +273,18 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                             Associe emissores aos ativos no Master para visualizar a concentração de crédito.
                         </Typography>
                     </div>
-                ) : modoTabela ? (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={tableStyle}>
-                            <thead>
-                                <tr>
-                                    <th style={thStyle}>Emissor</th>
-                                    <th style={thStyle}>Setor</th>
-                                    <th style={thStyle}>Valor</th>
-                                    <th style={{ ...thStyle, textAlign: 'right' }}>% Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {dadosFiltrados.map((emissor, i) => (
-                                    <tr key={i}>
-                                        <td style={tdStyle}>{emissor.name}</td>
-                                        <td style={tdStyle}>
-                                            <Badge variant="ghost" style={{ fontSize: '10px', fontFamily: 'Montserrat, sans-serif' }}>
-                                                {emissor.setor || 'N/A'}
-                                            </Badge>
-                                        </td>
-                                        <td style={{ ...tdStyle, fontWeight: 700 }}>{fmt(emissor.value)}</td>
-                                        <td style={{ ...tdStyle, textAlign: 'right', color: emissor.pct > 15 ? '#EF4444' : 'inherit' }}>
-                                            {emissor.pct.toFixed(1)}%
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                ) : isWide ? (
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '24px',
+                        alignItems: 'start',
+                    }}>
+                        <div>{renderTreemap()}</div>
+                        <div>{renderTabela()}</div>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {dadosFiltrados.map((emissor, index) => {
-                            const corBarra = emissor.pct > 25 ? '#EF4444' : emissor.pct > 15 ? '#F59E0B' : '#10B981';
-                            return (
-                                <div key={index}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px', fontFamily: 'Montserrat, sans-serif' }}>
-                                                {emissor.name}
-                                            </Typography>
-                                            {emissor.setor && (
-                                                <span style={{ fontSize: '10px', background: 'rgba(0,0,0,0.05)', padding: '2px 6px', borderRadius: '4px', fontFamily: 'Montserrat, sans-serif' }}>
-                                                    {emissor.setor}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <Typography variant="p" style={{ fontWeight: 700, fontSize: '13px', color: corBarra, fontFamily: 'Montserrat, sans-serif' }}>
-                                            {emissor.pct.toFixed(1)}% <span style={{ opacity: 0.5, fontWeight: 400, fontSize: '11px', marginLeft: '6px', color: 'var(--color-secundaria)' }}>({fmt(emissor.value)})</span>
-                                        </Typography>
-                                    </div>
-                                    <div style={{ height: '6px', width: '100%', background: 'rgba(0,0,0,0.05)', borderRadius: '3px' }}>
-                                        <div
-                                            style={{
-                                                height: '100%',
-                                                width: `${Math.min(emissor.pct, 100)}%`,
-                                                background: corBarra,
-                                                borderRadius: '3px',
-                                                transition: 'width 1s ease-in-out'
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
+                    modoTabela ? renderTabela() : renderTreemap()
                 )}
 
                 {dados && dados.some(d => d.pct > 15) && (

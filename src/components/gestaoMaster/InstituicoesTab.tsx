@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Card, Button, DataTable, Spinner, Modal, ModalContent, ModalHeader, ModalTitle, ModalFooter, TextField, toast } from 'avere-ui';
+import { Card, Button, DataTable, Spinner, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, TextField, toast } from 'avere-ui';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { supabase } from '../../services/supabase';
+import { isValidHex } from '../../utils/colors';
 
 // 1. Definição da Interface para acabar com os erros de 'never'
 interface Instituicao {
@@ -102,7 +103,8 @@ export default function InstituicoesTab() {
                                         onClick={() => {
                                             toast('Excluir instituição?', {
                                                 action: { label: 'Excluir', onClick: async () => {
-                                                    await supabase.from('instituicoes').delete().eq('id', item.id);
+                                                    const { error } = await supabase.from('instituicoes').delete().eq('id', item.id);
+                                                    if (error) { toast.error('Falha ao excluir instituição.'); return; }
                                                     toast.success('Instituição excluída.');
                                                     load();
                                                 }},
@@ -119,7 +121,10 @@ export default function InstituicoesTab() {
 
             <Modal open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <ModalContent>
-                    <ModalHeader><ModalTitle>{editId ? 'Editar Instituição' : 'Nova Instituição'}</ModalTitle></ModalHeader>
+                    <ModalHeader>
+                        <ModalTitle>{editId ? 'Editar Instituição' : 'Nova Instituição'}</ModalTitle>
+                        <ModalDescription>Preencha os dados e cores da instituição.</ModalDescription>
+                    </ModalHeader>
                     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                         <TextField
                             label="Nome"
@@ -130,14 +135,14 @@ export default function InstituicoesTab() {
                             <div>
                                 <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, marginBottom: '6px', color: '#6B7280' }}>COR PRIMÁRIA</label>
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <input type="color" value={formData.cor_primaria} onChange={e => setFormData({ ...formData, cor_primaria: e.target.value })} style={{ border: 'none', width: '36px', height: '36px', cursor: 'pointer' }} />
+                                    <input type="color" value={isValidHex(formData.cor_primaria) ? formData.cor_primaria : '#000000'} onChange={e => setFormData({ ...formData, cor_primaria: e.target.value })} style={{ border: 'none', width: '36px', height: '36px', cursor: 'pointer' }} />
                                     <TextField value={formData.cor_primaria} onChange={e => setFormData({ ...formData, cor_primaria: e.target.value })} />
                                 </div>
                             </div>
                             <div>
                                 <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, marginBottom: '6px', color: '#6B7280' }}>COR SECUNDÁRIA</label>
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <input type="color" value={formData.cor_secundaria || '#ffffff'} onChange={e => setFormData({ ...formData, cor_secundaria: e.target.value })} style={{ border: 'none', width: '36px', height: '36px', cursor: 'pointer' }} />
+                                    <input type="color" value={isValidHex(formData.cor_secundaria) ? formData.cor_secundaria! : '#ffffff'} onChange={e => setFormData({ ...formData, cor_secundaria: e.target.value })} style={{ border: 'none', width: '36px', height: '36px', cursor: 'pointer' }} />
                                     <TextField value={formData.cor_secundaria || ''} onChange={e => setFormData({ ...formData, cor_secundaria: e.target.value })} />
                                 </div>
                             </div>
