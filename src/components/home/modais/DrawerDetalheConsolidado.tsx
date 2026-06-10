@@ -586,10 +586,17 @@ export function DrawerDetalheConsolidado({
 
     const raw         = ativo.rawData;
     const instituicao = ativo.instituicao;
-    const isBTG    = instituicao === 'BTG Pactual';
-    const isXP     = instituicao === 'XP Investimentos';
-    const isAvenue = instituicao === 'Avenue';
-    const isAgora  = instituicao === 'Ágora';
+    // Base da instituição (resiste a rótulos multi-conta tipo "BTG Pactual 2").
+    // Fallback por nome para snapshots antigos sem instituicaoBase.
+    const base = ativo.instituicaoBase
+        ?? (instituicao.includes('BTG') ? 'BTG'
+            : instituicao.includes('XP') ? 'XP'
+            : instituicao.includes('Avenue') ? 'AVENUE'
+            : /[ÁA]gora/.test(instituicao) ? 'AGORA' : 'MANUAL');
+    const isBTG    = base === 'BTG';
+    const isXP     = base === 'XP';
+    const isAvenue = base === 'AVENUE';
+    const isAgora  = base === 'AGORA';
 
     const pesoPct = patrimonioTotal > 0 ? (ativo.valorLiquido / patrimonioTotal) * 100 : 0;
 

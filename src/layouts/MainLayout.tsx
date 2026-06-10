@@ -16,12 +16,11 @@ export default function MainLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [clientes, setClientes] = useState<any[]>([]);
   const [consultores, setConsultores] = useState<any[]>([]);
-  const [consultorSelecionado, setConsultorSelecionado] = useState<string>("todos");
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  const { setSelectedClient } = useClient();
+  const { selectedClient, setSelectedClient, consultorSelecionado, setConsultorSelecionado, setConsultorPerfilId } = useClient();
   const { perfil, signOut } = useAuth();
 
   const isMaster = perfil?.role === 'MASTER';
@@ -33,7 +32,7 @@ export default function MainLayout() {
       if (isMaster) {
         const { data, error } = await supabase
           .from('consultores')
-          .select('id, nome')
+          .select('id, nome, perfil_id')
           .eq('ativo', true)
           .order('nome');
 
@@ -71,6 +70,17 @@ export default function MainLayout() {
     if (perfil) loadClientes();
   }, [perfil, consultorSelecionado, isMaster]);
 
+  // Resolve o perfil_id (auth) do consultor selecionado no header → chave das exceções.
+  useEffect(() => {
+    let pid: string | null = null;
+    if (!isMaster) pid = perfil?.id ?? null;
+    else if (consultorSelecionado === 'meus') pid = perfil?.id ?? null;
+    else if (consultorSelecionado && consultorSelecionado !== 'todos') {
+      pid = consultores.find(c => c.id === consultorSelecionado)?.perfil_id ?? null;
+    }
+    setConsultorPerfilId(pid);
+  }, [consultorSelecionado, consultores, isMaster, perfil?.id, setConsultorPerfilId]);
+
   const handleSelectCliente = (id: string) => {
     const clienteEncontrado = clientes.find(c => c.id === id);
     if (clienteEncontrado) {
@@ -78,11 +88,11 @@ export default function MainLayout() {
         id: clienteEncontrado.id,
         codigoAvere: clienteEncontrado.codigo_avere,
         nome: clienteEncontrado.nome,
-        codigoXp: clienteEncontrado.codigo_xp,
-        codigoBtg: clienteEncontrado.codigo_btg,
-        codigoAvenue: clienteEncontrado.codigo_avenue,
-        cpf: clienteEncontrado.cpf,
-        codigo_agora: clienteEncontrado.codigo_agora,
+        // consultorId = perfil_id (auth) do dono — chave usada em excecoes.consultor_id.
+        // Master: resolve via consultores; consultor interno: ele mesmo.
+        consultorId: isMaster
+          ? (consultores.find(c => c.id === clienteEncontrado.consultor_id)?.perfil_id ?? null)
+          : (perfil?.id ?? null),
       });
     } else {
       setSelectedClient(null);
@@ -126,6 +136,9 @@ export default function MainLayout() {
       label: "Cliente Final",
       placeholder: "Selecione o Cliente...",
       icon: User as any,
+      // Controlado pelo cliente do contexto: ao trocar o consultor (que faz
+      // setSelectedClient(null)), este nível perde a seleção automaticamente.
+      value: selectedClient?.id ?? '',
       // Se não houver clientes, mostramos a opção informativa sem a prop 'disabled'
       options: clientes.length > 0
         ? clientes.map(c => ({ value: c.id, label: c.nome }))

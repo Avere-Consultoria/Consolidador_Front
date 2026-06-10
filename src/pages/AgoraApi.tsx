@@ -233,25 +233,28 @@ export default function AgoraApi() {
     }
 
     async function handleFetch() {
-        if (!selectedClient?.id || !selectedClient?.cpf || !selectedClient?.codigo_agora) {
-            setErrorMsg("Dados cadastrais incompletos (CPF ou Código Ágora).");
-            return;
-        }
+        if (!selectedClient?.id) { setErrorMsg("Selecione um cliente."); return; }
 
         setLoading(true);
         setErrorMsg(null);
         try {
-            console.log("Disparando Edge Function da Ágora...");
-            console.log("selectedClient completo:", JSON.stringify(selectedClient))
-            const { error: funcError } = await supabase.functions.invoke('get-agora-position', {
-                body: {
-                    clientId: selectedClient.id,
-                    cpfCnpj: selectedClient.cpf,
-                    accountCode: selectedClient.codigo_agora
-                },
-            });
+            // Sincroniza TODAS as contas Ágora do cliente (multi-conta).
+            const { data: contasAg } = await supabase
+                .from('cliente_contas')
+                .select('id, instituicoes!inner(nome)')
+                .eq('cliente_id', selectedClient.id)
+                .ilike('instituicoes.nome', '%gora%')
+                .order('ordem');
 
-            if (funcError) throw new Error(funcError.message);
+            if (!contasAg || contasAg.length === 0) {
+                setErrorMsg("Cliente sem conta Ágora cadastrada.");
+                setLoading(false);
+                return;
+            }
+            for (const c of contasAg) {
+                const { error: e } = await supabase.functions.invoke('get-agora-position', { body: { contaId: c.id } });
+                if (e) throw new Error(e.message);
+            }
 
             await checkExistingSnapshot();
         } catch (err: any) {

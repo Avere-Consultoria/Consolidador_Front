@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Card, Button, DataTable, Spinner, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, TextField, toast } from 'avere-ui';
+import { Card, Button, DataTable, Spinner, Badge, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, TextField, toast } from 'avere-ui';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { isValidHex } from '../../utils/colors';
 
-// 1. Definição da Interface para acabar com os erros de 'never'
 interface Instituicao {
     id: string;
     nome: string;
     cor_primaria: string;
     cor_secundaria: string | null;
+    tipo: string | null;   // 'API' | 'MANUAL'
 }
 
 export default function InstituicoesTab() {
@@ -43,14 +43,24 @@ export default function InstituicoesTab() {
     useEffect(() => { load(); }, []);
 
     const handleSave = async () => {
-        const payload = { ...formData, cor_secundaria: formData.cor_secundaria || null };
+        const nome = (formData.nome ?? '').trim();
+        if (!nome) { toast.error('Nome é obrigatório.'); return; }
+        const payload = { ...formData, nome, cor_secundaria: formData.cor_secundaria || null };
         try {
-            if (editId) await supabase.from('instituicoes').update(payload).eq('id', editId);
-            else await supabase.from('instituicoes').insert([payload]);
+            const { error } = editId
+                ? await supabase.from('instituicoes').update(payload).eq('id', editId)
+                : await supabase.from('instituicoes').insert([payload]);
+            if (error) {
+                toast.error(error.code === '23505'
+                    ? 'Já existe uma instituição com esse nome.'
+                    : `Erro ao salvar: ${error.message}`);
+                return;
+            }
             setIsModalOpen(false);
+            toast.success(editId ? `Instituição "${nome}" atualizada.` : `Instituição "${nome}" cadastrada.`);
             load();
-        } catch (err) {
-            toast.error('Erro ao salvar instituição.');
+        } catch (err: any) {
+            toast.error(`Erro ao salvar instituição: ${err?.message ?? ''}`);
         }
     };
 
@@ -71,10 +81,29 @@ export default function InstituicoesTab() {
             <Card style={{ padding: 0 }}>
                 <DataTable
                     data={data}
-                    // 3. Adicionado keyExtractor exigido na linha 41
+                    selectable={false}
                     keyExtractor={(item) => item.id}
                     columns={[
                         { header: 'Nome', accessorKey: 'nome' },
+                        {
+                            header: 'Tipo',
+                            cell: (item: Instituicao) => {
+                                const api = item.tipo === 'API';
+                                return (
+                                    <Badge
+                                        variant="ghost"
+                                        title={api ? 'Conectada via API (fixa)' : 'Entrada manual (via PDF/agente)'}
+                                        style={{
+                                            fontSize: '10px', fontWeight: 700, letterSpacing: '0.03em',
+                                            background: api ? 'rgba(0,131,203,0.1)' : 'rgba(100,116,139,0.1)',
+                                            color: api ? '#0083CB' : '#475569',
+                                        }}
+                                    >
+                                        {api ? '🔒 API' : 'Manual'}
+                                    </Badge>
+                                );
+                            },
+                        },
                         {
                             header: 'Cores',
                             cell: (item: Instituicao) => ( // Tipagem aqui resolve erros 47 e 48

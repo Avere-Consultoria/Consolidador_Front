@@ -563,14 +563,25 @@ export default function BtgApi() {
 
   // ── 2. Consulta API via Edge Function ─────────────────────────────────────
   async function handleFetch() {
-    if (!selectedClient?.codigoBtg) return;
+    if (!selectedClient?.id) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('get-btg-position', {
-        body: { account: selectedClient.codigoBtg },
-      });
+      // Sincroniza TODAS as contas BTG do cliente (multi-conta); exibe a última.
+      const { data: contasBtg } = await supabase
+        .from('cliente_contas')
+        .select('id, instituicoes!inner(nome)')
+        .eq('cliente_id', selectedClient.id)
+        .ilike('instituicoes.nome', '%btg%')
+        .order('ordem');
 
-      if (error) throw new Error(error.message);
+      if (!contasBtg || contasBtg.length === 0) { setLoading(false); return; }
+
+      let data: any = null;
+      for (const c of contasBtg) {
+        const res = await supabase.functions.invoke('get-btg-position', { body: { contaId: c.id } });
+        if (res.error) throw new Error(res.error.message);
+        data = res.data;
+      }
 
       // 1. Atualiza a tela com os dados novos
       setPortfolioData({
@@ -625,7 +636,7 @@ export default function BtgApi() {
           </div>
           <Typography variant="p" style={{ opacity: 0.6 }}>Posição Consolidada BTG Pactual</Typography>
         </div>
-        {selectedClient?.codigoBtg && (
+        {selectedClient?.id && (
           <Button onClick={handleFetch} disabled={loading}>
             {loading ? <Spinner size="sm" /> : <RefreshCw size={18} />} Atualizar Posição
           </Button>

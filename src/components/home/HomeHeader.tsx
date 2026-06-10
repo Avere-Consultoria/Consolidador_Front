@@ -1,22 +1,24 @@
-import { Typography, Select, Button } from 'avere-ui';
-import { FileText } from 'lucide-react';
+import { Typography, Select, Button, Badge } from 'avere-ui';
+import { FileText, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { fmtDate } from '../../utils/formatters';
+
+const MESES_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+function formatarMes(mes: string): string {
+    const [a, m] = mes.split('-');
+    return `${MESES_PT[parseInt(m, 10) - 1]} ${a}`;
+}
 
 interface HomeHeaderProps {
     cliente: any;
     carteiraAtiva: string;
     setCarteiraAtiva: (val: string) => void;
     opcoesCarteira: { label: string; value: string }[];
-    dataRefBtg?: string;
-    dataRefXp?: string;
-    dataRefAvenue?: string;
-    dataRefAgora?: string;
-    incluirBtg: boolean;
-    incluirXp: boolean;
-    incluirAvenue: boolean;
-    incluirAgora: boolean;
+    fontesRef: { label: string; dataRef?: string }[];
     onOpenGerenciarCarteiras: () => void;
+    periodo: string;
+    setPeriodo: (val: string) => void;
+    mesesFechados: string[];
 }
 
 
@@ -25,17 +27,18 @@ export function HomeHeader({
     carteiraAtiva,
     setCarteiraAtiva,
     opcoesCarteira,
-    dataRefBtg,
-    dataRefXp,
-    dataRefAvenue,
-    dataRefAgora,
-    incluirBtg,
-    incluirXp,
-    incluirAvenue,
-    incluirAgora,
-    onOpenGerenciarCarteiras
+    fontesRef,
+    onOpenGerenciarCarteiras,
+    periodo,
+    setPeriodo,
+    mesesFechados,
 }: HomeHeaderProps) {
     const navigate = useNavigate();
+    const fechado = periodo !== 'LIVE';
+    const opcoesPeriodo = [
+        { label: 'Posição atual', value: 'LIVE' },
+        ...mesesFechados.map(m => ({ label: `${formatarMes(m)} (fechado)`, value: m })),
+    ];
 
     return (
         <header>
@@ -44,6 +47,14 @@ export function HomeHeader({
                     <Typography variant="h1">
                         Carteira {cliente?.codigoAvere ?? '—'}
                     </Typography>
+                    {mesesFechados.length > 0 && (
+                        <Select
+                            label="Período"
+                            value={periodo}
+                            onChange={setPeriodo}
+                            options={opcoesPeriodo}
+                        />
+                    )}
                     <Select
                         label="Visão da Carteira"
                         placeholder="Selecione uma visão..."
@@ -51,6 +62,11 @@ export function HomeHeader({
                         onChange={setCarteiraAtiva}
                         options={opcoesCarteira}
                     />
+                    {fechado && (
+                        <Badge intent="secundaria" variant="ghost" style={{ fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <Lock size={11} /> Relatório fechado · somente leitura
+                        </Badge>
+                    )}
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <Button variant="outline" onClick={() => navigate('/relatorio')}>
@@ -63,13 +79,10 @@ export function HomeHeader({
                 </div>
             </div>
 
-            {/* Texto dinâmico com datas de referência de cada instituição ativa */}
+            {/* Texto dinâmico com datas de referência de cada conta/fonte ativa */}
             <Typography variant="p" style={{ opacity: 0.6 }}>
                 {cliente?.nome}
-                {incluirBtg    && dataRefBtg    && ` · BTG: ${fmtDate(dataRefBtg    + 'T12:00:00Z')}`}
-                {incluirXp     && dataRefXp     && ` · XP: ${fmtDate(dataRefXp      + 'T12:00:00Z')}`}
-                {incluirAvenue && dataRefAvenue && ` · Avenue: ${fmtDate(dataRefAvenue + 'T12:00:00Z')}`}
-                {incluirAgora  && dataRefAgora  && ` · Ágora: ${fmtDate(dataRefAgora  + 'T12:00:00Z')}`}
+                {fontesRef.map(f => f.dataRef ? ` · ${f.label}: ${fmtDate(f.dataRef + 'T12:00:00Z')}` : '').join('')}
             </Typography>
         </header>
     );

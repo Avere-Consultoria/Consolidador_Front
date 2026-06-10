@@ -23,6 +23,7 @@ import AvenueApi from './pages/AvenueApi';
 import AgoraApi from './pages/AgoraApi';
 import Relatorio from './pages/Relatorio';
 import FechamentoMes from './pages/FechamentoMes';
+import MovimentacoesMes from './pages/MovimentacoesMes';
 import HistoricoMensal from './pages/HistoricoMensal';
 import Manutencao from './pages/Manutencao';
 
@@ -55,6 +56,7 @@ export default function App() {
                 <Route path="/dev" element={<EmDesenvolvimento />} />
                 <Route path="/personalizar" element={<PersonalizarAtivos />} />
                 <Route path="/fechamento" element={<FechamentoMes />} />
+                <Route path="/fechamento/movimentacoes/:mes" element={<MovimentacoesMes />} />
                 <Route path="/historico" element={<HistoricoMensal />} />
               </Route>
             </Route>

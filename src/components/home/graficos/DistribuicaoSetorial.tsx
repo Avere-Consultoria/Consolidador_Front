@@ -7,10 +7,10 @@ import { fmt } from '../../../utils/formatters';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
 
 interface DistribuicaoSetorialProps {
-    dados: { setor: string; valor: number; pct: number }[];
+    dados: { setor: string; valor: number; pct: number; cor?: string | null }[];
 }
 
-// Paleta de cores para setores (sem cor cadastrada no banco ainda)
+// Paleta fallback — usada só quando o setor não tem cor cadastrada na Gestão Master
 const PALETA_SETORES = [
     '#0083CB', '#00B4D8', '#8B5CF6', '#EC4899', '#F59E0B',
     '#10B981', '#EF4444', '#F97316', '#6366F1', '#84CC16',
@@ -65,7 +65,8 @@ export function DistribuicaoSetorial({ dados }: DistribuicaoSetorialProps) {
     const dataComCor = useMemo(() =>
         (dados || []).map((d, i) => ({
             ...d,
-            fill:  PALETA_SETORES[i % PALETA_SETORES.length],
+            // Cor cadastrada na Gestão Master tem prioridade; paleta é só fallback
+            fill:  d.cor ?? PALETA_SETORES[i % PALETA_SETORES.length],
             value: d.valor,   // recharts usa "value" no Pie
         }))
     , [dados]);

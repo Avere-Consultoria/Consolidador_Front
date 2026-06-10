@@ -111,11 +111,9 @@ export function ModalNovaRegra({
     return (
         <div
             style={{ position: 'fixed', inset: 0, background: 'rgba(8,31,40,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '24px', fontFamily: 'var(--font-family)' }}
-            onClick={onClose}
         >
             <div
                 style={{ background: 'var(--color-white)', borderRadius: '14px', width: '100%', maxWidth: '580px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 48px rgba(0,0,0,0.15)' }}
-                onClick={e => e.stopPropagation()}
             >
                 {/* ── Cabeçalho ── */}
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
@@ -125,8 +123,8 @@ export function ModalNovaRegra({
                     <X size={20} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={onClose} />
                 </div>
 
-                {/* ── Corpo ── */}
-                <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '22px', overflowY: 'auto' }}>
+                {/* ── Corpo ── (overflow visible: dropdowns dos Combobox não são cortados) */}
+                <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '22px', overflowY: 'visible' }}>
 
                     {/* Seleção do Ativo Canônico */}
                     <div style={{ position: 'relative', zIndex: 50 }}>

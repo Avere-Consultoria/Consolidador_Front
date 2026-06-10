@@ -15,7 +15,7 @@ interface MesElegivel {
 }
 
 interface SnapshotsAPodar {
-    BTG: number; XP: number; AVENUE: number; AGORA: number; total: number;
+    BTG: number; XP: number; AVENUE: number; AGORA: number; MANUAL: number; total: number;
 }
 
 interface Status {
@@ -193,8 +193,8 @@ export default function Manutencao() {
                     O histórico em <code>snapshots_fechados</code> permanece intacto.
                 </Typography>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                    {(['BTG', 'XP', 'AVENUE', 'AGORA'] as const).map(inst => (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+                    {(['BTG', 'XP', 'AVENUE', 'AGORA', 'MANUAL'] as const).map(inst => (
                         <div key={inst} style={{ background: '#F9FAFB', borderRadius: '6px', padding: '10px 14px', textAlign: 'center' }}>
                             <Typography variant="p" style={{ fontSize: '10px', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 {inst}

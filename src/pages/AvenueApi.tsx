@@ -190,11 +190,26 @@ export default function AvenueApi() {
         setLoading(true);
         try {
             console.log("Disparando Edge Function...");
-            const { data, error } = await supabase.functions.invoke('get-avenue-position', {
-                body: { clientId: selectedClient.id },
-            });
+            // Sincroniza TODAS as contas Avenue do cliente (multi-conta); exibe a última.
+            const { data: contasAv } = await supabase
+                .from('cliente_contas')
+                .select('id, instituicoes!inner(nome)')
+                .eq('cliente_id', selectedClient.id)
+                .ilike('instituicoes.nome', '%avenue%')
+                .order('ordem');
 
-            if (error) throw new Error(error.message);
+            let data: any = null;
+            if (contasAv && contasAv.length > 0) {
+                for (const c of contasAv) {
+                    const res = await supabase.functions.invoke('get-avenue-position', { body: { contaId: c.id } });
+                    if (res.error) throw new Error(res.error.message);
+                    data = res.data;
+                }
+            } else {
+                const res = await supabase.functions.invoke('get-avenue-position', { body: { clientId: selectedClient.id } });
+                if (res.error) throw new Error(res.error.message);
+                data = res.data;
+            }
 
             console.log("Resposta da API:", data);
 

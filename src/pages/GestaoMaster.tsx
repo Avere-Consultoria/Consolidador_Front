@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { Typography, Button } from 'avere-ui';
-import { Settings, Building2, PieChart, Landmark, ShieldCheck } from 'lucide-react';
+import { Settings, Building2, PieChart, Landmark, ShieldCheck, SlidersHorizontal, Layers, Timer } from 'lucide-react';
 import EmissoresTab from '../components/gestaoMaster/EmissoresTab';
 import ClassesTab from '../components/gestaoMaster/ClassesTab';
 import InstituicoesTab from '../components/gestaoMaster/InstituicoesTab';
 import FGCTab from '../components/gestaoMaster/FGCTab';
+import FaixasTab from '../components/gestaoMaster/FaixasTab';
+import SetoresTab from '../components/gestaoMaster/SetoresTab';
+import LiquidezSubtipoTab from '../components/gestaoMaster/LiquidezSubtipoTab';
 
 
 export default function GestaoMaster() {
-    const [activeTab, setActiveTab] = useState<'EMISSORES' | 'CLASSES' | 'INSTITUICOES' | 'FGC'>('EMISSORES');
+    const [activeTab, setActiveTab] = useState<'EMISSORES' | 'CLASSES' | 'INSTITUICOES' | 'FGC' | 'FAIXAS' | 'SETORES' | 'LIQUIDEZ'>('EMISSORES');
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px' }}>
@@ -26,19 +29,31 @@ export default function GestaoMaster() {
                 <Button variant={activeTab === 'CLASSES' ? 'solid' : 'ghost'} onClick={() => setActiveTab('CLASSES')}>
                     <PieChart size={16} style={{ marginRight: 8 }} /> Classes
                 </Button>
+                <Button variant={activeTab === 'SETORES' ? 'solid' : 'ghost'} onClick={() => setActiveTab('SETORES')}>
+                    <Layers size={16} style={{ marginRight: 8 }} /> Setores
+                </Button>
                 <Button variant={activeTab === 'INSTITUICOES' ? 'solid' : 'ghost'} onClick={() => setActiveTab('INSTITUICOES')}>
                     <Landmark size={16} style={{ marginRight: 8 }} /> Instituições
                 </Button>
                 <Button variant={activeTab === 'FGC' ? 'solid' : 'ghost'} onClick={() => setActiveTab('FGC')}>
                     <ShieldCheck size={16} style={{ marginRight: 8 }} /> FGC
                 </Button>
+                <Button variant={activeTab === 'FAIXAS' ? 'solid' : 'ghost'} onClick={() => setActiveTab('FAIXAS')}>
+                    <SlidersHorizontal size={16} style={{ marginRight: 8 }} /> Faixas
+                </Button>
+                <Button variant={activeTab === 'LIQUIDEZ' ? 'solid' : 'ghost'} onClick={() => setActiveTab('LIQUIDEZ')}>
+                    <Timer size={16} style={{ marginRight: 8 }} /> Liquidez/Subtipo
+                </Button>
             </div>
 
             {/* Renderização Condicional Limpa */}
             {activeTab === 'EMISSORES' && <EmissoresTab />}
             {activeTab === 'CLASSES' && <ClassesTab />}
+            {activeTab === 'SETORES' && <SetoresTab />}
             {activeTab === 'INSTITUICOES' && <InstituicoesTab />}
             {activeTab === 'FGC' && <FGCTab />}
+            {activeTab === 'FAIXAS' && <FaixasTab />}
+            {activeTab === 'LIQUIDEZ' && <LiquidezSubtipoTab />}
         </div>
     );
 }

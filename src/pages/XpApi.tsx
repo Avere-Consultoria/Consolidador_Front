@@ -525,28 +525,35 @@ export default function XpApi() {
   async function carregarDadosXp() {
     if (!selectedClient) return;
 
-    if (!selectedClient.codigoXp) {
-      setErro('sem_conta');
-      return;
-    }
-
     setLoading(true);
     setErro(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke('get-xp-position', {
-        body: {
-          account: selectedClient.codigoXp,
-          clientId: selectedClient.id,
-        },
-      });
+      // Sincroniza TODAS as contas XP do cliente (multi-conta); exibe a última.
+      const { data: contasXp } = await supabase
+        .from('cliente_contas')
+        .select('id, instituicoes!inner(nome)')
+        .eq('cliente_id', selectedClient.id)
+        .ilike('instituicoes.nome', '%xp%')
+        .order('ordem');
 
-      if (error) throw error;
+      if (!contasXp || contasXp.length === 0) {
+        setErro('sem_conta');
+        setLoading(false);
+        return;
+      }
+
+      let data: any = null;
+      for (const c of contasXp) {
+        const res = await supabase.functions.invoke('get-xp-position', { body: { contaId: c.id } });
+        if (res.error) throw res.error;
+        data = res.data;
+      }
       if (!data) throw new Error('Resposta vazia da Edge Function');
 
       // Mapeia a resposta normalizada da Edge Function para XpPortfolio (para exibição)
       const portfolio: XpPortfolio = {
-        codigoCliente: parseInt(selectedClient.codigoXp || '0'),
+        codigoCliente: 0,
         dataAtualizacao: data.dataReferencia,
         patrimonioTotal: data.patrimonioTotal,
         patrimonioTotalLiquido: data.patrimonioTotalLiquido,

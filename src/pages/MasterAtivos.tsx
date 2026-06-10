@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Typography, Card, Badge, Button, DataTable, Spinner, toast } from 'avere-ui';
-import { Filter, Save, Eye } from 'lucide-react';
+import { Typography, Card, Badge, Button, Spinner, TextField, toast } from 'avere-ui';
+import { Filter, Wand2, Search } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { DrawerCanonico, type CanonicoDetalhe } from '../components/masterAtivos/DrawerCanonico';
 import { ModalFundirCanonicos, type CanonicoOpcaoDestino } from '../components/masterAtivos/ModalFundirCanonicos';
@@ -21,6 +21,7 @@ interface VisaoInstitucional {
     liquidez_api_original: string | null;
     vencimento_api_original: string | null;
     index_rate: string | null;
+    taxa_formatada: string | null;
 }
 
 interface AtivoCanonicoMaster {
@@ -31,11 +32,13 @@ interface AtivoCanonicoMaster {
     data_vencimento: string;
     emissor_id: string;
     taxa_canonica: string;
+    taxa_formatada: string;
     benchmark_canonico: string;
     sub_tipo_canonico: string;
     is_fii: boolean;
     is_coe: boolean;
     notas: string;
+    conglomerado_id: string;
     visoes: VisaoInstitucional[];
     status: 'PENDENTE' | 'CLASSIFICADO';
 }
@@ -45,12 +48,22 @@ interface Emissor {
     nome_fantasia: string;
 }
 
+interface ConglomeradoOpt {
+    id: string;
+    nome_lider: string;
+}
+
 interface ClasseDinamica {
     nome: string;
 }
 
-function calcularStatus(c: { classe_avere: string; liquidez_avere: string; emissor_id: string }): 'CLASSIFICADO' | 'PENDENTE' {
-    return (c.classe_avere && c.liquidez_avere.trim() !== '' && c.emissor_id) ? 'CLASSIFICADO' : 'PENDENTE';
+// Sub-tipos do mundo bancário (FGC) → risco = conglomerado; demais → emissor
+const SUBTIPOS_BANCARIO = new Set(['CDB', 'LCI', 'LCA', 'LF', 'LIG', 'RDB', 'LH', 'LC', 'LCD', 'DPGE', 'RDC']);
+const isBancario = (subTipo: string) => SUBTIPOS_BANCARIO.has((subTipo || '').toUpperCase().trim());
+
+function calcularStatus(c: { classe_avere: string; liquidez_avere: string; emissor_id: string; conglomerado_id: string }): 'CLASSIFICADO' | 'PENDENTE' {
+    const temRisco = !!c.emissor_id || !!c.conglomerado_id;
+    return (c.classe_avere && c.liquidez_avere.trim() !== '' && temRisco) ? 'CLASSIFICADO' : 'PENDENTE';
 }
 
 const CORES_INST: Record<string, { bg: string; fg: string }> = {
@@ -60,14 +73,21 @@ const CORES_INST: Record<string, { bg: string; fg: string }> = {
     AGORA:  { bg: '#DCFCE7', fg: '#15803D' },
 };
 
+const thMA: React.CSSProperties = {
+    padding: '12px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase',
+    letterSpacing: '0.05em', color: '#9CA3AF', textAlign: 'left', whiteSpace: 'nowrap',
+};
+const tdMA: React.CSSProperties = { padding: '12px 16px', verticalAlign: 'middle' };
+
 export default function MasterAtivos() {
     const [canonicos, setCanonicos] = useState<AtivoCanonicoMaster[]>([]);
     const [emissores, setEmissores] = useState<Emissor[]>([]);
+    const [conglomerados, setConglomerados] = useState<ConglomeradoOpt[]>([]);
     const [classesAvere, setClassesAvere] = useState<ClasseDinamica[]>([]);
     const [loading, setLoading] = useState(true);
-    const [salvando, setSalvando] = useState(false);
+    const [classificando, setClassificando] = useState(false);
     const [filtroStatus, setFiltroStatus] = useState<'TODOS' | 'PENDENTE' | 'CLASSIFICADO'>('PENDENTE');
-    const [idsModificados, setIdsModificados] = useState<Set<string>>(new Set());
+    const [busca, setBusca] = useState('');
 
     // ── Drawer e modal de fundir ─────────────────────────────────────────
     const [drawerCanonicoId, setDrawerCanonicoId] = useState<string | null>(null);
@@ -76,22 +96,25 @@ export default function MasterAtivos() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [canonicosRes, emissoresRes, classesRes, dicionarioRes] = await Promise.all([
+            const [canonicosRes, emissoresRes, conglomeradosRes, classesRes, dicionarioRes] = await Promise.all([
                 supabase
                     .from('ativos_canonicos')
-                    .select('id, nome_canonico, classe_avere, liquidez_avere, data_vencimento, emissor_id, taxa_canonica, benchmark_canonico, sub_tipo_canonico, is_fii, is_coe, notas')
+                    .select('id, nome_canonico, classe_avere, liquidez_avere, data_vencimento, emissor_id, conglomerado_id, taxa_canonica, taxa_formatada, benchmark_canonico, sub_tipo_canonico, is_fii, is_coe, notas')
                     .order('nome_canonico'),
                 supabase.from('dicionario_emissores').select('id, nome_fantasia').order('nome_fantasia'),
+                supabase.from('dicionario_conglomerados').select('id, nome_lider').order('nome_lider'),
                 supabase.from('dicionario_classes').select('nome').order('ordem_exibicao'),
-                supabase.from('dicionario_ativos').select('ativo_canonico_id, instituicao_origem, codigo_identificador, tipo_identificador, nome_ativo, emissor_original, classe_original, liquidez_api_original, vencimento_api_original, index_rate'),
+                supabase.from('dicionario_ativos').select('ativo_canonico_id, instituicao_origem, codigo_identificador, tipo_identificador, nome_ativo, emissor_original, classe_original, liquidez_api_original, vencimento_api_original, index_rate, taxa_formatada'),
             ]);
 
             if (canonicosRes.error) throw canonicosRes.error;
             if (emissoresRes.error) throw emissoresRes.error;
+            if (conglomeradosRes.error) throw conglomeradosRes.error;
             if (classesRes.error) throw classesRes.error;
             if (dicionarioRes.error) throw dicionarioRes.error;
 
             setEmissores(emissoresRes.data || []);
+            setConglomerados(conglomeradosRes.data || []);
             setClassesAvere(classesRes.data || []);
 
             // Agrupa visões institucionais por canonico_id
@@ -109,6 +132,7 @@ export default function MasterAtivos() {
                     liquidez_api_original:   d.liquidez_api_original,
                     vencimento_api_original: d.vencimento_api_original,
                     index_rate:              d.index_rate,
+                    taxa_formatada:          d.taxa_formatada,
                 });
                 visoesPorCanonico.set(d.ativo_canonico_id, arr);
             });
@@ -121,9 +145,11 @@ export default function MasterAtivos() {
                     data_vencimento:    c.data_vencimento || '',
                     emissor_id:         c.emissor_id || '',
                     taxa_canonica:      c.taxa_canonica || '',
+                    taxa_formatada:     c.taxa_formatada || '',
                     benchmark_canonico: c.benchmark_canonico || '',
                     sub_tipo_canonico:  c.sub_tipo_canonico || '',
                     notas:              c.notas || '',
+                    conglomerado_id:    c.conglomerado_id || '',
                     visoes:             visoesPorCanonico.get(c.id) ?? [],
                     status: 'PENDENTE' as const,
                 };
@@ -131,7 +157,6 @@ export default function MasterAtivos() {
             });
 
             setCanonicos(lista);
-            setIdsModificados(new Set());
         } catch (err) {
             console.error('Erro ao buscar canônicos:', err);
             toast.error('Erro ao carregar os dados.');
@@ -142,54 +167,41 @@ export default function MasterAtivos() {
 
     useEffect(() => { fetchData(); }, []);
 
-    const handleAtualizarCanonico = (
-        id: string,
-        campo: 'classe_avere' | 'liquidez_avere' | 'data_vencimento' | 'emissor_id',
-        valor: string,
-    ) => {
-        setCanonicos(prev => prev.map(c => {
-            if (c.id !== id) return c;
-            const novo = { ...c, [campo]: valor };
-            return { ...novo, status: calcularStatus(novo) };
-        }));
-        setIdsModificados(prev => new Set(prev).add(id));
-    };
-
-    const handleSalvar = async () => {
-        if (idsModificados.size === 0) return;
-        setSalvando(true);
+    const handleAutoClassificar = async () => {
+        setClassificando(true);
         try {
-            const paraSalvar = canonicos.filter(c => idsModificados.has(c.id));
-            const promessas = paraSalvar.map(c =>
-                supabase
-                    .from('ativos_canonicos')
-                    .update({
-                        classe_avere:    c.classe_avere || null,
-                        liquidez_avere:  c.liquidez_avere || null,
-                        data_vencimento: c.data_vencimento || null,
-                        emissor_id:      c.emissor_id || null,
-                    })
-                    .eq('id', c.id),
-            );
-            await Promise.all(promessas);
-            toast.success(`${idsModificados.size} ativo(s) atualizado(s) com sucesso!`);
-            setIdsModificados(new Set());
-        } catch (err) {
-            console.error('Erro ao salvar:', err);
-            toast.error('Erro ao salvar no banco.');
+            const { data, error } = await supabase.functions.invoke('classificar-riscos');
+            if (error) throw error;
+            toast.success(`Auto-classificação: ${data.classificados_emissor} emissor(es) + ${data.classificados_conglomerado} conglomerado(s). ${data.sem_match} sem match.`);
+            await fetchData();
+        } catch (err: any) {
+            toast.error(`Erro ao auto-classificar: ${err?.message ?? err}`);
         } finally {
-            setSalvando(false);
+            setClassificando(false);
         }
     };
 
-    const emissoresMap = useMemo(() => new Map(emissores.map(e => [e.id, e.nome_fantasia])), [emissores]);
-    const emissoresOptions = useMemo(() => emissores.map(e => <option key={e.id} value={e.id}>{e.nome_fantasia}</option>), [emissores]);
-    const classesOptions   = useMemo(() => classesAvere.map(c => <option key={c.nome} value={c.nome}>{c.nome}</option>), [classesAvere]);
+    const emissoresMap     = useMemo(() => new Map(emissores.map(e => [e.id, e.nome_fantasia])), [emissores]);
+    const conglomeradosMap = useMemo(() => new Map(conglomerados.map(c => [c.id, c.nome_lider])), [conglomerados]);
 
-    const { canonicosFiltrados, pendentesCount } = useMemo(() => ({
-        canonicosFiltrados: canonicos.filter(c => filtroStatus === 'TODOS' || c.status === filtroStatus),
-        pendentesCount:     canonicos.filter(c => c.status === 'PENDENTE').length,
-    }), [canonicos, filtroStatus]);
+    const { canonicosFiltrados, pendentesCount } = useMemo(() => {
+        const q = busca.trim().toLowerCase();
+        const matchBusca = (c: AtivoCanonicoMaster) => {
+            if (!q) return true;
+            const ident = c.visoes[0]?.codigo_identificador ?? '';
+            const bancario = isBancario(c.sub_tipo_canonico);
+            const riscoNome = bancario
+                ? (c.conglomerado_id ? conglomeradosMap.get(c.conglomerado_id) ?? '' : '')
+                : (c.emissor_id ? emissoresMap.get(c.emissor_id) ?? '' : '');
+            return (c.nome_canonico ?? '').toLowerCase().includes(q)
+                || ident.toLowerCase().includes(q)
+                || riscoNome.toLowerCase().includes(q);
+        };
+        return {
+            canonicosFiltrados: canonicos.filter(c => (filtroStatus === 'TODOS' || c.status === filtroStatus) && matchBusca(c)),
+            pendentesCount:     canonicos.filter(c => c.status === 'PENDENTE').length,
+        };
+    }, [canonicos, filtroStatus, busca, emissoresMap, conglomeradosMap]);
 
     const canonicoSelecionado: CanonicoDetalhe | null = useMemo(() => {
         if (!drawerCanonicoId) return null;
@@ -216,6 +228,7 @@ export default function MasterAtivos() {
             <style>{`
                 input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
                 input[type=number] { -moz-appearance: textfield; }
+                .master-row:hover { background: rgba(0,131,203,0.04); }
             `}</style>
 
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
@@ -230,206 +243,111 @@ export default function MasterAtivos() {
                         Dicionário Universal de Classificação e Risco da Avere
                     </Typography>
                 </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                    <TextField
+                        leftIcon={Search}
+                        placeholder="Buscar ativo, código ou risco..."
+                        value={busca}
+                        onChange={e => setBusca(e.target.value)}
+                        style={{ width: 260 }}
+                    />
                     <Button variant="outline" onClick={() => setFiltroStatus(prev => prev === 'PENDENTE' ? 'TODOS' : 'PENDENTE')}>
                         <Filter size={16} style={{ marginRight: '8px' }} />
                         {filtroStatus === 'PENDENTE' ? 'Ver Todos' : 'Ver Pendentes'}
                     </Button>
-                    <Button variant="solid" onClick={handleSalvar} disabled={salvando || idsModificados.size === 0}>
-                        {salvando ? <Spinner size="sm" /> : <Save size={16} style={{ marginRight: '8px' }} />}
-                        {salvando ? 'A guardar...' : `Salvar Alterações (${idsModificados.size})`}
+                    <Button variant="solid" onClick={handleAutoClassificar} disabled={classificando}>
+                        {classificando ? <Spinner size="sm" /> : <Wand2 size={16} style={{ marginRight: '8px' }} />}
+                        {classificando ? 'Classificando...' : 'Auto-classificar'}
                     </Button>
                 </div>
             </header>
 
             <Card style={{ padding: 0, overflowX: 'auto' }}>
-                <DataTable
-                    data={canonicosFiltrados}
-                    columns={[
-                        {
-                            header: 'Ativo',
-                            accessorKey: 'nome_canonico',
-                            cell: (item: AtivoCanonicoMaster) => {
-                                const principal = item.visoes[0]; // visão usada pra exibir identificador padrão
-                                const instituicoesDistintas = Array.from(new Set(item.visoes.map(v => v.instituicao_origem)));
-                                return (
-                                    <div style={{ width: '260px', minWidth: '260px', maxWidth: '260px', overflow: 'hidden' }}>
-                                        {/* Linha 1: nome canônico */}
-                                        <Typography
-                                            variant="p"
-                                            title={item.nome_canonico}
-                                            style={{ fontWeight: 700, fontSize: '13px', color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                                        >
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                        <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #EEEEEE' }}>
+                            <th style={thMA}>Ativo</th>
+                            <th style={thMA}>Risco</th>
+                            <th style={thMA}>Classe Avere</th>
+                            <th style={thMA}>Vencimento / Liquidez</th>
+                            <th style={thMA}>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {canonicosFiltrados.map(item => {
+                            const principal = item.visoes[0];
+                            const instituicoesDistintas = Array.from(new Set(item.visoes.map(v => v.instituicao_origem)));
+                            const bancario = isBancario(item.sub_tipo_canonico);
+                            const riscoNome = bancario ? conglomeradosMap.get(item.conglomerado_id) : emissoresMap.get(item.emissor_id);
+                            return (
+                                <tr
+                                    key={item.id}
+                                    className="master-row"
+                                    onClick={() => setDrawerCanonicoId(item.id)}
+                                    style={{ borderBottom: '1px solid #F3F4F6', cursor: 'pointer' }}
+                                >
+                                    {/* Ativo */}
+                                    <td style={{ ...tdMA, minWidth: '260px' }}>
+                                        <Typography variant="p" title={item.nome_canonico} style={{ fontWeight: 700, fontSize: '13px', color: '#111827' }}>
                                             {item.nome_canonico}
                                             {item.is_fii && <span style={{ fontSize: '9px', marginLeft: '6px', color: '#7C3AED', fontWeight: 700 }}>FII</span>}
                                             {item.is_coe && <span style={{ fontSize: '9px', marginLeft: '6px', color: '#DC2626', fontWeight: 700 }}>COE</span>}
                                         </Typography>
-
-                                        {/* Linha 2: identificador principal */}
                                         {principal && (
                                             <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '2px' }}>
-                                                <Typography variant="p" style={{ fontWeight: 600, fontSize: '11px', fontFamily: 'monospace', color: '#6B7280' }}>
-                                                    {principal.codigo_identificador}
-                                                </Typography>
-                                                <span style={{ fontSize: '9px', color: '#9CA3AF', fontWeight: 600 }}>
-                                                    {principal.tipo_identificador}
-                                                </span>
+                                                <span style={{ fontWeight: 600, fontSize: '11px', fontFamily: 'monospace', color: '#6B7280' }}>{principal.codigo_identificador}</span>
+                                                <span style={{ fontSize: '9px', color: '#9CA3AF', fontWeight: 600 }}>{principal.tipo_identificador}</span>
                                             </div>
                                         )}
-
-                                        {/* Linha 3: badges de instituição + taxa + classe original */}
                                         <div style={{ display: 'flex', gap: '4px', marginTop: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
                                             {instituicoesDistintas.map(inst => {
                                                 const cor = CORES_INST[inst] ?? { bg: '#E5E7EB', fg: '#374151' };
-                                                return (
-                                                    <span
-                                                        key={inst}
-                                                        style={{
-                                                            background: cor.bg,
-                                                            color: cor.fg,
-                                                            fontSize: '9px',
-                                                            fontWeight: 700,
-                                                            padding: '2px 6px',
-                                                            borderRadius: '4px',
-                                                        }}
-                                                    >
-                                                        {inst}
-                                                    </span>
-                                                );
+                                                return <span key={inst} style={{ background: cor.bg, color: cor.fg, fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>{inst}</span>;
                                             })}
-                                            {item.taxa_canonica && (
-                                                <Badge variant="ghost" style={{ fontSize: '9px' }}>{item.taxa_canonica}</Badge>
-                                            )}
+                                            {(item.taxa_formatada || item.taxa_canonica) && <Badge variant="ghost" style={{ fontSize: '9px' }}>{item.taxa_formatada || item.taxa_canonica}</Badge>}
                                         </div>
-                                    </div>
-                                );
-                            },
-                        },
-                        {
-                            header: 'Emissor (Risco)',
-                            accessorKey: 'emissor_id',
-                            cell: (item: AtivoCanonicoMaster) => (
-                                <div style={{ width: '170px' }}>
-                                    <select
-                                        value={item.emissor_id}
-                                        onChange={(e) => handleAtualizarCanonico(item.id, 'emissor_id', e.target.value)}
-                                        style={{
-                                            width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
-                                            fontSize: '12px', fontFamily: 'var(--font-family)', outline: 'none',
-                                            background: item.emissor_id ? '#fff' : 'rgba(239, 68, 68, 0.05)',
-                                        }}
-                                    >
-                                        <option value="">Selecione o Emissor...</option>
-                                        {emissoresOptions}
-                                    </select>
-                                </div>
-                            ),
-                        },
-                        {
-                            header: 'Classe Avere',
-                            accessorKey: 'classe_avere',
-                            cell: (item: AtivoCanonicoMaster) => {
-                                const classeOriginal = item.visoes[0]?.classe_original;
-                                return (
-                                    <div style={{ width: '150px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                        <select
-                                            value={item.classe_avere}
-                                            onChange={(e) => handleAtualizarCanonico(item.id, 'classe_avere', e.target.value)}
-                                            style={{
-                                                width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
-                                                fontSize: '12px', fontFamily: 'var(--font-family)', outline: 'none',
-                                                background: item.classe_avere ? '#fff' : 'rgba(245, 158, 11, 0.05)',
-                                            }}
-                                        >
-                                            <option value="">Não classificado</option>
-                                            {classesOptions}
-                                        </select>
-                                        {classeOriginal && (
-                                            <Badge intent="neutro" variant="ghost" style={{ fontSize: '9px', width: 'fit-content' }}>
-                                                Origem: {classeOriginal}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                );
-                            },
-                        },
-                        {
-                            header: 'Liquidez',
-                            accessorKey: 'liquidez_avere',
-                            cell: (item: AtivoCanonicoMaster) => {
-                                const liqApi = item.visoes[0]?.liquidez_api_original;
-                                return (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                        <input
-                                            type="number" min="0"
-                                            value={item.liquidez_avere}
-                                            onChange={(e) => handleAtualizarCanonico(item.id, 'liquidez_avere', e.target.value)}
-                                            placeholder="D+"
-                                            style={{
-                                                width: '80px', padding: '6px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
-                                                fontSize: '12px', fontFamily: 'var(--font-family)', outline: 'none',
-                                            }}
-                                        />
-                                        {liqApi != null && (
-                                            <Badge intent="neutro" variant="ghost" style={{ fontSize: '9px', width: 'fit-content' }}>
-                                                API: D+{liqApi}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                );
-                            },
-                        },
-                        {
-                            header: 'Vencimento',
-                            accessorKey: 'data_vencimento',
-                            cell: (item: AtivoCanonicoMaster) => {
-                                const vencApi = item.visoes[0]?.vencimento_api_original;
-                                return (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                        <input
-                                            type="date"
-                                            value={item.data_vencimento}
-                                            onChange={(e) => handleAtualizarCanonico(item.id, 'data_vencimento', e.target.value)}
-                                            style={{
-                                                width: '130px', padding: '6px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
-                                                fontSize: '12px', fontFamily: 'var(--font-family)', outline: 'none',
-                                                background: item.data_vencimento ? '#fff' : 'transparent',
-                                            }}
-                                        />
-                                        {vencApi && (
-                                            <Badge intent="neutro" variant="ghost" style={{ fontSize: '9px', width: 'fit-content' }}>
-                                                API: {formatarDataBR(vencApi)}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                );
-                            },
-                        },
-                        {
-                            header: 'Status',
-                            accessorKey: 'status',
-                            cell: (item: AtivoCanonicoMaster) => (
-                                <Badge intent={item.status === 'CLASSIFICADO' ? 'primaria' : 'secundaria'} variant="ghost" style={{ fontSize: '10px' }}>
-                                    {item.status}
-                                </Badge>
-                            ),
-                        },
-                        {
-                            header: '',
-                            cell: (item: AtivoCanonicoMaster) => (
-                                <div
-                                    style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: '12px', cursor: 'pointer' }}
-                                    onClick={() => setDrawerCanonicoId(item.id)}
-                                    title="Ver detalhes e visões institucionais"
-                                >
-                                    <Eye size={16} color="#6B7280" />
-                                </div>
-                            ),
-                        },
-                    ]}
-                    keyExtractor={(item: AtivoCanonicoMaster) => item.id}
-                    selectable={false}
-                />
+                                    </td>
+
+                                    {/* Risco (read-only) */}
+                                    <td style={{ ...tdMA, minWidth: '170px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            {riscoNome
+                                                ? <span style={{ fontSize: '13px', fontWeight: 600, color: '#111827' }}>{riscoNome}</span>
+                                                : <span style={{ fontSize: '13px', fontWeight: 700, color: '#EF4444' }}>—</span>}
+                                            <span style={{ fontSize: '9px', color: '#9CA3AF', fontWeight: 600 }}>{bancario ? '🏦 Bancário/FGC' : '🏭 Privado'}</span>
+                                        </div>
+                                    </td>
+
+                                    {/* Classe */}
+                                    <td style={tdMA}>
+                                        {item.classe_avere
+                                            ? <span style={{ fontSize: '13px', color: '#111827' }}>{item.classe_avere}</span>
+                                            : <span style={{ fontSize: '12px', color: '#D97706', fontStyle: 'italic' }}>Não classificado</span>}
+                                    </td>
+
+                                    {/* Vencimento / Liquidez (modelo Home: vencimento quando existe, senão liquidez) */}
+                                    <td style={tdMA}>
+                                        {item.data_vencimento
+                                            ? <span style={{ fontSize: '13px', color: '#111827' }}>{formatarDataBR(item.data_vencimento)}</span>
+                                            : (item.liquidez_avere !== '' && item.liquidez_avere != null
+                                                ? <span style={{ fontSize: '13px', color: '#111827' }}>D+{item.liquidez_avere}</span>
+                                                : <span style={{ color: '#9CA3AF' }}>—</span>)}
+                                    </td>
+
+                                    {/* Status */}
+                                    <td style={tdMA}>
+                                        <Badge intent={item.status === 'CLASSIFICADO' ? 'primaria' : 'secundaria'} variant="ghost" style={{ fontSize: '10px' }}>
+                                            {item.status}
+                                        </Badge>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        {canonicosFiltrados.length === 0 && (
+                            <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', opacity: 0.4 }}>Nenhum ativo encontrado.</td></tr>
+                        )}
+                    </tbody>
+                </table>
             </Card>
 
             {/* ── Drawer com detalhes do canônico ── */}
@@ -437,8 +355,11 @@ export default function MasterAtivos() {
                 isOpen={drawerCanonicoId !== null}
                 onClose={() => setDrawerCanonicoId(null)}
                 canonico={canonicoSelecionado}
-                emissoresMap={emissoresMap}
+                emissores={emissores}
+                conglomerados={conglomerados}
+                classes={classesAvere}
                 onFundir={() => setModalFundirAberto(true)}
+                onSalvo={fetchData}
             />
 
             {/* ── Modal de fundir canônicos ── */}

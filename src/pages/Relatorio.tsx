@@ -142,16 +142,11 @@ export default function Relatorio() {
 
     // ── Dados auxiliares ──
     const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
-    const cores = metrics.coresInstituicoes;
 
-    const instituicoes = [
-        { nome: 'BTG Pactual',      total: metrics.btgTotal,    cor: cores?.btg    || '#0083CB', ref: metrics.dataRefBtg    },
-        { nome: 'XP Investimentos', total: metrics.xpTotal,     cor: cores?.xp     || '#FF6B00', ref: metrics.dataRefXp     },
-        { nome: 'Avenue',           total: metrics.avenueTotal, cor: cores?.avenue || '#6366F1', ref: metrics.dataRefAvenue },
-        { nome: 'Ágora',            total: metrics.agoraTotal,  cor: cores?.agora  || '#10B981', ref: metrics.dataRefAgora  },
-    ].filter(i => i.total > 0).map(i => ({
-        ...i, pct: metrics.patrimonioTotal > 0 ? (i.total / metrics.patrimonioTotal) * 100 : 0,
-    }));
+    // Cada fonte (conta de API ou instituição manual) é uma linha de composição.
+    const instituicoes = ((metrics.fontesData || []) as any[])
+        .filter(i => i.total > 0)
+        .map(i => ({ nome: i.nome, total: i.total, cor: i.cor, ref: i.ref, pct: i.pct }));
 
     const pieData = instituicoes.map(i => ({ name: i.nome, value: i.total, fill: i.cor }));
     const riscoDados = [...(metrics.exposicaoRiscoData || [])].sort((a, b) => b.pct - a.pct);

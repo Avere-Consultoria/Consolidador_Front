@@ -8,7 +8,6 @@ import {
 import { CardHeaderComSwitch } from './CardHeaderComSwitch';
 import { TooltipCustom } from './Tooltips';
 import { fmt, fmtDate } from '../../../utils/formatters';
-import { CORES } from '../../../utils/colors';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
 
 interface ResumoCardsProps {
@@ -19,23 +18,10 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
     const isWide = useMediaQuery('(min-width: 1280px)');
     const [modoTabela, setModoTabela] = useState(false);
 
-    const corBtg    = metrics.coresInstituicoes?.btg    || CORES.btg;
-    const corXp     = metrics.coresInstituicoes?.xp     || CORES.xp;
-    const corAvenue = metrics.coresInstituicoes?.avenue || CORES.avenue;
-    const corAgora  = metrics.coresInstituicoes?.agora  || CORES.agora;
+    // Cada fonte (conta de API ou instituição manual) é um card de composição.
+    const instituicoes = (metrics.fontesData || []).filter((i: any) => i.total > 0);
 
-    const pct = (valor: number) => metrics.patrimonioTotal > 0
-        ? (valor / metrics.patrimonioTotal) * 100
-        : 0;
-
-    const instituicoes = [
-        { id: 'btg',    nome: 'BTG Pactual',      total: metrics.btgTotal,    pct: pct(metrics.btgTotal),    ref: metrics.dataRefBtg,    cor: corBtg    },
-        { id: 'xp',     nome: 'XP Investimentos', total: metrics.xpTotal,     pct: pct(metrics.xpTotal),     ref: metrics.dataRefXp,     cor: corXp     },
-        { id: 'avenue', nome: 'Avenue',           total: metrics.avenueTotal, pct: pct(metrics.avenueTotal), ref: metrics.dataRefAvenue, cor: corAvenue },
-        { id: 'agora',  nome: 'Ágora',            total: metrics.agoraTotal,  pct: pct(metrics.agoraTotal),  ref: metrics.dataRefAgora,  cor: corAgora  },
-    ].filter(i => i.total > 0);
-
-    const pieData = instituicoes.map(i => ({
+    const pieData = instituicoes.map((i: any) => ({
         name: i.nome, value: i.total, fill: i.cor, pct: i.pct,
     }));
 
@@ -53,7 +39,7 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
                     animationBegin={0}
                     animationDuration={800}
                 >
-                    {pieData.map((entry, i) => (
+                    {pieData.map((entry: any, i: number) => (
                         <Cell key={i} fill={entry.fill} stroke="none" />
                     ))}
                 </Pie>
@@ -83,7 +69,7 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
                     </tr>
                 </thead>
                 <tbody>
-                    {instituicoes.map(inst => (
+                    {instituicoes.map((inst: any) => (
                         <tr key={inst.id} style={{ borderBottom: '1px solid #F9FAFB' }}>
                             <td style={{ padding: '14px 0' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

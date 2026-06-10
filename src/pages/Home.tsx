@@ -7,6 +7,7 @@ import { ResumoCards } from '../components/home/graficos/ResumoCards';
 import { TabelaAtivos } from '../components/home/TabelaAtivos';
 import { DrawerGerenciarCarteiras } from '../components/home/modais/DrawerGerenciarCarteiras';
 import { RiscoEmissor } from '../components/home/graficos/RiscoEmissor';
+import { CreditoBancarioFGC } from '../components/home/graficos/CreditoBancarioFGC';
 import { DistribuicaoSetorial } from '../components/home/graficos/DistribuicaoSetorial';
 import { LiquidezVisao } from '../components/home/graficos/LiquidezVisao';
 import { NenhumClienteSelecionado } from '../components/home/NenhumClienteSelecionado';
@@ -18,11 +19,12 @@ export default function Home() {
     selectedClient,
     loading,
     metrics,
-    snapshotData,
     diasVencimento, setDiasVencimento,
     drawerCarteirasAberto, setDrawerCarteirasAberto,
     carteiraAtiva, setCarteiraAtiva,
     opcoesCarteira,
+    instituicoesManuais,
+    periodo, setPeriodo, mesesFechados,
   } = useHomeMetrics();
 
   // <-- 1. NOVO ESTADO: Se não houver cliente, mostra o Empty State amigável -->
@@ -58,15 +60,11 @@ export default function Home() {
         carteiraAtiva={carteiraAtiva}
         setCarteiraAtiva={setCarteiraAtiva}
         opcoesCarteira={opcoesCarteira}
-        dataRefBtg={metrics.dataRefBtg}
-        dataRefXp={metrics.dataRefXp}
-        dataRefAvenue={metrics.dataRefAvenue}
-        dataRefAgora={metrics.dataRefAgora}
-        incluirBtg={metrics.incluirBtg}
-        incluirXp={metrics.incluirXp}
-        incluirAvenue={metrics.incluirAvenue}
-        incluirAgora={metrics.incluirAgora}
+        fontesRef={metrics.fontesRef}
         onOpenGerenciarCarteiras={() => setDrawerCarteirasAberto(true)}
+        periodo={periodo}
+        setPeriodo={setPeriodo}
+        mesesFechados={mesesFechados}
       />
 
       <ResumoCards metrics={metrics} />
@@ -74,6 +72,7 @@ export default function Home() {
       <GraficoAlocacao
         alocacaoData={metrics.alocacaoData}
         comparativoData={metrics.comparativoData}
+        comparativoInstituicoes={metrics.comparativoInstituicoes}
       />
 
       <LiquidezVisao
@@ -82,7 +81,9 @@ export default function Home() {
         dadosRV={metrics.liquidezDataRV}
       />
 
-      <RiscoEmissor dados={metrics.exposicaoRiscoData} />
+      <CreditoBancarioFGC dados={metrics.creditoBancarioData} />
+
+      <RiscoEmissor dados={metrics.creditoPrivadoData} />
 
       <DistribuicaoSetorial dados={metrics.setorialData} />
 
@@ -98,10 +99,11 @@ export default function Home() {
       <DrawerGerenciarCarteiras
         aberto={drawerCarteirasAberto}
         onClose={() => setDrawerCarteirasAberto(false)}
-        temBtg={!!snapshotData.btg}
-        temXp={!!snapshotData.xp}
-        temAvenue={!!snapshotData.avenue}
-        temAgora={!!snapshotData.agora}
+        temBtg={metrics.temBtg}
+        temXp={metrics.temXp}
+        temAvenue={metrics.temAvenue}
+        temAgora={metrics.temAgora}
+        instituicoesManuais={instituicoesManuais}
         clienteId={selectedClient?.id ?? null}
       />
     </div>

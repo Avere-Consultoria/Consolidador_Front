@@ -7,22 +7,19 @@ import { useClient } from '../contexts/ClientContext';
 import { DrawerAtivosFechados } from '../components/historicoMensal/DrawerAtivosFechados';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
-type Instituicao = 'BTG' | 'XP' | 'AVENUE' | 'AGORA';
-
 interface SnapshotFechado {
     id: string;
     cliente_id: string;
-    instituicao: Instituicao;
+    instituicao: string;            // base ('BTG'/'XP'/...) ou nome da instituição manual
     mes_referencia: string;
     data_referencia: string;
     patrimonio_total: number;
     frozen_at: string;
 }
-
 interface PosicaoFechada {
     id: string;
     snapshot_fechado_id: string;
-    instituicao: Instituicao;
+    instituicao: string;
     nome_exibicao: string;
     classe_avere: string | null;
     liquidez_avere: string | null;
@@ -55,25 +52,21 @@ function formatarMoeda(v: number | null | undefined): string {
     return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 });
 }
 
-const CORES_INST: Record<Instituicao, string> = {
-    BTG:    '#0369A1',
-    XP:     '#C2410C',
-    AVENUE: '#92400E',
-    AGORA:  '#15803D',
+const CORES_INST: Record<string, string> = {
+    BTG: '#0369A1', XP: '#C2410C', AVENUE: '#92400E', AGORA: '#15803D',
 };
-
-// Paleta padrão para classes (caso dicionario_classes não esteja carregado)
+const PALETA_INST = ['#0083CB', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16', '#06B6D4'];
 const PALETA_CLASSES = ['#0083CB', '#00B4D8', '#F59E0B', '#8B5CF6', '#10B981', '#EF4444', '#EC4899', '#6366F1', '#F97316', '#84CC16'];
 
 // ── Página principal ─────────────────────────────────────────────────────────
 export default function HistoricoMensal() {
     const { selectedClient } = useClient();
 
-    const [loading, setLoading]                 = useState(false);
-    const [snapshots, setSnapshots]             = useState<SnapshotFechado[]>([]);
-    const [posicoes, setPosicoes]               = useState<PosicaoFechada[]>([]);
-    const [coresClasses, setCoresClasses]       = useState<Map<string, string>>(new Map());
-    const [drawerMes, setDrawerMes]             = useState<string | null>(null);
+    const [loading, setLoading]           = useState(false);
+    const [snapshots, setSnapshots]       = useState<SnapshotFechado[]>([]);
+    const [posicoes, setPosicoes]         = useState<PosicaoFechada[]>([]);
+    const [coresClasses, setCoresClasses] = useState<Map<string, string>>(new Map());
+    const [drawerMes, setDrawerMes]       = useState<string | null>(null);
 
     const fetchData = async () => {
         if (!selectedClient?.id) return;
@@ -87,7 +80,6 @@ export default function HistoricoMensal() {
                     .order('mes_referencia', { ascending: true }),
                 supabase.from('dicionario_classes').select('nome, cor_hex').order('ordem_exibicao'),
             ]);
-
             if (snapsRes.error)   throw snapsRes.error;
             if (classesRes.error) throw classesRes.error;
 
@@ -100,7 +92,6 @@ export default function HistoricoMensal() {
             });
             setCoresClasses(corMap);
 
-            // Busca posições de TODOS os snapshots fechados desse cliente
             if (snaps.length > 0) {
                 const snapIds = snaps.map(s => s.id);
                 const { data: posRes, error: posErr } = await supabase
@@ -120,54 +111,50 @@ export default function HistoricoMensal() {
         }
     };
 
-    useEffect(() => {
-        fetchData();
-    }, [selectedClient?.id]);
+    useEffect(() => { fetchData(); }, [selectedClient?.id]);
 
-    // ── Agregações ───────────────────────────────────────────────────────────
-    const { mesesUnicos, evolucaoData, alocacaoData, classesAtivas, resumoPorMes } = useMemo(() => {
-        const mesesSet = new Set(snapshots.map(s => s.mes_referencia));
-        const mesesArr = Array.from(mesesSet).sort();
+    // ── Agregações (instituições dinâmicas: 4 APIs + manuais) ─────────────────
+    const { mesesUnicos, evolucaoData, alocacaoData, classesAtivas, resumoPorMes, instituicoesPresentes, corInst } = useMemo(() => {
+        const mesesArr = Array.from(new Set(snapshots.map(s => s.mes_referencia))).sort();
+
+        // Instituições presentes (base) — agrega contas da mesma instituição.
+        const instSet = Array.from(new Set(snapshots.map(s => s.instituicao))).sort();
+        const corMapInst = new Map<string, string>();
+        let p = 0;
+        instSet.forEach(inst => corMapInst.set(inst, CORES_INST[inst] ?? PALETA_INST[p++ % PALETA_INST.length]));
+        const corInstFn = (inst: string) => corMapInst.get(inst) ?? '#9CA3AF';
 
         // Patrimônio total + por instituição por mês
-        const totaisPorMes = new Map<string, { total: number; BTG: number; XP: number; AVENUE: number; AGORA: number }>();
+        const totaisPorMes = new Map<string, { total: number; porInst: Record<string, number> }>();
         snapshots.forEach(s => {
-            const cur = totaisPorMes.get(s.mes_referencia) ?? { total: 0, BTG: 0, XP: 0, AVENUE: 0, AGORA: 0 };
-            cur.total += Number(s.patrimonio_total) || 0;
-            cur[s.instituicao] = (cur[s.instituicao] || 0) + (Number(s.patrimonio_total) || 0);
+            const cur = totaisPorMes.get(s.mes_referencia) ?? { total: 0, porInst: {} };
+            const v = Number(s.patrimonio_total) || 0;
+            cur.total += v;
+            cur.porInst[s.instituicao] = (cur.porInst[s.instituicao] || 0) + v;
             totaisPorMes.set(s.mes_referencia, cur);
         });
 
         const evolucao = mesesArr.map(m => {
             const t = totaisPorMes.get(m)!;
-            return {
-                mes: formatarMesCurto(m),
-                mesRef: m,
-                Total: t.total,
-                BTG: t.BTG,
-                XP: t.XP,
-                AVENUE: t.AVENUE,
-                AGORA: t.AGORA,
-            };
+            const row: any = { mes: formatarMesCurto(m), mesRef: m, Total: t.total };
+            instSet.forEach(inst => { row[inst] = t.porInst[inst] || 0; });
+            return row;
         });
 
         // Alocação por classe ao longo dos meses
-        // Construir map (snapshot_fechado_id -> mes_referencia) pra cruzar com posicoes
         const snapToMes = new Map<string, string>();
         snapshots.forEach(s => snapToMes.set(s.id, s.mes_referencia));
-
         const classesSet = new Set<string>();
         const alocPorMes = new Map<string, Map<string, number>>();
-        posicoes.forEach(p => {
-            const mes = snapToMes.get(p.snapshot_fechado_id);
+        posicoes.forEach(pos => {
+            const mes = snapToMes.get(pos.snapshot_fechado_id);
             if (!mes) return;
-            const classe = p.classe_avere || 'Não classificado';
+            const classe = pos.classe_avere || 'Não classificado';
             classesSet.add(classe);
             const mapPorMes = alocPorMes.get(mes) ?? new Map();
-            mapPorMes.set(classe, (mapPorMes.get(classe) || 0) + Number(p.valor_bruto || 0));
+            mapPorMes.set(classe, (mapPorMes.get(classe) || 0) + Number(pos.valor_bruto || 0));
             alocPorMes.set(mes, mapPorMes);
         });
-
         const classes = Array.from(classesSet).sort();
         const alocacao = mesesArr.map(m => {
             const row: any = { mes: formatarMesCurto(m), mesRef: m };
@@ -176,26 +163,20 @@ export default function HistoricoMensal() {
             return row;
         });
 
-        // Resumo pra tabela
         const resumo = mesesArr.map(m => {
             const t = totaisPorMes.get(m)!;
-            const instituicoes = (['BTG','XP','AVENUE','AGORA'] as Instituicao[]).filter(i => t[i] > 0);
-            const ativosMes = posicoes.filter(p => snapToMes.get(p.snapshot_fechado_id) === m).length;
-            return {
-                mes_referencia: m,
-                patrimonio_total: t.total,
-                instituicoes,
-                ativos_count: ativosMes,
-            };
-        }).reverse(); // mais recente primeiro
+            const insts = instSet.filter(i => (t.porInst[i] || 0) > 0);
+            const ativosMes = posicoes.filter(pos => snapToMes.get(pos.snapshot_fechado_id) === m).length;
+            return { mes_referencia: m, patrimonio_total: t.total, instituicoes: insts, ativos_count: ativosMes };
+        }).reverse();
 
-        return { mesesUnicos: mesesArr, evolucaoData: evolucao, alocacaoData: alocacao, classesAtivas: classes, resumoPorMes: resumo };
+        return { mesesUnicos: mesesArr, evolucaoData: evolucao, alocacaoData: alocacao, classesAtivas: classes, resumoPorMes: resumo, instituicoesPresentes: instSet, corInst: corInstFn };
     }, [snapshots, posicoes]);
 
     const posicoesDoMesSelecionado = useMemo(() => {
         if (!drawerMes) return [];
         const idsDoMes = snapshots.filter(s => s.mes_referencia === drawerMes).map(s => s.id);
-        return posicoes.filter(p => idsDoMes.includes(p.snapshot_fechado_id));
+        return posicoes.filter(pos => idsDoMes.includes(pos.snapshot_fechado_id));
     }, [drawerMes, snapshots, posicoes]);
 
     // ── Render ───────────────────────────────────────────────────────────────
@@ -209,14 +190,12 @@ export default function HistoricoMensal() {
             </div>
         );
     }
-
     if (loading) {
         return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
     }
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
@@ -239,7 +218,6 @@ export default function HistoricoMensal() {
                 </Card>
             ) : (
                 <>
-                    {/* ── Evolução do patrimônio ── */}
                     <Card style={{ padding: '20px' }}>
                         <Typography variant="h2" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-secundaria)', marginBottom: '16px' }}>
                             Evolução do Patrimônio
@@ -251,16 +229,14 @@ export default function HistoricoMensal() {
                                 <YAxis tickFormatter={formatarMoedaCurta} tick={{ fontSize: 11 }} width={80} />
                                 <Tooltip formatter={(v: number) => formatarMoeda(v)} labelStyle={{ fontWeight: 700 }} />
                                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                                <Line type="monotone" dataKey="Total"  stroke="#111827" strokeWidth={3} dot={{ r: 4 }} />
-                                <Line type="monotone" dataKey="BTG"    stroke={CORES_INST.BTG}    strokeWidth={2} dot={{ r: 3 }} />
-                                <Line type="monotone" dataKey="XP"     stroke={CORES_INST.XP}     strokeWidth={2} dot={{ r: 3 }} />
-                                <Line type="monotone" dataKey="AVENUE" stroke={CORES_INST.AVENUE} strokeWidth={2} dot={{ r: 3 }} />
-                                <Line type="monotone" dataKey="AGORA"  stroke={CORES_INST.AGORA}  strokeWidth={2} dot={{ r: 3 }} />
+                                <Line type="monotone" dataKey="Total" stroke="#111827" strokeWidth={3} dot={{ r: 4 }} />
+                                {instituicoesPresentes.map(inst => (
+                                    <Line key={inst} type="monotone" dataKey={inst} stroke={corInst(inst)} strokeWidth={2} dot={{ r: 3 }} />
+                                ))}
                             </LineChart>
                         </ResponsiveContainer>
                     </Card>
 
-                    {/* ── Alocação por classe ── */}
                     <Card style={{ padding: '20px' }}>
                         <Typography variant="h2" style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-secundaria)', marginBottom: '16px' }}>
                             Alocação por Classe Avere
@@ -279,58 +255,31 @@ export default function HistoricoMensal() {
                         </ResponsiveContainer>
                     </Card>
 
-                    {/* ── Resumo por mês ── */}
                     <Card style={{ padding: 0, overflow: 'hidden' }}>
                         <DataTable
                             data={resumoPorMes}
                             columns={[
-                                {
-                                    header: 'Mês',
-                                    accessorKey: 'mes_referencia',
-                                    cell: (item: any) => (
-                                        <Typography variant="p" style={{ fontWeight: 700, fontSize: '13px' }}>
-                                            {formatarMesLongo(item.mes_referencia)}
-                                        </Typography>
-                                    ),
-                                },
-                                {
-                                    header: 'Patrimônio Total',
-                                    accessorKey: 'patrimonio_total',
-                                    cell: (item: any) => (
-                                        <Typography variant="p" style={{ fontWeight: 700, fontSize: '13px', color: 'var(--color-primaria)' }}>
-                                            {formatarMoeda(item.patrimonio_total)}
-                                        </Typography>
-                                    ),
-                                },
-                                {
-                                    header: 'Instituições',
-                                    accessorKey: 'instituicoes',
-                                    cell: (item: any) => (
-                                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                                            {item.instituicoes.map((i: string) => (
-                                                <Badge key={i} variant="ghost" style={{ fontSize: '9px' }}>{i}</Badge>
-                                            ))}
-                                        </div>
-                                    ),
-                                },
-                                {
-                                    header: 'Ativos',
-                                    accessorKey: 'ativos_count',
-                                    cell: (item: any) => (
-                                        <Typography variant="p" style={{ fontSize: '13px' }}>{item.ativos_count}</Typography>
-                                    ),
-                                },
-                                {
-                                    header: '',
-                                    cell: (item: any) => (
-                                        <div style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: '12px' }}>
-                                            <Button variant="outline" onClick={() => setDrawerMes(item.mes_referencia)}>
-                                                <Eye size={14} style={{ marginRight: '6px' }} />
-                                                Ver ativos
-                                            </Button>
-                                        </div>
-                                    ),
-                                },
+                                { header: 'Mês', accessorKey: 'mes_referencia', cell: (item: any) => (
+                                    <Typography variant="p" style={{ fontWeight: 700, fontSize: '13px' }}>{formatarMesLongo(item.mes_referencia)}</Typography>
+                                ) },
+                                { header: 'Patrimônio Total', accessorKey: 'patrimonio_total', cell: (item: any) => (
+                                    <Typography variant="p" style={{ fontWeight: 700, fontSize: '13px', color: 'var(--color-primaria)' }}>{formatarMoeda(item.patrimonio_total)}</Typography>
+                                ) },
+                                { header: 'Instituições', accessorKey: 'instituicoes', cell: (item: any) => (
+                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                        {item.instituicoes.map((i: string) => (<Badge key={i} variant="ghost" style={{ fontSize: '9px' }}>{i}</Badge>))}
+                                    </div>
+                                ) },
+                                { header: 'Ativos', accessorKey: 'ativos_count', cell: (item: any) => (
+                                    <Typography variant="p" style={{ fontSize: '13px' }}>{item.ativos_count}</Typography>
+                                ) },
+                                { header: '', cell: (item: any) => (
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', paddingRight: '12px' }}>
+                                        <Button variant="outline" onClick={() => setDrawerMes(item.mes_referencia)}>
+                                            <Eye size={14} style={{ marginRight: '6px' }} /> Ver ativos
+                                        </Button>
+                                    </div>
+                                ) },
                             ]}
                             keyExtractor={(item: any) => item.mes_referencia}
                             selectable={false}
@@ -345,7 +294,6 @@ export default function HistoricoMensal() {
                 mesReferencia={drawerMes}
                 posicoes={posicoesDoMesSelecionado}
             />
-
         </div>
     );
 }

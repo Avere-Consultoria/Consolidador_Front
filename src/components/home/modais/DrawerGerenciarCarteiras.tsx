@@ -17,10 +17,14 @@ interface DrawerGerenciarCarteirasProps {
     temXp: boolean;
     temAvenue: boolean;
     temAgora: boolean;
+    instituicoesManuais?: string[];
     clienteId: string | null;
 }
 
-export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAvenue, temAgora, clienteId }: DrawerGerenciarCarteirasProps) {
+// Exibe a chave da carteira de forma amigável ('MANUAL:SANTANDER' → 'SANTANDER')
+const labelInst = (key: string) => key.startsWith('MANUAL:') ? key.slice('MANUAL:'.length) : key;
+
+export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAvenue, temAgora, instituicoesManuais = [], clienteId }: DrawerGerenciarCarteirasProps) {
     const temAlguma = temBtg || temXp || temAvenue || temAgora;
     const [carteiras, setCarteiras] = useState<CarteiraPersonalizada[]>([]);
     const [modalCriarAberto, setModalCriarAberto] = useState(false);
@@ -190,7 +194,7 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAv
                                                     </div>
                                                     <div>
                                                         <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>{c.nome}</Typography>
-                                                        <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>{c.instituicoes.join(' + ')}</Typography>
+                                                        <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>{c.instituicoes.map(labelInst).join(' + ')}</Typography>
                                                     </div>
                                                 </div>
 
@@ -236,6 +240,7 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAv
                     temXp={temXp}
                     temAvenue={temAvenue}
                     temAgora={temAgora}
+                    instituicoesManuais={instituicoesManuais}
                     clienteId={clienteId}
                     onSalva={handleCarteiraSalva}
                     carteiraEditando={carteiraEditando}
