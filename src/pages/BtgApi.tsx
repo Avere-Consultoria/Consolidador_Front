@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Wallet, RefreshCw, LayoutGrid, Calendar,
   Landmark, BarChart3, PieChart, ChevronRight
@@ -444,6 +444,7 @@ export default function BtgApi() {
   const { selectedClient } = useClient();
   const [portfolioData, setPortfolioData] = useState<AverePortfolio | null>(null);
   const [loading, setLoading] = useState(false);
+  const syncingRef = useRef(false);   // mutex contra sync concorrente (race no delete+insert)
   const [ativoSelecionado, setAtivoSelecionado] = useState<AvereAtivo | null>(null);
   const [drawerAberto, setDrawerAberto] = useState(false);
 
@@ -564,6 +565,8 @@ export default function BtgApi() {
   // ── 2. Consulta API via Edge Function ─────────────────────────────────────
   async function handleFetch() {
     if (!selectedClient?.id) return;
+    if (syncingRef.current) return;   // já há uma sync em andamento → ignora
+    syncingRef.current = true;
     setLoading(true);
     try {
       // Sincroniza TODAS as contas BTG do cliente (multi-conta); exibe a última.
@@ -596,6 +599,7 @@ export default function BtgApi() {
       console.error(err);
     } finally {
       setLoading(false);
+      syncingRef.current = false;
     }
   }
 

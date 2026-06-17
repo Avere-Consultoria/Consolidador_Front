@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Wallet, RefreshCw, LayoutGrid, Calendar,
     BarChart3, ChevronRight, AlertCircle, Database
@@ -155,6 +155,7 @@ export default function AgoraApi() {
     const { selectedClient } = useClient();
     const [portfolioData, setPortfolioData] = useState<AverePortfolio | null>(null);
     const [loading, setLoading] = useState(false);
+    const syncingRef = useRef(false);   // mutex contra sync concorrente (race no delete+insert)
     const [ativoSelecionado, setAtivoSelecionado] = useState<AvereAtivo | null>(null);
     const [drawerAberto, setDrawerAberto] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -234,7 +235,9 @@ export default function AgoraApi() {
 
     async function handleFetch() {
         if (!selectedClient?.id) { setErrorMsg("Selecione um cliente."); return; }
+        if (syncingRef.current) return;   // já há uma sync em andamento → ignora
 
+        syncingRef.current = true;
         setLoading(true);
         setErrorMsg(null);
         try {
@@ -262,6 +265,7 @@ export default function AgoraApi() {
             setErrorMsg(err.message);
         } finally {
             setLoading(false);
+            syncingRef.current = false;
         }
     }
 

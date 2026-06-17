@@ -137,7 +137,7 @@ export default function GestaoEquipe() {
         const senha = gerarSenhaTemp();
         try {
             const { error } = await supabase.functions.invoke('invite-consultor', {
-                body: { consultor_id: item.id, email: item.email_professional, nome: item.nome, senha, role: 'CONSULTOR' }
+                body: { consultor_id: item.id, email: item.email_professional, nome: item.nome, senha, role: 'CONSULTOR_INTERNO' }
             });
             if (error) throw error;
             setAcessoResult({ email: item.email_professional, senha });

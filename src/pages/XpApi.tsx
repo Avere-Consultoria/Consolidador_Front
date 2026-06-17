@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Wallet, RefreshCw, LayoutGrid, Calendar,
   Landmark, BarChart3, PieChart, TrendingUp,
@@ -517,6 +517,11 @@ export default function XpApi() {
   const { selectedClient } = useClient();
   const [portfolioData, setPortfolioData] = useState<XpPortfolio | null>(null);
   const [loading, setLoading] = useState(false);
+  // Trava em ref: bloqueia execução concorrente de qualquer gatilho (botão, effect,
+  // troca de selectedClient). `loading` (state) é assíncrono e não serve de mutex —
+  // sem isto, dois carregarDadosXp simultâneos disparam dois invoke → race no
+  // delete+insert da Edge Function → ativos duplicados no snapshot.
+  const syncingRef = useRef(false);
   const [erro, setErro] = useState<'ip_bloqueado' | 'sem_conta' | 'token_invalido' | 'generico' | null>(null);
   const [ativoSelecionado, setAtivoSelecionado] = useState<XpAtivo | null>(null);
   const [drawerAberto, setDrawerAberto] = useState(false);
@@ -524,7 +529,9 @@ export default function XpApi() {
   // ── Carregar dados via Edge Function ─────────────────────────────────────
   async function carregarDadosXp() {
     if (!selectedClient) return;
+    if (syncingRef.current) return;   // já há uma sync em andamento → ignora
 
+    syncingRef.current = true;
     setLoading(true);
     setErro(null);
 
@@ -597,6 +604,7 @@ export default function XpApi() {
       }
     } finally {
       setLoading(false);
+      syncingRef.current = false;
     }
   }
 

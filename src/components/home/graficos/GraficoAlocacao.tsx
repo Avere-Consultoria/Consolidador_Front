@@ -109,8 +109,8 @@ export function GraficoAlocacao({ alocacaoData, comparativoData, comparativoInst
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.06)" />
                     <XAxis type="number" hide />
                     <YAxis
-                        type="category" dataKey="name" width={95}
-                        tick={{ fontSize: 12, fontFamily: 'Montserrat, sans-serif', fill: 'var(--color-secundaria)', opacity: 0.6 }}
+                        type="category" dataKey="name" width={128} interval={0}
+                        tick={{ fontSize: 11, fontFamily: 'Montserrat, sans-serif', fill: 'var(--color-secundaria)', opacity: 0.6 }}
                         axisLine={false} tickLine={false}
                     />
                     <Tooltip content={<TooltipCustom />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />

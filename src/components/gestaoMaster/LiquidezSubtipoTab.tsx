@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, Button, Typography, Spinner, TextField, Badge, toast } from 'avere-ui';
 import { Info } from 'lucide-react';
 import { supabase } from '../../services/supabase';
+import { FAMILIAS_LIQUIDEZ_FLAT } from '../../constants/familiasLiquidez';
 
 interface Row { sub_tipo: string; dias: string; padronizar: boolean; }
 
@@ -12,22 +13,18 @@ export default function LiquidezSubtipoTab() {
 
     const loadData = async () => {
         setLoading(true);
-        const [canRes, cfgRes] = await Promise.all([
-            supabase.from('ativos_canonicos').select('sub_tipo_canonico'),
-            supabase.from('liquidez_subtipo').select('sub_tipo, liquidez_dias, padronizar').is('consultor_id', null),
-        ]);
-        // subtipos distintos derivados do que existe no sistema
-        const subtipos = Array.from(new Set(
-            (canRes.data || [])
-                .map((c: any) => (c.sub_tipo_canonico || '').trim())
-                .filter((s: string) => s !== '')
-        )).sort();
+        const { data: cfgData } = await supabase
+            .from('liquidez_subtipo')
+            .select('sub_tipo, liquidez_dias, padronizar')
+            .is('consultor_id', null);
+        // Lista FECHADA de famílias (constants/familiasLiquidez) — a tela não
+        // deriva mais do que as APIs mandam (poluía com tickers e lixo).
         const cfg = new Map<string, { dias: string; padronizar: boolean }>();
-        (cfgRes.data || []).forEach((r: any) => cfg.set(r.sub_tipo, {
+        (cfgData || []).forEach((r: any) => cfg.set(r.sub_tipo, {
             dias: r.liquidez_dias != null ? String(r.liquidez_dias) : '',
             padronizar: !!r.padronizar,
         }));
-        setRows(subtipos.map(st => ({
+        setRows(FAMILIAS_LIQUIDEZ_FLAT.map(st => ({
             sub_tipo: st,
             dias: cfg.get(st)?.dias ?? '',
             padronizar: cfg.get(st)?.padronizar ?? false,

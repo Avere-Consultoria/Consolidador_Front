@@ -133,12 +133,15 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
 
     const handleSalvar = async () => {
         setSalvando(true);
+        const classeMudou = (form.classe_avere || null) !== (canonico.classe_avere || null);
         const { error } = await supabase.from('ativos_canonicos').update({
             classe_avere:    form.classe_avere || null,
             liquidez_avere:  form.liquidez_avere || null,
             data_vencimento: form.data_vencimento || null,
             emissor_id:      bancario ? null : (form.emissor_id || null),
             conglomerado_id: bancario ? (form.conglomerado_id || null) : null,
+            // classe definida pelo Master é intocável por reprocessamentos
+            ...(classeMudou ? { origem_classificacao: form.classe_avere ? 'manual' : null } : {}),
         }).eq('id', canonico.id);
         setSalvando(false);
         if (error) { toast.error(`Erro ao salvar: ${error.message}`); return; }

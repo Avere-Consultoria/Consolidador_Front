@@ -10,6 +10,8 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
+    const [modoReset, setModoReset] = useState(false);
+    const [resetEnviado, setResetEnviado] = useState(false);
     const navigate = useNavigate();
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -17,18 +19,33 @@ export default function Login() {
         setErrorMsg('');
         setLoading(true);
         try {
-            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            const { error } = await supabase.auth.signInWithPassword({ email, password });
 
             if (error) {
-                console.error("ERRO SUPABASE:", error.message);
                 setErrorMsg('E-mail ou senha incorretos. Tente novamente.');
                 return;
             }
 
             navigate('/');
-        } catch (error: any) {
-            console.error("Erro no catch:", error);
+        } catch {
             setErrorMsg('Erro inesperado na aplicação. Tente novamente.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleReset = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setErrorMsg('');
+        setLoading(true);
+        try {
+            await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/redefinir-senha`,
+            });
+            // Resposta neutra de propósito: não revela se o e-mail existe na base.
+            setResetEnviado(true);
+        } catch {
+            setErrorMsg('Não foi possível enviar o link. Tente novamente.');
         } finally {
             setLoading(false);
         }
@@ -95,7 +112,13 @@ export default function Login() {
                         </div>
                     </div>
 
-                    <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <form onSubmit={modoReset ? handleReset : handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                        {modoReset && (
+                            <Typography variant="p" style={{ fontSize: '13px', color: '#374151', margin: 0, lineHeight: 1.5 }}>
+                                Informe seu e-mail e enviaremos um link para redefinir a senha.
+                            </Typography>
+                        )}
 
                         {/* Input Email com Ícone */}
                         <div>
@@ -120,11 +143,17 @@ export default function Login() {
                         </div>
 
                         {/* input das Senhas */}
+                        {!modoReset && (
                         <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                 <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>Senha</label>
-                                {/* Link falso para recuperar senha, muito comum em SaaS */}
-                                <a href="#" style={{ fontSize: '12px', color: 'var(--color-primaria)', textDecoration: 'none', fontWeight: 500 }}>Esqueceu a senha?</a>
+                                <button
+                                    type="button"
+                                    onClick={() => { setModoReset(true); setErrorMsg(''); setResetEnviado(false); }}
+                                    style={{ fontSize: '12px', color: 'var(--color-primaria)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, padding: 0 }}
+                                >
+                                    Esqueceu a senha?
+                                </button>
                             </div>
                             <div style={{ position: 'relative' }}>
                                 <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '14px', color: '#9CA3AF' }}>
@@ -144,6 +173,15 @@ export default function Login() {
                                 />
                             </div>
                         </div>
+                        )}
+
+                        {modoReset && resetEnviado && (
+                            <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '8px', padding: '10px 14px' }}>
+                                <Typography variant="p" style={{ fontSize: '13px', color: '#047857', fontWeight: 500 }}>
+                                    Se este e-mail estiver cadastrado, um link de redefinição foi enviado. Confira também a caixa de spam.
+                                </Typography>
+                            </div>
+                        )}
 
                         {errorMsg && (
                             <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '10px 14px' }}>
@@ -160,8 +198,18 @@ export default function Login() {
                                 borderRadius: '8px', background: 'var(--color-primaria)'
                             }}
                         >
-                            {loading ? <Spinner size="md" /> : 'Entrar na Plataforma'}
+                            {loading ? <Spinner size="md" /> : (modoReset ? 'Enviar link de redefinição' : 'Entrar na Plataforma')}
                         </Button>
+
+                        {modoReset && (
+                            <button
+                                type="button"
+                                onClick={() => { setModoReset(false); setErrorMsg(''); setResetEnviado(false); }}
+                                style={{ fontSize: '13px', color: '#6B7280', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, padding: 0 }}
+                            >
+                                ← Voltar ao login
+                            </button>
+                        )}
                     </form>
 
                 </div>

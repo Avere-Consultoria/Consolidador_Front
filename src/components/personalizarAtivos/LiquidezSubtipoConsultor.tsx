@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, Button, Typography, Spinner, TextField, Badge, toast } from 'avere-ui';
 import { Info } from 'lucide-react';
 import { supabase } from '../../services/supabase';
+import { FAMILIAS_LIQUIDEZ_FLAT } from '../../constants/familiasLiquidez';
 
 type Choice = 'HERDAR' | 'PADRONIZAR' | 'DESLIGAR';
 interface Row {
@@ -21,14 +22,12 @@ export function LiquidezSubtipoConsultor({ consultorId }: { consultorId: string 
 
     const loadData = async () => {
         setLoading(true);
-        const [canRes, globalRes, consRes] = await Promise.all([
-            supabase.from('ativos_canonicos').select('sub_tipo_canonico'),
+        const [globalRes, consRes] = await Promise.all([
             supabase.from('liquidez_subtipo').select('sub_tipo, liquidez_dias, padronizar').is('consultor_id', null),
             supabase.from('liquidez_subtipo').select('sub_tipo, liquidez_dias, padronizar').eq('consultor_id', consultorId),
         ]);
-        const subtipos = Array.from(new Set(
-            (canRes.data || []).map((c: any) => (c.sub_tipo_canonico || '').trim()).filter((s: string) => s !== '')
-        )).sort();
+        // Lista FECHADA de famílias — mesma curadoria da aba global (Gestão Master)
+        const subtipos = FAMILIAS_LIQUIDEZ_FLAT;
 
         const globalMap = new Map<string, { padronizar: boolean; dias: number | null }>();
         (globalRes.data || []).forEach((r: any) => globalMap.set(r.sub_tipo, { padronizar: !!r.padronizar, dias: r.liquidez_dias }));

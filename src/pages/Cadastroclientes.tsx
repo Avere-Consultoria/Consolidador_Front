@@ -16,6 +16,7 @@ interface Cliente {
     nome: string;
     consultor_id: string | null;
     codigo_avere: string | null;
+    documento: string | null;   // CPF/CNPJ (só dígitos) — opcional; chave p/ casar fontes (ex.: Avenue)
 }
 interface Conta {
     id?: string;
@@ -154,7 +155,7 @@ export default function CadastroClientes() {
         try {
             const [consRes, clisRes, instRes, contasRes] = await Promise.all([
                 supabase.from('consultores').select('id, nome').eq('ativo', true).order('nome'),
-                supabase.from('clientes').select('id, nome, consultor_id, codigo_avere').order('nome'),
+                supabase.from('clientes').select('id, nome, consultor_id, codigo_avere, documento').order('nome'),
                 supabase.from('instituicoes').select('id, nome, tipo').order('tipo').order('nome'),
                 supabase.from('cliente_contas').select('id, cliente_id, instituicao_id, apelido, codigo, documento, ordem').order('ordem'),
             ]);
@@ -187,7 +188,7 @@ export default function CadastroClientes() {
 
     const handleNovoCliente = () => {
         setClienteEmEdicao(null);
-        setFormCliente({ nome: '', consultor_id: null, codigo_avere: '' });
+        setFormCliente({ nome: '', consultor_id: null, codigo_avere: '', documento: '' });
         setFormContas([]);
         setErros({});
         setTipoDoc('PF');
@@ -196,11 +197,12 @@ export default function CadastroClientes() {
 
     const handleEditarNoModal = (cliente: Cliente) => {
         setClienteEmEdicao(cliente.id);
-        setFormCliente({ id: cliente.id, nome: cliente.nome, consultor_id: cliente.consultor_id, codigo_avere: cliente.codigo_avere });
+        const docCliente = cliente.documento ? maskDoc(cliente.documento, ehCnpj(cliente.documento) ? 'PJ' : 'PF') : '';
+        setFormCliente({ id: cliente.id, nome: cliente.nome, consultor_id: cliente.consultor_id, codigo_avere: cliente.codigo_avere, documento: docCliente });
         const contas = (contasPorCliente[cliente.id] || []).map(c => ({ ...c, uid: c.id || crypto.randomUUID() }));
         setFormContas(contas);
-        // infere PF/PJ pelo documento de alguma conta (Ágora)
-        const docExistente = contas.find(c => c.documento)?.documento;
+        // infere PF/PJ pelo documento do cliente (prioridade) ou de alguma conta (Ágora)
+        const docExistente = cliente.documento || contas.find(c => c.documento)?.documento;
         setTipoDoc(ehCnpj(docExistente) ? 'PJ' : 'PF');
         setErros({});
         setIsModalOpen(true);
@@ -230,6 +232,7 @@ export default function CadastroClientes() {
                 nome: (formCliente.nome ?? '').trim(),
                 consultor_id: formCliente.consultor_id || null,
                 codigo_avere: (formCliente.codigo_avere ?? '').trim() || null,
+                documento: apenasDigitos(formCliente.documento) || null,   // opcional, só dígitos
             };
             if (clienteEmEdicao) {
                 const { error } = await supabase.from('clientes').update(payload).eq('id', clienteEmEdicao);
@@ -425,6 +428,7 @@ export default function CadastroClientes() {
                                     <button key={t} type="button"
                                         onClick={() => {
                                             setTipoDoc(t);
+                                            setFormCliente(p => ({ ...p, documento: p.documento ? maskDoc(p.documento, t) : p.documento }));
                                             setFormContas(prev => prev.map(c => ({ ...c, documento: c.documento ? maskDoc(c.documento, t) : c.documento })));
                                         }}
                                         style={{
@@ -462,6 +466,17 @@ export default function CadastroClientes() {
                                 />
                                 {erros.codigo_avere && <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#EF4444' }}>{erros.codigo_avere}</p>}
                             </div>
+                        </div>
+
+                        <div>
+                            <TextField
+                                label={tipoDoc === 'PJ' ? 'CNPJ (opcional)' : 'CPF (opcional)'}
+                                value={formCliente.documento || ''}
+                                onChange={e => setFormCliente(p => ({ ...p, documento: maskDoc(e.target.value, tipoDoc) }))}
+                            />
+                            <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#9CA3AF' }}>
+                                Opcional. Identifica o cliente em fontes que indexam por documento (ex.: Avenue por CPF).
+                            </p>
                         </div>
 
                         {/* ── Contas por instituição ── */}

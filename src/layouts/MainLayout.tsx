@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home, LineChart, Database, SlidersHorizontal, Users, User, Building2, Landmark, BarChart2, Globe, Activity, BookOpen, UserPlus, UsersRound, Lock, History, Wrench } from 'lucide-react';
-import { SideBar, SideBarItem, TopBar, HierarchicalCombobox, Toaster, type ComboboxLevel } from 'avere-ui';
+import { Home, LineChart, Database, SlidersHorizontal, Users, User, Building2, Landmark, BarChart2, Globe, Activity, BookOpen, UserPlus, UsersRound, Lock, History, Wrench, RefreshCw } from 'lucide-react';
+import { SideBar, SideBarItem, TopBar, HierarchicalCombobox, Toaster, Spinner, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -279,6 +279,10 @@ export default function MainLayout() {
               icon={Wrench} label="Manutenção"
               active={location.pathname === '/manutencao'} onClick={() => navigate('/manutencao')}
             />
+            <SideBarItem
+              icon={RefreshCw} label="Sincronização em Massa"
+              active={location.pathname === '/sincronizacao'} onClick={() => navigate('/sincronizacao')}
+            />
           </>
         )}
       </SideBar>
@@ -294,7 +298,9 @@ export default function MainLayout() {
         </TopBar>
         <div style={{ padding: '32px', flex: 1, overflowY: 'auto' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-            <Outlet />
+            <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>}>
+              <Outlet />
+            </Suspense>
           </div>
         </div>
       </main>

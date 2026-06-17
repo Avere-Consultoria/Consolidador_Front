@@ -58,12 +58,20 @@ interface ClasseDinamica {
 }
 
 // Sub-tipos do mundo bancário (FGC) → risco = conglomerado; demais → emissor
-const SUBTIPOS_BANCARIO = new Set(['CDB', 'LCI', 'LCA', 'LF', 'LIG', 'RDB', 'LH', 'LC', 'LCD', 'DPGE', 'RDC']);
+const SUBTIPOS_BANCARIO = new Set(['CDB', 'LCI', 'LCA', 'LF', 'LIG', 'RDB', 'LH', 'LC', 'LCD', 'DPGE', 'RDC', 'LFSN']);
 const isBancario = (subTipo: string) => SUBTIPOS_BANCARIO.has((subTipo || '').toUpperCase().trim());
 
-function calcularStatus(c: { classe_avere: string; liquidez_avere: string; emissor_id: string; conglomerado_id: string }): 'CLASSIFICADO' | 'PENDENTE' {
-    const temRisco = !!c.emissor_id || !!c.conglomerado_id;
-    return (c.classe_avere && c.liquidez_avere.trim() !== '' && temRisco) ? 'CLASSIFICADO' : 'PENDENTE';
+// Crédito privado: emissor é obrigatório. Fundos/ações/caixa/COE/títulos públicos
+// não têm risco de crédito nesse modelo — não exigem emissor pra fechar o status.
+const SUBTIPOS_CREDITO = new Set(['DEB', 'CRA', 'CRI', 'FIDC', 'NP', 'NC', 'CCB', 'CCI', 'CDCA']);
+
+function calcularStatus(c: { classe_avere: string; liquidez_avere: string; sub_tipo_canonico: string; emissor_id: string; conglomerado_id: string }): 'CLASSIFICADO' | 'PENDENTE' {
+    if (!c.classe_avere || c.liquidez_avere.trim() === '') return 'PENDENTE';
+    const st = (c.sub_tipo_canonico || '').toUpperCase().trim();
+    if (SUBTIPOS_BANCARIO.has(st) || SUBTIPOS_CREDITO.has(st)) {
+        return (c.emissor_id || c.conglomerado_id) ? 'CLASSIFICADO' : 'PENDENTE';
+    }
+    return 'CLASSIFICADO';
 }
 
 const CORES_INST: Record<string, { bg: string; fg: string }> = {

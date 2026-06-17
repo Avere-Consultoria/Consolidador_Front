@@ -341,7 +341,10 @@ function montarFontesMeta(
         const multi = entries.length > 1;
         entries.forEach((e, i) => {
             const label = (e.apelido && e.apelido.trim()) || (multi ? `${nomeBase} ${i + 1}` : nomeBase);
-            const saldoOutros = def.base === 'BTG' ? (Number(e.snap?.saldo_cc) || 0) + (Number(e.snap?.saldo_cripto) || 0)
+            // BTG: a conta corrente já entra como ATIVO (CASH) → não somar saldo_cc
+            // aqui senão duplica em "Conta Corrente / Outros". Mantém só o cripto,
+            // que não vem como ativo no parser.
+            const saldoOutros = def.base === 'BTG' ? (Number(e.snap?.saldo_cripto) || 0)
                               : def.base === 'XP'  ? (Number(e.snap?.saldo_coe) || 0) : 0;
             fontes.push({
                 key: e.cid ? `CONTA:${e.cid}` : `CONTA:${def.base}`,

@@ -137,6 +137,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                 }}>
                                     <style>{`
                                         .tabela-carteira td { vertical-align: middle; }
+                                        .tabela-carteira td p { margin: 0; }
                                     `}</style>
                                     <div className="tabela-carteira">
                                     <DataTable
@@ -146,7 +147,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                 header: 'Tipo',
                                                 accessorKey: 'subTipo',
                                                 cell: (item: ConsolidatedAtivo) => (
-                                                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                                                         {item.subTipo
                                                             ? <Badge intent="primaria" variant="ghost" style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(0,131,203,0.05)', fontFamily: 'Montserrat, sans-serif' }}>{item.subTipo}</Badge>
                                                             : <span style={{ opacity: 0.3 }}>—</span>}
@@ -157,12 +158,13 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                 header: 'Emissor / Ativo',
                                                 accessorKey: 'nome',
                                                 cell: (item: ConsolidatedAtivo) => (
-                                                    <div style={{ maxWidth: '300px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', maxWidth: '300px', minWidth: 0 }}>
                                                         <Typography
                                                             variant="p"
                                                             style={{
                                                                 fontWeight: 600,
                                                                 fontSize: '13px',
+                                                                margin: 0,
                                                                 whiteSpace: 'nowrap',
                                                                 overflow: 'hidden',
                                                                 textOverflow: 'ellipsis'
@@ -180,10 +182,10 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                 cell: (item: ConsolidatedAtivo) => {
                                                     const valor = item.taxa || item.benchmark;
                                                     return (
-                                                        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                                                             {(!valor || valor === '-')
                                                                 ? <span style={{ opacity: 0.3 }}>—</span>
-                                                                : <Typography variant="p" style={{ fontSize: '11px', fontWeight: 600, color: '#6B7280', fontFamily: 'Montserrat, sans-serif', whiteSpace: 'nowrap' }}>{valor}</Typography>
+                                                                : <Typography variant="p" style={{ fontSize: '11px', fontWeight: 600, color: '#6B7280', fontFamily: 'Montserrat, sans-serif', whiteSpace: 'nowrap', margin: 0 }}>{valor}</Typography>
                                                             }
                                                         </div>
                                                     );
@@ -193,7 +195,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                 header: 'Instituição',
                                                 accessorKey: 'instituicao',
                                                 cell: (item: ConsolidatedAtivo) => (
-                                                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                                                         <Badge variant="ghost" style={{
                                                             fontSize: '10px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif',
                                                             color: corInstituicao(item.instituicao),
@@ -211,9 +213,9 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                 cell: (item: ConsolidatedAtivo) => {
                                                     let conteudo: React.ReactNode = <span style={{ opacity: 0.3 }}>—</span>;
                                                     if (item.vencimento) {
-                                                        conteudo = <Typography variant="p" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 500, fontFamily: 'Montserrat, sans-serif' }}>{fmtDate(item.vencimento)}</Typography>;
+                                                        conteudo = <Typography variant="p" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 500, fontFamily: 'Montserrat, sans-serif', margin: 0 }}>{fmtDate(item.vencimento)}</Typography>;
                                                     } else if (item.liquidez !== null && item.liquidez !== undefined && item.liquidez !== '') {
-                                                        conteudo = <Typography variant="p" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 500, fontFamily: 'Montserrat, sans-serif' }}>D+{item.liquidez}</Typography>;
+                                                        conteudo = <Typography variant="p" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 500, fontFamily: 'Montserrat, sans-serif', margin: 0 }}>D+{item.liquidez}</Typography>;
                                                     }
                                                     return <div style={{ display: 'flex', justifyContent: 'flex-start' }}>{conteudo}</div>;
                                                 },
@@ -222,7 +224,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                 header: 'Valor Bruto',
                                                 accessorKey: 'valorBruto',
                                                 cell: (item: ConsolidatedAtivo) => (
-                                                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                                                         <strong style={{ fontFamily: 'Montserrat, sans-serif' }}>{fmt(item.valorBruto ?? item.valorLiquido)}</strong>
                                                     </div>
                                                 ),
@@ -231,7 +233,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                 header: '',
                                                 accessorKey: 'rowId',
                                                 cell: (item: ConsolidatedAtivo) => (
-                                                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();

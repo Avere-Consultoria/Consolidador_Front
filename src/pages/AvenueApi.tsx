@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Wallet, RefreshCw, LayoutGrid, Calendar,
     Globe, BarChart3, ChevronRight
@@ -110,6 +110,7 @@ export default function AvenueApi() {
     const { selectedClient } = useClient();
     const [portfolioData, setPortfolioData] = useState<AverePortfolio | null>(null);
     const [loading, setLoading] = useState(false);
+    const syncingRef = useRef(false);   // mutex contra sync concorrente (race no delete+insert)
     const [ativoSelecionado, setAtivoSelecionado] = useState<AvereAtivo | null>(null);
     const [drawerAberto, setDrawerAberto] = useState(false);
 
@@ -187,6 +188,8 @@ export default function AvenueApi() {
 
     async function handleFetch() {
         if (!selectedClient?.id) return;
+        if (syncingRef.current) return;   // já há uma sync em andamento → ignora
+        syncingRef.current = true;
         setLoading(true);
         try {
             console.log("Disparando Edge Function...");
@@ -225,6 +228,7 @@ export default function AvenueApi() {
             console.error("Erro no handleFetch:", err);
         } finally {
             setLoading(false);
+            syncingRef.current = false;
         }
     }
 
