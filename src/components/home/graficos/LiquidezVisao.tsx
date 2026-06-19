@@ -164,7 +164,7 @@ export function LiquidezVisao({ dados, dadosPrev, dadosRV }: LiquidezVisaoProps)
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {temGeral && <LiquidezBloco titulo="Perfil de Liquidez"        dados={dados}      faixas={faixas} />}
+            {temGeral && <LiquidezBloco titulo="Liquidez — Geral"          dados={dados}      faixas={faixas} />}
             {temPrev  && <LiquidezBloco titulo="Liquidez — Previdência"    dados={dadosPrev!} faixas={faixas} />}
             {temRV    && <LiquidezBloco titulo="Liquidez — Renda Variável" dados={dadosRV!}   faixas={faixas} />}
         </div>

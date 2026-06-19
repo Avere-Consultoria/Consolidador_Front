@@ -123,13 +123,10 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                     {dadosFiltrados.map((emissor, i) => (
                         <tr key={i}>
                             <td style={tdStyle}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ width: 8, height: 8, borderRadius: '2px', background: corSetor(emissor), flexShrink: 0 }} />
-                                    {emissor.name}
-                                </div>
+                                {emissor.name}
                             </td>
                             <td style={tdStyle}>
-                                <Badge variant="ghost" style={{ fontSize: '10px', fontFamily: 'Montserrat, sans-serif' }}>
+                                <Badge variant="ghost" style={{ fontSize: '10px', fontFamily: 'Montserrat, sans-serif', color: corSetor(emissor), background: `${corSetor(emissor)}1A` }}>
                                     {emissor.setor || 'N/A'}
                                 </Badge>
                             </td>
@@ -155,16 +152,8 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                     mostrarSwitch={!isWide}
                 />
 
-                {/* ── Sub-header: ícone + segmented control ── */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '8px', borderRadius: '8px', color: '#EF4444' }}>
-                            <ShieldAlert size={20} />
-                        </div>
-                        <Typography variant="p" style={{ fontSize: '12px', opacity: 0.6, fontFamily: 'Montserrat, sans-serif' }}>
-                            Debêntures, CRA, CRI e afins (fora do FGC)
-                        </Typography>
-                    </div>
+                {/* ── Sub-header: controle de visualização ── */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '20px' }}>
 
                     <div style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.05)', padding: '4px', borderRadius: '8px' }}>
                         {opcoesVisualizacao.map(opt => (

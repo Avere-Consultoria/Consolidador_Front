@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Typography, Card, Badge, Button, Spinner, TextField, toast } from 'avere-ui';
-import { Filter, Wand2, Search } from 'lucide-react';
+import { Wand2, Search } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { DrawerCanonico, type CanonicoDetalhe } from '../components/masterAtivos/DrawerCanonico';
 import { ModalFundirCanonicos, type CanonicoOpcaoDestino } from '../components/masterAtivos/ModalFundirCanonicos';
@@ -94,7 +94,7 @@ export default function MasterAtivos() {
     const [classesAvere, setClassesAvere] = useState<ClasseDinamica[]>([]);
     const [loading, setLoading] = useState(true);
     const [classificando, setClassificando] = useState(false);
-    const [filtroStatus, setFiltroStatus] = useState<'TODOS' | 'PENDENTE' | 'CLASSIFICADO'>('PENDENTE');
+    const [abaAtiva, setAbaAtiva] = useState<string>('CLASSIFICAR');   // 'CLASSIFICAR' | nome da classe
     const [busca, setBusca] = useState('');
 
     // ── Drawer e modal de fundir ─────────────────────────────────────────
@@ -192,7 +192,17 @@ export default function MasterAtivos() {
     const emissoresMap     = useMemo(() => new Map(emissores.map(e => [e.id, e.nome_fantasia])), [emissores]);
     const conglomeradosMap = useMemo(() => new Map(conglomerados.map(c => [c.id, c.nome_lider])), [conglomerados]);
 
-    const { canonicosFiltrados, pendentesCount } = useMemo(() => {
+    // Contagem por aba: "Classificar" (sem classe) + uma por classe Avere.
+    const contagemPorAba = useMemo(() => {
+        const m: Record<string, number> = { CLASSIFICAR: 0 };
+        for (const c of canonicos) {
+            if (!c.classe_avere) m.CLASSIFICAR += 1;
+            else m[c.classe_avere] = (m[c.classe_avere] ?? 0) + 1;
+        }
+        return m;
+    }, [canonicos]);
+
+    const canonicosFiltrados = useMemo(() => {
         const q = busca.trim().toLowerCase();
         const matchBusca = (c: AtivoCanonicoMaster) => {
             if (!q) return true;
@@ -205,11 +215,13 @@ export default function MasterAtivos() {
                 || ident.toLowerCase().includes(q)
                 || riscoNome.toLowerCase().includes(q);
         };
-        return {
-            canonicosFiltrados: canonicos.filter(c => (filtroStatus === 'TODOS' || c.status === filtroStatus) && matchBusca(c)),
-            pendentesCount:     canonicos.filter(c => c.status === 'PENDENTE').length,
-        };
-    }, [canonicos, filtroStatus, busca, emissoresMap, conglomeradosMap]);
+        const base = abaAtiva === 'CLASSIFICAR'
+            ? canonicos.filter(c => !c.classe_avere)
+            : canonicos.filter(c => c.classe_avere === abaAtiva);
+        return base.filter(matchBusca);
+    }, [canonicos, abaAtiva, busca, emissoresMap, conglomeradosMap]);
+
+    const pendentesCount = contagemPorAba.CLASSIFICAR ?? 0;
 
     const canonicoSelecionado: CanonicoDetalhe | null = useMemo(() => {
         if (!drawerCanonicoId) return null;
@@ -244,7 +256,7 @@ export default function MasterAtivos() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                         <Typography variant="h1" style={{ fontWeight: 700 }}>Master de Ativos</Typography>
                         <Badge intent={pendentesCount > 0 ? 'primaria' : 'secundaria'} variant="solid">
-                            {pendentesCount} Pendentes
+                            {pendentesCount} a classificar
                         </Badge>
                     </div>
                     <Typography variant="p" style={{ opacity: 0.6 }}>
@@ -259,16 +271,42 @@ export default function MasterAtivos() {
                         onChange={e => setBusca(e.target.value)}
                         style={{ width: 260 }}
                     />
-                    <Button variant="outline" onClick={() => setFiltroStatus(prev => prev === 'PENDENTE' ? 'TODOS' : 'PENDENTE')}>
-                        <Filter size={16} style={{ marginRight: '8px' }} />
-                        {filtroStatus === 'PENDENTE' ? 'Ver Todos' : 'Ver Pendentes'}
-                    </Button>
                     <Button variant="solid" onClick={handleAutoClassificar} disabled={classificando}>
                         {classificando ? <Spinner size="sm" /> : <Wand2 size={16} style={{ marginRight: '8px' }} />}
                         {classificando ? 'Classificando...' : 'Auto-classificar'}
                     </Button>
                 </div>
             </header>
+
+            {/* ── Abas: Classificar (sem classe) + uma por Classe Avere ── */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {[{ id: 'CLASSIFICAR', label: 'Classificar' }, ...classesAvere.map(c => ({ id: c.nome, label: c.nome }))].map(aba => {
+                    const ativa = abaAtiva === aba.id;
+                    const n = contagemPorAba[aba.id] ?? 0;
+                    const fila = aba.id === 'CLASSIFICAR';
+                    return (
+                        <button
+                            key={aba.id}
+                            onClick={() => setAbaAtiva(aba.id)}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '7px', whiteSpace: 'nowrap',
+                                padding: '8px 14px', borderRadius: '999px', cursor: 'pointer',
+                                border: `1px solid ${ativa ? 'transparent' : 'var(--color-borda)'}`,
+                                background: ativa ? (fila ? '#D97706' : 'var(--color-secundaria)') : '#fff',
+                                color: ativa ? '#fff' : (fila && n > 0 ? '#D97706' : '#6B7280'),
+                                fontSize: '12px', fontWeight: 700,
+                            }}
+                        >
+                            {aba.label}
+                            <span style={{
+                                fontSize: '10px', fontWeight: 800, padding: '1px 7px', borderRadius: '999px',
+                                background: ativa ? 'rgba(255,255,255,0.25)' : (fila && n > 0 ? 'rgba(217,119,6,0.12)' : '#F3F4F6'),
+                                color: ativa ? '#fff' : (fila && n > 0 ? '#D97706' : '#6B7280'),
+                            }}>{n}</span>
+                        </button>
+                    );
+                })}
+            </div>
 
             <Card style={{ padding: 0, overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>

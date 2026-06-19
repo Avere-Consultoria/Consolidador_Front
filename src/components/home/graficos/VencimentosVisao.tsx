@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, Typography, Badge, Select } from 'avere-ui';
-import { Calendar } from 'lucide-react';
 import {
     ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LabelList, ResponsiveContainer,
 } from 'recharts';
@@ -92,12 +91,12 @@ export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: 
     }, [ativos, diasVencimento]);
 
     const totalFinanceiro = useMemo(
-        () => ativosFiltrados.reduce((acc, c) => acc + (c.valorLiquido || 0), 0),
+        () => ativosFiltrados.reduce((acc, c) => acc + (c.valorBruto || 0), 0),
         [ativosFiltrados],
     );
 
     const patrimonioTotal = useMemo(
-        () => (ativos ?? []).reduce((acc, c) => acc + (c.valorLiquido || 0), 0),
+        () => (ativos ?? []).reduce((acc, c) => acc + (c.valorBruto || 0), 0),
         [ativos],
     );
 
@@ -109,7 +108,7 @@ export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: 
             if (!dataStr) return;
             const d = new Date(dataStr);
             const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            map.set(key, (map.get(key) ?? 0) + (a.valorLiquido || 0));
+            map.set(key, (map.get(key) ?? 0) + (a.valorBruto || 0));
         });
         let acc = 0;
         return Array.from(map.keys()).sort().map(k => {
@@ -130,7 +129,7 @@ export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: 
             const dataVenc = new Date(dataStr); dataVenc.setHours(0, 0, 0, 0);
             const dias = Math.round((dataVenc.getTime() - hoje.getTime()) / 86_400_000);
             const idx = faixas.findIndex(f => dias >= f.min && dias <= f.max);
-            if (idx >= 0) acc[idx] += (a.valorLiquido || 0);
+            if (idx >= 0) acc[idx] += (a.valorBruto || 0);
         });
         return faixas.map((f, i) => ({
             label: f.label, cor: f.cor, value: acc[i],
@@ -147,18 +146,13 @@ export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: 
                 <CardHeaderComSwitch titulo="Agenda de Vencimentos" modoTabela={modoTabela} setModoTabela={setModoTabela} />
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '12px', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '8px', borderRadius: '8px', color: '#f59e0b' }}>
-                            <Calendar size={20} />
-                        </div>
-                        <div>
-                            <Typography variant="p" style={{ fontSize: '14px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif' }}>
-                                {fmt(totalFinanceiro)}
-                            </Typography>
-                            <Typography variant="p" style={{ fontSize: '11px', opacity: 0.6, fontFamily: 'Montserrat, sans-serif' }}>
-                                {ativosFiltrados.length} ativos a vencer
-                            </Typography>
-                        </div>
+                    <div>
+                        <Typography variant="p" style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', marginBottom: '2px', fontFamily: 'Montserrat, sans-serif' }}>
+                            Total a vencer · {ativosFiltrados.length} ativo{ativosFiltrados.length === 1 ? '' : 's'}
+                        </Typography>
+                        <Typography variant="p" style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'Montserrat, sans-serif', color: 'var(--color-secundaria)' }}>
+                            {fmt(totalFinanceiro)}
+                        </Typography>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -195,7 +189,7 @@ export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: 
                                             </Badge>
                                         </td>
                                         <td style={{ ...tdStyle, fontWeight: 600 }}>{fmtDate(a.vencimento || a.data_vencimento)}</td>
-                                        <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>{fmt(a.valorLiquido)}</td>
+                                        <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>{fmt(a.valorBruto)}</td>
                                     </tr>
                                 ))}
                             </tbody>

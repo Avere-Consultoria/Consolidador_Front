@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, Typography, Badge, Button } from 'avere-ui';
-import { Landmark, ShieldCheck, AlertTriangle, Info } from 'lucide-react';
+import { Landmark, AlertTriangle, Info } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Cell, Tooltip, ResponsiveContainer, ReferenceLine, CartesianGrid } from 'recharts';
 import { CardHeaderComSwitch } from './CardHeaderComSwitch';
 import { fmt } from '../../../utils/formatters';
@@ -183,15 +183,7 @@ export function CreditoBancarioFGC({ dados }: Props) {
                     mostrarSwitch={!isWide}
                 />
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ background: 'rgba(16,185,129,0.1)', padding: 8, borderRadius: 8, color: '#10B981' }}>
-                            <ShieldCheck size={20} />
-                        </div>
-                        <Typography variant="p" style={{ fontSize: 12, opacity: 0.6, fontFamily: 'Montserrat, sans-serif' }}>
-                            Exposição por conglomerado · teto FGC {fmt(TETO_FGC)} por CPF
-                        </Typography>
-                    </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
                     <div style={{ display: 'flex', gap: 4, background: 'rgba(0,0,0,0.05)', padding: 4, borderRadius: 8 }}>
                         {opcoesVisualizacao.map(opt => (
                             <Button

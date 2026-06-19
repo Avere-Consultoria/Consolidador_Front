@@ -26,8 +26,8 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
         return Object.entries(map)
             .map(([tipo, itens]) => ({
                 tipo,
-                itens: [...itens].sort((a, b) => b.valorLiquido - a.valorLiquido),
-                total: itens.reduce((s, a) => s + a.valorLiquido, 0)
+                itens: [...itens].sort((a, b) => b.valorBruto - a.valorBruto),
+                total: itens.reduce((s, a) => s + a.valorBruto, 0)
             }))
             .sort((a, b) => b.total - a.total);
     }, [ativos]);

@@ -141,21 +141,6 @@ export function DistribuicaoSetorial({ dados }: DistribuicaoSetorialProps) {
                     mostrarSwitch={!isWide}
                 />
 
-                {/* Sub-header: ícone + descrição */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    marginBottom: '20px',
-                }}>
-                    <div style={{ background: 'rgba(0, 131, 203, 0.1)', padding: '8px', borderRadius: '8px', color: '#0083CB' }}>
-                        <Layers size={20} />
-                    </div>
-                    <Typography variant="p" style={{ fontSize: '12px', opacity: 0.6, fontFamily: 'Montserrat, sans-serif' }}>
-                        Diversificação por setor dos emissores
-                    </Typography>
-                </div>
-
                 {(!dados || dados.length === 0) ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', gap: '12px', opacity: 0.4 }}>
                         <Layers size={32} />

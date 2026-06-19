@@ -1,5 +1,5 @@
 import { Typography, Select, Button, Badge } from 'avere-ui';
-import { FileText, Lock } from 'lucide-react';
+import { FileText, Lock, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { fmtDate } from '../../utils/formatters';
 
@@ -40,6 +40,14 @@ export function HomeHeader({
         ...mesesFechados.map(m => ({ label: `${formatarMes(m)} (fechado)`, value: m })),
     ];
 
+    // Data de referência consolidada = o FECHAMENTO que a carteira representa.
+    // BTG e XP são D0; sincronizados de manhã, ambos refletem o último fechamento —
+    // só rotulam diferente (BTG a abertura do dia D, XP o close de D-1). Não estão
+    // descasados. A data honesta é a mais antiga entre as fontes (o close que todas
+    // alcançam); a XP, que rotula pelo close, ancora isso.
+    const refs = fontesRef.map(f => f.dataRef).filter(Boolean) as string[];
+    const dataRef = refs.length ? refs.reduce((a, b) => (b < a ? b : a)) : null;
+
     return (
         <header>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
@@ -79,10 +87,15 @@ export function HomeHeader({
                 </div>
             </div>
 
-            {/* Texto dinâmico com datas de referência de cada conta/fonte ativa */}
-            <Typography variant="p" style={{ opacity: 0.6 }}>
+            {/* Carimbo único: o FECHAMENTO que a carteira representa (não o dia do sync). */}
+            <Typography variant="p" style={{ opacity: 0.6, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 {cliente?.nome}
-                {fontesRef.map(f => f.dataRef ? ` · ${f.label}: ${fmtDate(f.dataRef + 'T12:00:00Z')}` : '').join('')}
+                {dataRef && !fechado && (
+                    <Badge intent="secundaria" variant="ghost"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontWeight: 600 }}>
+                        <Calendar size={12} /> Posição de {fmtDate(dataRef + 'T12:00:00Z')}
+                    </Badge>
+                )}
             </Typography>
         </header>
     );

@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, Typography, Badge } from 'avere-ui';
-import { Briefcase } from 'lucide-react';
 import {
-    PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
+    PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, Label,
 } from 'recharts';
 
 import { CardHeaderComSwitch } from './CardHeaderComSwitch';
@@ -42,6 +41,18 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
                     {pieData.map((entry: any, i: number) => (
                         <Cell key={i} fill={entry.fill} stroke="none" />
                     ))}
+                    <Label content={({ viewBox }: any) => {
+                        const { cx, cy } = viewBox;
+                        const valor = fmt(metrics.patrimonioTotal);
+                        // Fonte adaptativa: o valor cheio (com centavos) precisa caber no furo (~130px).
+                        const fs = valor.length <= 10 ? 20 : valor.length <= 13 ? 17 : valor.length <= 16 ? 14 : 12;
+                        return (
+                            <g>
+                                <text x={cx} y={cy - 10} textAnchor="middle" style={{ fontSize: 10, fontWeight: 700, fill: '#9CA3AF', letterSpacing: '0.05em' }}>TOTAL</text>
+                                <text x={cx} y={cy + 13} textAnchor="middle" style={{ fontSize: fs, fontWeight: 800, fill: 'var(--color-secundaria)' }}>{valor}</text>
+                            </g>
+                        );
+                    }} />
                 </Pie>
                 <Tooltip content={<TooltipCustom />} />
                 <Legend
@@ -58,7 +69,16 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
     );
 
     const renderTabela = () => (
-        <div style={{ overflowX: 'auto' }}>
+        <div>
+            <div style={{ marginBottom: '16px' }}>
+                <Typography variant="p" style={{ fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF' }}>
+                    Patrimônio Total
+                </Typography>
+                <Typography variant="h1" style={{ fontSize: '28px', fontWeight: 800, color: 'var(--color-secundaria)' }}>
+                    {fmt(metrics.patrimonioTotal)}
+                </Typography>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                     <tr style={{ textAlign: 'left', borderBottom: '1px solid #F3F4F6' }}>
@@ -98,6 +118,7 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
                     ))}
                 </tbody>
             </table>
+            </div>
         </div>
     );
 
@@ -111,19 +132,6 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
                     setModoTabela={setModoTabela}
                     mostrarSwitch={!isWide}
                 />
-
-                {/* Patrimônio total — sempre visível */}
-                <div style={{ marginBottom: '24px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6B7280', marginBottom: '4px' }}>
-                        <Briefcase size={16} />
-                        <Typography variant="p" style={{ fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                            Patrimônio Total da Visão
-                        </Typography>
-                    </div>
-                    <Typography variant="h1" style={{ fontSize: '36px', fontWeight: 800, color: 'var(--color-secundaria)' }}>
-                        {fmt(metrics.patrimonioTotal)}
-                    </Typography>
-                </div>
 
                 {/* ── Conteúdo: lado a lado em desktop wide, toggle em telas menores ── */}
                 {isWide ? (

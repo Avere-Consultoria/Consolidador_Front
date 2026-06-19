@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Typography, Badge, Button, Spinner, toast } from 'avere-ui';
 import { X, GitMerge, Save } from 'lucide-react';
 import { supabase } from '../../services/supabase';
+import { camposBibliotecaPorSubtipo, normalizarChave } from '../../config/bibliotecaSchema';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 export interface VisaoInstitucionalDetalhe {
@@ -113,17 +114,29 @@ function CardVisaoInstitucional({ visao }: { visao: VisaoInstitucionalDetalhe })
 export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomerados, classes, onFundir, onSalvo }: DrawerCanonicoProps) {
     const [form, setForm] = useState({ classe_avere: '', liquidez_avere: '', data_vencimento: '', emissor_id: '', conglomerado_id: '' });
     const [salvando, setSalvando] = useState(false);
+    const [detalhes, setDetalhes] = useState<Record<string, any>>({});  // biblioteca_ativos.detalhes
+    const [bibChave, setBibChave] = useState<string | null>(null);      // chave da linha na biblioteca
 
     useEffect(() => {
-        if (canonico) {
-            setForm({
-                classe_avere:    canonico.classe_avere || '',
-                liquidez_avere:  canonico.liquidez_avere || '',
-                data_vencimento: canonico.data_vencimento || '',
-                emissor_id:      canonico.emissor_id || '',
-                conglomerado_id: canonico.conglomerado_id || '',
+        if (!canonico) return;
+        setForm({
+            classe_avere:    canonico.classe_avere || '',
+            liquidez_avere:  canonico.liquidez_avere || '',
+            data_vencimento: canonico.data_vencimento || '',
+            emissor_id:      canonico.emissor_id || '',
+            conglomerado_id: canonico.conglomerado_id || '',
+        });
+        // Carrega os detalhes curados da biblioteca (por qualquer identificador do ativo).
+        const idents = canonico.visoes
+            .map(v => normalizarChave(v.codigo_identificador))
+            .filter((c): c is string => !!c);
+        if (idents.length === 0) { setDetalhes({}); setBibChave(null); return; }
+        supabase.from('biblioteca_ativos').select('chave, detalhes').in('chave', idents).limit(1)
+            .then(({ data }) => {
+                const row = data?.[0];
+                setBibChave(row?.chave ?? idents[0]);
+                setDetalhes(row?.detalhes ?? {});
             });
-        }
     }, [canonico]);
 
     if (!isOpen || !canonico) return null;
@@ -143,6 +156,20 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
             // classe definida pelo Master é intocável por reprocessamentos
             ...(classeMudou ? { origem_classificacao: form.classe_avere ? 'manual' : null } : {}),
         }).eq('id', canonico.id);
+
+        // Curadoria rica → biblioteca (durável; sobrevive a reset do canônico).
+        if (!error && bibChave) {
+            await supabase.from('biblioteca_ativos').upsert({
+                chave:         bibChave,
+                sub_tipo:      canonico.sub_tipo_canonico || null,
+                nome_ref:      canonico.nome_canonico || null,
+                classe_avere:  form.classe_avere || null,
+                detalhes,
+                fonte:         'manual',
+                atualizado_em: new Date().toISOString(),
+            }, { onConflict: 'chave' });
+        }
+
         setSalvando(false);
         if (error) { toast.error(`Erro ao salvar: ${error.message}`); return; }
         toast.success('Ativo classificado.');
@@ -165,6 +192,16 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
                         <Typography variant="h2" style={{ fontSize: '18px', margin: 0, color: 'var(--color-secundaria)', fontWeight: 700 }}>
                             {canonico.nome_canonico}
                         </Typography>
+                        {canonico.visoes[0] && (
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'baseline', marginTop: '4px' }}>
+                                <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 700, color: '#6B7280' }}>
+                                    {canonico.visoes[0].codigo_identificador}
+                                </span>
+                                <span style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 600 }}>
+                                    {canonico.visoes[0].tipo_identificador}
+                                </span>
+                            </div>
+                        )}
                         <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                             {instituicoesDistintas.map(inst => {
                                 const cor = CORES_INST[inst] ?? { bg: '#E5E7EB', fg: '#374151' };
@@ -248,6 +285,46 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
                             </div>
                         </div>
                     </section>
+
+                    {/* Detalhes do ativo (biblioteca) — curável por subtipo (schema-driven) */}
+                    {camposBibliotecaPorSubtipo(canonico.sub_tipo_canonico).length > 0 && (
+                        <section>
+                            <Typography variant="p" style={{ fontSize: '11px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                                Detalhes do ativo · {canonico.sub_tipo_canonico}
+                                <span style={{ fontWeight: 500, textTransform: 'none', color: '#9CA3AF' }}> (biblioteca)</span>
+                            </Typography>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', background: '#F9FAFB', padding: '16px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                                {camposBibliotecaPorSubtipo(canonico.sub_tipo_canonico).map(campo => (
+                                    <div key={campo.key}>
+                                        <label style={labelStyle}>{campo.label}</label>
+                                        {campo.tipo === 'boolean' ? (
+                                            <select style={ctrlStyle}
+                                                value={detalhes[campo.key] === true ? 'sim' : detalhes[campo.key] === false ? 'nao' : ''}
+                                                onChange={e => setDetalhes(p => ({ ...p, [campo.key]: e.target.value === '' ? null : e.target.value === 'sim' }))}>
+                                                <option value="">—</option>
+                                                <option value="sim">Sim</option>
+                                                <option value="nao">Não</option>
+                                            </select>
+                                        ) : campo.tipo === 'select' ? (
+                                            <select style={ctrlStyle}
+                                                value={detalhes[campo.key] ?? ''}
+                                                onChange={e => setDetalhes(p => ({ ...p, [campo.key]: e.target.value || null }))}>
+                                                <option value="">—</option>
+                                                {campo.opcoes!.map(o => <option key={o} value={o}>{o}</option>)}
+                                            </select>
+                                        ) : (
+                                            <input
+                                                type={campo.tipo === 'number' ? 'number' : 'text'}
+                                                style={ctrlStyle}
+                                                value={detalhes[campo.key] ?? ''}
+                                                onChange={e => setDetalhes(p => ({ ...p, [campo.key]: e.target.value === '' ? null : (campo.tipo === 'number' ? Number(e.target.value) : e.target.value) }))}
+                                            />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
 
                     {/* Visões Institucionais */}
                     <section>

@@ -11,7 +11,7 @@ export interface ConsolidatedAtivo {
     tipo: string;
     subTipo?: string;
     valorLiquido: number;
-    valorBruto?: number;
+    valorBruto: number;   // padrão de exibição/agregação da Home (sempre preenchido)
     vencimento?: string | null;
     instituicao: string;       // rótulo da fonte/carteira (ex.: 'BTG Pactual 2')
     instituicaoBase?: string;  // base p/ lógica: 'BTG' | 'XP' | 'AVENUE' | 'AGORA' | 'MANUAL'
@@ -112,7 +112,7 @@ function buildExposicaoRisco(
         if (!a.emissorId || !emissorMap.has(a.emissorId)) return;
         const emissor = emissorMap.get(a.emissorId)!;
         if (!raw[a.emissorId]) raw[a.emissorId] = { nome: emissor.nome_fantasia, setor: emissor.setor, valor: 0 };
-        raw[a.emissorId].valor += a.valorLiquido;
+        raw[a.emissorId].valor += a.valorBruto;
     });
     return Object.values(raw)
         .map(e => ({ name: e.nome, setor: e.setor, value: e.valor, pct: pct(e.valor, patrimonioTotal) }))
@@ -142,10 +142,10 @@ function buildCreditoBancario(
             porte = c.porte;
         } else {
             const bruto = (a.rawData?.emissor ?? a.nome ?? '—').toString().trim() || '—';
-            semNomes.set(bruto, (semNomes.get(bruto) ?? 0) + a.valorLiquido);
+            semNomes.set(bruto, (semNomes.get(bruto) ?? 0) + a.valorBruto);
         }
         if (!raw[key]) raw[key] = { name: nome, porte, value: 0 };
-        raw[key].value += a.valorLiquido;
+        raw[key].value += a.valorBruto;
     });
     const detalhesSem = Array.from(semNomes.entries())
         .map(([nome, valor]) => ({ nome, valor }))
@@ -183,10 +183,10 @@ function buildCreditoPrivado(
             cor = e.setorCor ?? null;
         } else {
             const bruto = (a.rawData?.emissor ?? a.nome ?? '—').toString().trim() || '—';
-            semNomes.set(bruto, (semNomes.get(bruto) ?? 0) + a.valorLiquido);
+            semNomes.set(bruto, (semNomes.get(bruto) ?? 0) + a.valorBruto);
         }
         if (!raw[key]) raw[key] = { name: nome, setor, cor, value: 0 };
-        raw[key].value += a.valorLiquido;
+        raw[key].value += a.valorBruto;
     });
     const detalhesSem = Array.from(semNomes.entries())
         .map(([nome, valor]) => ({ nome, valor }))
@@ -210,7 +210,7 @@ function buildLiquidezData(ativos: ConsolidatedAtivo[], _patrimonioTotal: number
         } else if (a.tipo === 'Conta Corrente / Outros' || a.nome.toLowerCase().includes('saldo')) {
             liqKey = 'D+0 (Imediata)';
         }
-        map[liqKey] = (map[liqKey] || 0) + a.valorLiquido;
+        map[liqKey] = (map[liqKey] || 0) + a.valorBruto;
     });
     const totalLiquidez = Object.values(map).reduce((s, v) => s + v, 0);
     return Object.entries(map)
@@ -427,7 +427,7 @@ function computeMetrics(ctx: ComputeMetricsCtx) {
         return d > hoje && (diasVencimento === 9999 || d <= limiteData);
     });
 
-    const todosAtivos = [...totalAtivos].sort((a, b) => b.valorLiquido - a.valorLiquido);
+    const todosAtivos = [...totalAtivos].sort((a, b) => b.valorBruto - a.valorBruto);
 
     const exposicaoRiscoData = buildExposicaoRisco(totalAtivos, emissorMap, patrimonioTotal);
     const creditoBancarioData = buildCreditoBancario(totalAtivos, conglomeradoMap, patrimonioTotal);
@@ -462,7 +462,7 @@ function computeMetrics(ctx: ComputeMetricsCtx) {
     const compInput: InstituicaoComparativo[] = [];
     fontesIncluidas.forEach(f => {
         const classes: Record<string, number> = {};
-        (ativosPorFonte.get(f.key) || []).forEach(a => { classes[a.tipo] = (classes[a.tipo] || 0) + a.valorLiquido; });
+        (ativosPorFonte.get(f.key) || []).forEach(a => { classes[a.tipo] = (classes[a.tipo] || 0) + a.valorBruto; });
         if (f.saldoOutros > 0) classes['Conta Corrente / Outros'] = (classes['Conta Corrente / Outros'] || 0) + f.saldoOutros;
         Object.keys(classes).forEach(k => { alocacaoMap[k] = (alocacaoMap[k] || 0) + classes[k]; });
         if (totalFonte(f) > 0) compInput.push({ key: f.key, label: f.label, cor: f.cor, classes });

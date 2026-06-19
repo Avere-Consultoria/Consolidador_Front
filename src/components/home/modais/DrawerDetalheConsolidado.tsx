@@ -598,7 +598,7 @@ export function DrawerDetalheConsolidado({
     const isAvenue = base === 'AVENUE';
     const isAgora  = base === 'AGORA';
 
-    const pesoPct = patrimonioTotal > 0 ? (ativo.valorLiquido / patrimonioTotal) * 100 : 0;
+    const pesoPct = patrimonioTotal > 0 ? ((ativo.valorBruto ?? ativo.valorLiquido) / patrimonioTotal) * 100 : 0;
 
     const tabs: Tab[] = [
         { id: 'geral',  label: 'Visão Geral' },
