@@ -11,8 +11,6 @@ import Login from './pages/Login';
 
 // Páginas — lazy (só baixam quando a rota é aberta).
 const Home = lazy(() => import('./pages/Home'));
-const BtgApi = lazy(() => import('./pages/BtgApi'));
-const XpApi = lazy(() => import('./pages/XpApi'));
 const EmDesenvolvimento = lazy(() => import('./pages/EmDesenvolvimento'));
 const MasterAtivos = lazy(() => import('./pages/MasterAtivos'));
 const GestaoMaster = lazy(() => import('./pages/GestaoMaster'));
@@ -20,8 +18,6 @@ const PersonalizarAtivos = lazy(() => import('./pages/PersonalizarAtivos'));
 const Rentabilidade = lazy(() => import('./pages/Rentabilidade'));
 const CadastroClientes = lazy(() => import('./pages/Cadastroclientes'));
 const GestaoEquipe = lazy(() => import('./pages/GestaoEquipe'));
-const AvenueApi = lazy(() => import('./pages/AvenueApi'));
-const AgoraApi = lazy(() => import('./pages/AgoraApi'));
 const Relatorio = lazy(() => import('./pages/Relatorio'));
 const FechamentoMes = lazy(() => import('./pages/FechamentoMes'));
 const MovimentacoesMes = lazy(() => import('./pages/MovimentacoesMes'));
@@ -59,10 +55,6 @@ export default function App() {
                 <Route element={<MainLayout />}>
                   <Route index element={<Home />} />
                   <Route path="rentabilidade" element={<Rentabilidade />} />
-                  <Route path="/btg" element={<BtgApi />} />
-                  <Route path="/xp" element={<XpApi />} />
-                  <Route path="/avenue" element={<AvenueApi />} />
-                  <Route path="/agora" element={<AgoraApi />} />
                   <Route path="/dev" element={<EmDesenvolvimento />} />
                   <Route path="/personalizar" element={<PersonalizarAtivos />} />
                   <Route path="/fechamento" element={<FechamentoMes />} />

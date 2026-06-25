@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Typography, Select, Button, Badge } from 'avere-ui';
-import { FileText, Lock, Calendar } from 'lucide-react';
+import { FileText, Lock, Calendar, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { fmtDate } from '../../utils/formatters';
+import { ModalEnvioPDF } from './modais/ModalEnvioPDF';
 
 const MESES_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 function formatarMes(mes: string): string {
@@ -34,6 +36,7 @@ export function HomeHeader({
     mesesFechados,
 }: HomeHeaderProps) {
     const navigate = useNavigate();
+    const [modalPdf, setModalPdf] = useState(false);
     const fechado = periodo !== 'LIVE';
     const opcoesPeriodo = [
         { label: 'Posição atual', value: 'LIVE' },
@@ -81,6 +84,10 @@ export function HomeHeader({
                         <FileText size={15} style={{ marginRight: 6 }} />
                         Exportar PDF
                     </Button>
+                    <Button variant="outline" onClick={() => setModalPdf(true)} disabled={!cliente?.id}>
+                        <Upload size={15} style={{ marginRight: 6 }} />
+                        Enviar arquivos
+                    </Button>
                     <Button variant="solid" onClick={onOpenGerenciarCarteiras}>
                         + Gerir Carteiras
                     </Button>
@@ -88,7 +95,7 @@ export function HomeHeader({
             </div>
 
             {/* Carimbo único: o FECHAMENTO que a carteira representa (não o dia do sync). */}
-            <Typography variant="p" style={{ opacity: 0.6, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ opacity: 0.6, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 {cliente?.nome}
                 {dataRef && !fechado && (
                     <Badge intent="secundaria" variant="ghost"
@@ -96,7 +103,9 @@ export function HomeHeader({
                         <Calendar size={12} /> Posição de {fmtDate(dataRef + 'T12:00:00Z')}
                     </Badge>
                 )}
-            </Typography>
+            </div>
+
+            <ModalEnvioPDF aberto={modalPdf} onClose={() => setModalPdf(false)} cliente={cliente} />
         </header>
     );
 }

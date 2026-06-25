@@ -82,7 +82,7 @@ export function DistribuicaoSetorial({ dados }: DistribuicaoSetorialProps) {
                     innerRadius={70} outerRadius={100}
                     paddingAngle={2}
                     dataKey="value"
-                    animationDuration={800}
+                    isAnimationActive={false}
                 >
                     {dataComCor.map((entry, i) => (
                         <Cell key={i} fill={entry.fill} stroke="none" />

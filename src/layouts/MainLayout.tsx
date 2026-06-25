@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home, LineChart, Database, SlidersHorizontal, Users, User, Building2, Landmark, BarChart2, Globe, Activity, BookOpen, UserPlus, UsersRound, Lock, History, Wrench, RefreshCw } from 'lucide-react';
+import { Home, LineChart, Database, SlidersHorizontal, Users, User, Building2, BookOpen, UserPlus, UsersRound, Lock, History, Wrench, RefreshCw } from 'lucide-react';
 import { SideBar, SideBarItem, TopBar, HierarchicalCombobox, Toaster, Spinner, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
@@ -181,38 +181,6 @@ export default function MainLayout() {
         <SideBarItem
           icon={LineChart} label="Rentabilidade"
           active={location.pathname === '/rentabilidade'} onClick={() => navigate('/rentabilidade')}
-        />
-        {/* ── Secção Integrações ── */}
-        <div style={{
-          padding: isCollapsed ? '24px 12px 8px' : '24px 20px 8px',
-          display: 'flex', alignItems: 'center', gap: '12px'
-        }}>
-          {!isCollapsed && (
-            <span style={{
-              fontSize: '10px', fontWeight: 700,
-              color: 'rgba(255,255,255,0.3)',
-              textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap'
-            }}>
-              Integrações
-            </span>
-          )}
-          <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-        </div>
-        <SideBarItem
-          icon={Landmark} label="BTG API"
-          active={location.pathname === '/btg'} onClick={() => navigate('/btg')}
-        />
-        <SideBarItem
-          icon={BarChart2} label="XP API"
-          active={location.pathname === '/xp'} onClick={() => navigate('/xp')}
-        />
-        <SideBarItem
-          icon={Globe} label="Avenue API"
-          active={location.pathname === '/avenue'} onClick={() => navigate('/avenue')}
-        />
-        <SideBarItem
-          icon={Activity} label="Ágora API"
-          active={location.pathname === '/agora'} onClick={() => navigate('/agora')}
         />
         {(isMaster || isConsultor) && (
           <SideBarItem

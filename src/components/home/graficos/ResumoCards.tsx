@@ -35,8 +35,7 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
                     innerRadius={70} outerRadius={100}
                     paddingAngle={3}
                     dataKey="value"
-                    animationBegin={0}
-                    animationDuration={800}
+                    isAnimationActive={false}
                 >
                     {pieData.map((entry: any, i: number) => (
                         <Cell key={i} fill={entry.fill} stroke="none" />

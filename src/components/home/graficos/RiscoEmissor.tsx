@@ -100,7 +100,7 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                         tickFormatter={(v: string) => (v.length > 22 ? v.slice(0, 22) + '…' : v)}
                     />
                     <Tooltip content={<TooltipBar />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]} animationDuration={700}>
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]} isAnimationActive={false}>
                         {dadosFiltrados.map((d, i) => <Cell key={i} fill={corSetor(d)} />)}
                     </Bar>
                 </BarChart>

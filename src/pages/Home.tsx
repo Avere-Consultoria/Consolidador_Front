@@ -39,20 +39,12 @@ export default function Home() {
     </div>
   );
 
-  // 3. Empty State (Sem dados em nenhuma corretora para o cliente selecionado)
-  if (!metrics.hasData && selectedClient) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '100px', gap: '16px', border: '2px dashed var(--color-borda)', borderRadius: '12px', opacity: 0.6 }}>
-        <PieIcon size={48} />
-        <Typography variant="h2">Aguardando Sincronização</Typography>
-        <Typography variant="p">
-          Acede ao BTG, XP, Avenue ou Ágora para carregar os dados de {selectedClient?.nome}.
-        </Typography>
-      </div>
-    );
-  }
-
-  // 4. Render Principal
+  // 3. Render Principal — a barra de ações (Enviar arquivos / Gerir Carteiras) fica
+  // SEMPRE visível. Sem dados, o corpo vira o aviso "Aguardando Sincronização" — mas o
+  // header continua, pra um cliente novo (ou que só terá posição manual) conseguir
+  // cadastrar a instituição manual e enviar os arquivos. Antes o empty state engolia a
+  // tela inteira e o fluxo manual ficava inalcançável.
+  const semDados = !metrics.hasData;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       <HomeHeader
@@ -67,33 +59,57 @@ export default function Home() {
         mesesFechados={mesesFechados}
       />
 
-      <ResumoCards metrics={metrics} />
+      {semDados ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 24px', gap: '16px', border: '2px dashed var(--color-borda)', borderRadius: '12px', opacity: 0.6 }}>
+          <PieIcon size={48} />
+          <Typography variant="h2">Aguardando Sincronização</Typography>
+          <Typography variant="p" style={{ textAlign: 'center', maxWidth: 560 }}>
+            Sincronize via BTG, XP, Avenue ou Ágora para carregar os dados de {selectedClient?.nome}.
+            Para instituições <strong>sem API</strong>, cadastre a instituição manual em
+            <strong> Cadastro de Clientes</strong> e depois use <strong>Enviar arquivos</strong> para subir os extratos.
+          </Typography>
+        </div>
+      ) : (
+        <>
+          <ResumoCards metrics={metrics} />
 
-      <GraficoAlocacao
-        alocacaoData={metrics.alocacaoData}
-        comparativoData={metrics.comparativoData}
-        comparativoInstituicoes={metrics.comparativoInstituicoes}
-      />
+          <GraficoAlocacao
+            alocacaoData={metrics.alocacaoData}
+            comparativoData={metrics.comparativoData}
+            comparativoInstituicoes={metrics.comparativoInstituicoes}
+          />
 
-      <LiquidezVisao
-        dados={metrics.liquidezData}
-        dadosPrev={metrics.liquidezDataPrev}
-        dadosRV={metrics.liquidezDataRV}
-      />
+          <LiquidezVisao
+            dados={metrics.liquidezData}
+            dadosPrev={metrics.liquidezDataPrev}
+            dadosRV={metrics.liquidezDataRV}
+            patrimonioTotal={metrics.patrimonioTotal}
+          />
 
-      <CreditoBancarioFGC dados={metrics.creditoBancarioData} />
+          {/* Gráficos só aparecem quando há dado — carteira sem o tema não exibe card vazio. */}
+          {(metrics.creditoBancarioData?.length ?? 0) > 0 && (
+            <CreditoBancarioFGC dados={metrics.creditoBancarioData} />
+          )}
 
-      <RiscoEmissor dados={metrics.creditoPrivadoData} />
+          {(metrics.creditoPrivadoData?.length ?? 0) > 0 && (
+            <RiscoEmissor dados={metrics.creditoPrivadoData} />
+          )}
 
-      <DistribuicaoSetorial dados={metrics.setorialData} />
+          {(metrics.setorialData?.length ?? 0) > 0 && (
+            <DistribuicaoSetorial dados={metrics.setorialData} />
+          )}
 
-      <VencimentosVisao
-        ativos={metrics.todosAtivos}
-        diasVencimento={diasVencimento}
-        setDiasVencimento={setDiasVencimento}
-      />
+          {metrics.todosAtivos?.some(a => a.vencimento) && (
+            <VencimentosVisao
+              ativos={metrics.todosAtivos}
+              diasVencimento={diasVencimento}
+              setDiasVencimento={setDiasVencimento}
+            />
+          )}
 
-      <TabelaAtivos ativos={metrics.todosAtivos} patrimonioTotal={metrics.patrimonioTotal} />
+          <TabelaAtivos ativos={metrics.todosAtivos} patrimonioTotal={metrics.patrimonioTotal} />
+        </>
+      )}
 
       {/* Drawer invisível na root para gerir z-index corretamente */}
       <DrawerGerenciarCarteiras

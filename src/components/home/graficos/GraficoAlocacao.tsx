@@ -114,7 +114,7 @@ export function GraficoAlocacao({ alocacaoData, comparativoData, comparativoInst
                         axisLine={false} tickLine={false}
                     />
                     <Tooltip content={<TooltipCustom />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]} animationDuration={800}>
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]} isAnimationActive={false}>
                         {alocacaoData.map((entry, i) => (
                             <Cell key={i} fill={entry.fill} />
                         ))}
@@ -160,7 +160,7 @@ export function GraficoAlocacao({ alocacaoData, comparativoData, comparativoInst
                             fill={c.cor}
                             stackId="a"
                             radius={i === colunas.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                            animationDuration={800 + i * 100}
+                            isAnimationActive={false}
                         />
                     ))}
                 </BarChart>

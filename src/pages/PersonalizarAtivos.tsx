@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Typography, Card, Button, Spinner, Badge, TextField, toast } from 'avere-ui';
 import { SlidersHorizontal, Plus, Search } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { padronizarTaxaExibicao } from '../utils/formatters';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
 import { DrawerRegra } from '../components/personalizarAtivos/DrawerRegra';
@@ -323,7 +324,7 @@ export default function PersonalizarAtivos() {
                             const clienteNome = clientes.find(cl => cl.id === item.cliente_id)?.nome;
                             const vlOrig = vencLiq(item.canonico_vencimento, item.canonico_liquidez);
                             const vlCustom = vencLiq(item.vencimento_customizado, item.liquidez_customizada);
-                            const taxa = c?.taxa_formatada || c?.taxa_canonica || '';
+                            const taxa = padronizarTaxaExibicao(c?.taxa_formatada || c?.taxa_canonica) || '';
                             return (
                                 <tr key={item.id} className="regra-row" onClick={() => openEditModal(item)} style={{ borderBottom: '1px solid #F3F4F6', cursor: 'pointer' }}>
                                     {/* Ativo (cartão estilo Master) */}

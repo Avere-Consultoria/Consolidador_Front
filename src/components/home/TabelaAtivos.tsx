@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Card, Typography, Badge, DataTable } from 'avere-ui';
 import { LayoutGrid, ChevronRight, List } from 'lucide-react';
-import { fmt, fmtDate } from '../../utils/formatters';
+import { fmt, fmtDate, padronizarTaxaExibicao } from '../../utils/formatters';
 import { CORES } from '../../utils/colors';
 import type { ConsolidatedAtivo } from '../../hooks/useHomeMetrics';
 import { DrawerDetalheConsolidado } from './modais/DrawerDetalheConsolidado';
@@ -138,6 +138,15 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                     <style>{`
                                         .tabela-carteira td { vertical-align: middle; }
                                         .tabela-carteira td p { margin: 0; }
+                                        /* Larguras FIXAS por coluna → todas as tabelas de grupo alinham entre si. */
+                                        .tabela-carteira table { table-layout: fixed; width: 100%; }
+                                        .tabela-carteira th:nth-child(1), .tabela-carteira td:nth-child(1) { width: 9%; }
+                                        .tabela-carteira th:nth-child(2), .tabela-carteira td:nth-child(2) { width: 29%; }
+                                        .tabela-carteira th:nth-child(3), .tabela-carteira td:nth-child(3) { width: 12%; }
+                                        .tabela-carteira th:nth-child(4), .tabela-carteira td:nth-child(4) { width: 12%; }
+                                        .tabela-carteira th:nth-child(5), .tabela-carteira td:nth-child(5) { width: 16%; }
+                                        .tabela-carteira th:nth-child(6), .tabela-carteira td:nth-child(6) { width: 16%; }
+                                        .tabela-carteira th:nth-child(7), .tabela-carteira td:nth-child(7) { width: 6%; }
                                     `}</style>
                                     <div className="tabela-carteira">
                                     <DataTable
@@ -158,7 +167,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                 header: 'Emissor / Ativo',
                                                 accessorKey: 'nome',
                                                 cell: (item: ConsolidatedAtivo) => (
-                                                    <div style={{ display: 'flex', alignItems: 'center', maxWidth: '300px', minWidth: 0 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, maxWidth: '300px', minWidth: 0 }}>
                                                         <Typography
                                                             variant="p"
                                                             style={{
@@ -173,6 +182,15 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                         >
                                                             {item.nome || '—'}
                                                         </Typography>
+                                                        {item.naoVerificado && (
+                                                            <Badge
+                                                                variant="ghost"
+                                                                title="Entrada manual sem identificador único — não vinculada à biblioteca (dado não verificado)"
+                                                                style={{ flexShrink: 0, fontSize: '9px', fontWeight: 700, color: '#B45309', background: 'rgba(245,158,11,0.12)', fontFamily: 'Montserrat, sans-serif' }}
+                                                            >
+                                                                manual · não verif.
+                                                            </Badge>
+                                                        )}
                                                     </div>
                                                 ),
                                             },
@@ -180,7 +198,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
                                                 header: 'Taxa',
                                                 accessorKey: 'taxa' as any,
                                                 cell: (item: ConsolidatedAtivo) => {
-                                                    const valor = item.taxa || item.benchmark;
+                                                    const valor = padronizarTaxaExibicao(item.taxa || item.benchmark);
                                                     return (
                                                         <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                                                             {(!valor || valor === '-')

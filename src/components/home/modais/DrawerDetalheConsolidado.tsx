@@ -4,7 +4,7 @@ import {
     DrawerTitle, DrawerDescription, DrawerSeparator, Badge,
 } from 'avere-ui';
 import type { ConsolidatedAtivo } from '../../../hooks/useHomeMetrics';
-import { fmt, fmtUsd, fmtDate, fmtNum } from '../../../utils/formatters';
+import { fmt, fmtUsd, fmtDate, fmtNum, padronizarTaxaExibicao } from '../../../utils/formatters';
 import { DetalheItem, Secao } from '../../shared/DrawerDetalhe';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -91,12 +91,12 @@ function TabGeral({ ativo, raw, pesoPct, isBTG, isAvenue, isAgora }: {
     const quantidade = raw.quantidade ?? raw.quantidade_cotas;
     const precoUnitario = raw.preco_mercado ?? raw.preco_unitario ?? raw.valor_cota;
 
-    // ── Vencimento original da API + liquidez D+N ────────────────────────────
-    const vencimentoOriginal = raw.maturity_date ?? raw.data_vencimento;
-    const liquidezDmais = ativo.liquidez ? `D+${ativo.liquidez}` : null;
-    const vencimentoLiquidezValue = vencimentoOriginal
-        ? `${fmtDate(vencimentoOriginal)}${liquidezDmais ? ` · ${liquidezDmais}` : ''}`
-        : (liquidezDmais ?? '—');
+    // ── Vencimento OU liquidez (NUNCA os dois) — igual à tabela da carteira.
+    // Tem vencimento → mostra o vencimento (curado); senão → D+N. O D+N é interno
+    // (alimenta os gráficos de liquidez), não acompanha o vencimento na exibição.
+    const vencimentoLiquidezValue = ativo.vencimento
+        ? fmtDate(ativo.vencimento)
+        : (ativo.liquidez ? `D+${ativo.liquidez}` : '—');
 
     // ── Data de emissão (só BTG entrega de fato) ──────────────────────────────
     const dataEmissao = raw.issue_date ?? null;
@@ -139,7 +139,7 @@ function TabGeral({ ativo, raw, pesoPct, isBTG, isAvenue, isAgora }: {
             {/* ── Rentabilidade ── */}
             <DrawerSeparator />
             <Secao titulo="Rentabilidade">
-                <DetalheItem label="Taxa"        value={ativo.taxa ?? '—'} />
+                <DetalheItem label="Taxa"        value={padronizarTaxaExibicao(ativo.taxa) ?? '—'} />
                 <DetalheItem label="Tributação"  value={isento ? 'Isento' : 'Tributado'} accentColor={isento ? '#16a34a' : undefined} />
             </Secao>
 

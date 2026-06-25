@@ -114,7 +114,7 @@ export function CreditoBancarioFGC({ dados }: Props) {
                 <Tooltip content={<TooltipBar />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
                 <ReferenceLine x={TETO_FGC} stroke="#EF4444" strokeDasharray="4 4" strokeWidth={1.5}
                     label={{ value: 'Teto FGC R$ 250k', position: 'top', fontSize: 9, fontWeight: 700, fill: '#EF4444' }} />
-                <Bar dataKey="value" radius={[0, 4, 4, 0]} animationDuration={700}>
+                <Bar dataKey="value" radius={[0, 4, 4, 0]} isAnimationActive={false}>
                     {dadosFiltrados.map((d, i) => (
                         <Cell key={i} fill={d.semConglomerado ? '#D1D5DB' : corPorte(d.porte)} />
                     ))}

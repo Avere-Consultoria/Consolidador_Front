@@ -14,7 +14,7 @@ export const FAMILIAS_LIQUIDEZ: { grupo: string; familias: string[] }[] = [
     { grupo: 'Bancário (FGC)',     familias: ['CDB', 'LCI', 'LCA', 'LF', 'LFSN', 'LIG', 'LC', 'LCD', 'RDB', 'DPGE'] },
     { grupo: 'Crédito privado',    familias: ['DEB', 'CRA', 'CRI', 'CDCA', 'FIDC', 'NC', 'NP', 'CCB', 'CCI'] },
     { grupo: 'Tesouro Direto',     familias: ['LFT', 'LTN', 'NTNB', 'NTNF', 'NTNC'] },
-    { grupo: 'Outros',             familias: ['FI', 'COE', 'PREV', 'COMPROMISSADA'] },
+    { grupo: 'Outros',             familias: ['FUNDO', 'COE', 'PREV', 'COMPROMISSADA'] },
 ];
 
 export const FAMILIAS_LIQUIDEZ_FLAT: string[] =

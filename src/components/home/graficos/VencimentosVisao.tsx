@@ -212,10 +212,10 @@ export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: 
                                     contentStyle={{ fontSize: 12, borderRadius: 8, fontFamily: 'Montserrat, sans-serif' }}
                                 />
                                 <Legend wrapperStyle={{ fontSize: 12, fontFamily: 'Montserrat, sans-serif' }} formatter={(value) => value === 'valor' ? 'No mês' : 'Acumulado'} />
-                                <Bar dataKey="valor" name="valor" fill={COR_BARRA} radius={[4, 4, 0, 0]} maxBarSize={56}>
+                                <Bar dataKey="valor" name="valor" fill={COR_BARRA} radius={[4, 4, 0, 0]} maxBarSize={56} isAnimationActive={false}>
                                     <LabelList dataKey="valor" content={renderRotatedLabel} />
                                 </Bar>
-                                <Line type="stepAfter" dataKey="acumulado" name="acumulado" stroke={COR_LINHA} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
+                                <Line type="stepAfter" dataKey="acumulado" name="acumulado" stroke={COR_LINHA} strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} isAnimationActive={false} />
                             </ComposedChart>
                         </ResponsiveContainer>
                     )

@@ -14,6 +14,7 @@ interface LiquidezVisaoProps {
     dados: LiquidezItem[];
     dadosPrev?: LiquidezItem[];
     dadosRV?: LiquidezItem[];
+    patrimonioTotal: number;
 }
 
 // Faixas default (fallback se a tabela faixas_temporais estiver vazia)
@@ -34,8 +35,12 @@ function parseDias(name: string): number {
 
 type FaixaAgregada = { label: string; cor: string; value: number; pct: number };
 
-function agregarPorFaixas(dados: LiquidezItem[], faixas: Faixa[]): FaixaAgregada[] {
-    const total = dados.reduce((s, d) => s + d.value, 0);
+// `denominador` (ex.: patrimônio total): quando informado, o % é calculado sobre ele —
+// assim os 3 gráficos de liquidez ficam normalizados pelo TODO da carteira (somam 100%
+// entre si), em vez de cada um fechar 100% isolado.
+function agregarPorFaixas(dados: LiquidezItem[], faixas: Faixa[], denominador?: number): FaixaAgregada[] {
+    const totalGrupo = dados.reduce((s, d) => s + d.value, 0);
+    const base = (denominador && denominador > 0) ? denominador : totalGrupo;
     const acc = faixas.map(() => 0);
     let naoClass = 0;
     dados.forEach(d => {
@@ -46,10 +51,10 @@ function agregarPorFaixas(dados: LiquidezItem[], faixas: Faixa[]): FaixaAgregada
     });
     const out: FaixaAgregada[] = faixas.map((f, i) => ({
         label: f.label, cor: f.cor, value: acc[i],
-        pct: total > 0 ? (acc[i] / total) * 100 : 0,
+        pct: base > 0 ? (acc[i] / base) * 100 : 0,
     })).filter(f => f.value > 0);
     if (naoClass > 0) {
-        out.push({ label: 'Não Classificada', cor: COR_NAO_CLASS, value: naoClass, pct: total > 0 ? (naoClass / total) * 100 : 0 });
+        out.push({ label: 'Não Classificada', cor: COR_NAO_CLASS, value: naoClass, pct: base > 0 ? (naoClass / base) * 100 : 0 });
     }
     return out;
 }
@@ -66,8 +71,8 @@ function TooltipBarras({ active, payload }: any) {
     );
 }
 
-function BarChartLiquidez({ dados, faixas }: { dados: LiquidezItem[]; faixas: Faixa[] }) {
-    const chartData = useMemo(() => agregarPorFaixas(dados, faixas), [dados, faixas]);
+function BarChartLiquidez({ dados, faixas, total }: { dados: LiquidezItem[]; faixas: Faixa[]; total: number }) {
+    const chartData = useMemo(() => agregarPorFaixas(dados, faixas, total), [dados, faixas, total]);
 
     if (chartData.length === 0) {
         return <div style={{ padding: '24px', textAlign: 'center', opacity: 0.5, fontSize: '13px' }}>Sem dados de liquidez.</div>;
@@ -88,7 +93,7 @@ function BarChartLiquidez({ dados, faixas }: { dados: LiquidezItem[]; faixas: Fa
                     axisLine={false} tickLine={false} width={42}
                 />
                 <Tooltip content={<TooltipBarras />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
-                <Bar dataKey="pct" radius={[6, 6, 0, 0]} animationDuration={700}>
+                <Bar dataKey="pct" radius={[6, 6, 0, 0]} isAnimationActive={false}>
                     {chartData.map((entry, i) => <Cell key={i} fill={entry.cor} />)}
                     <LabelList dataKey="pct" position="top" formatter={(v: any) => `${Number(v).toFixed(1)}%`}
                         style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif', fill: 'var(--color-secundaria)' }} />
@@ -102,8 +107,8 @@ const thStyle: React.CSSProperties = {
     textAlign: 'left', padding: '8px 4px', borderBottom: '1px solid rgba(0,0,0,0.06)', opacity: 0.4,
     textTransform: 'uppercase', fontWeight: 700, fontSize: '10px', letterSpacing: '0.05em',
 };
-function TabelaFaixas({ dados, faixas }: { dados: LiquidezItem[]; faixas: Faixa[] }) {
-    const agregadas = useMemo(() => agregarPorFaixas(dados, faixas), [dados, faixas]);
+function TabelaFaixas({ dados, faixas, total }: { dados: LiquidezItem[]; faixas: Faixa[]; total: number }) {
+    const agregadas = useMemo(() => agregarPorFaixas(dados, faixas, total), [dados, faixas, total]);
     return (
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', fontFamily: 'Montserrat, sans-serif' }}>
             <thead>
@@ -131,7 +136,7 @@ function TabelaFaixas({ dados, faixas }: { dados: LiquidezItem[]; faixas: Faixa[
     );
 }
 
-function LiquidezBloco({ titulo, dados, faixas }: { titulo: string; dados: LiquidezItem[]; faixas: Faixa[] }) {
+function LiquidezBloco({ titulo, dados, faixas, total }: { titulo: string; dados: LiquidezItem[]; faixas: Faixa[]; total: number }) {
     const isWide = useMediaQuery('(min-width: 1280px)');
     const [modoTabela, setModoTabela] = useState(false);
 
@@ -143,18 +148,41 @@ function LiquidezBloco({ titulo, dados, faixas }: { titulo: string; dados: Liqui
                 <CardHeaderComSwitch titulo={titulo} modoTabela={modoTabela} setModoTabela={setModoTabela} mostrarSwitch={!isWide} />
                 {isWide ? (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', alignItems: 'start' }}>
-                        <div><BarChartLiquidez dados={dados} faixas={faixas} /></div>
-                        <div><TabelaFaixas dados={dados} faixas={faixas} /></div>
+                        <div><BarChartLiquidez dados={dados} faixas={faixas} total={total} /></div>
+                        <div><TabelaFaixas dados={dados} faixas={faixas} total={total} /></div>
                     </div>
                 ) : (
-                    modoTabela ? <TabelaFaixas dados={dados} faixas={faixas} /> : <BarChartLiquidez dados={dados} faixas={faixas} />
+                    modoTabela ? <TabelaFaixas dados={dados} faixas={faixas} total={total} /> : <BarChartLiquidez dados={dados} faixas={faixas} total={total} />
                 )}
             </CardContent>
         </Card>
     );
 }
 
-export function LiquidezVisao({ dados, dadosPrev, dadosRV }: LiquidezVisaoProps) {
+// Versão COMPACTA p/ classes com poucas faixas (Previdência, Renda Variável):
+// barra horizontal empilhada (100%) + legenda com % E valor (R$) por faixa.
+function LiquidezCompacta({ titulo, dados, faixas, total }: { titulo: string; dados: LiquidezItem[]; faixas: Faixa[]; total: number }) {
+    const agregadas = useMemo(() => agregarPorFaixas(dados, faixas, total), [dados, faixas, total]);
+    if (!dados || dados.length === 0 || agregadas.length === 0) return null;
+    return (
+        <Card>
+            <CardContent style={{ padding: '20px 24px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-secundaria)', marginBottom: '14px', fontFamily: 'Montserrat, sans-serif' }}>{titulo}</div>
+                <div style={{ display: 'flex', height: 16, borderRadius: 8, overflow: 'hidden', background: 'rgba(0,0,0,0.04)' }}>
+                    {agregadas.map((f, i) => (
+                        <div key={i} title={`${f.label} · ${f.pct.toFixed(1)}% · ${fmt(f.value)}`} style={{ width: `${f.pct}%`, background: f.cor }} />
+                    ))}
+                </div>
+                {/* Mesma tabela do "Liquidez — Geral" (Prazo · Valor · %), já normalizada pelo total. */}
+                <div style={{ marginTop: 16 }}>
+                    <TabelaFaixas dados={dados} faixas={faixas} total={total} />
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+export function LiquidezVisao({ dados, dadosPrev, dadosRV, patrimonioTotal }: LiquidezVisaoProps) {
     const faixas = useFaixas('LIQUIDEZ', FAIXAS_LIQUIDEZ_DEFAULT);
     const temGeral = dados && dados.length > 0;
     const temPrev  = dadosPrev && dadosPrev.length > 0;
@@ -164,9 +192,15 @@ export function LiquidezVisao({ dados, dadosPrev, dadosRV }: LiquidezVisaoProps)
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {temGeral && <LiquidezBloco titulo="Liquidez — Geral"          dados={dados}      faixas={faixas} />}
-            {temPrev  && <LiquidezBloco titulo="Liquidez — Previdência"    dados={dadosPrev!} faixas={faixas} />}
-            {temRV    && <LiquidezBloco titulo="Liquidez — Renda Variável" dados={dadosRV!}   faixas={faixas} />}
+            {/* Geral: mantém o gráfico completo (várias faixas). */}
+            {temGeral && <LiquidezBloco titulo="Liquidez — Geral" dados={dados} faixas={faixas} total={patrimonioTotal} />}
+            {/* Previdência / Renda Variável: compactos lado a lado (poucas faixas). */}
+            {(temPrev || temRV) && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                    {temPrev && <LiquidezCompacta titulo="Liquidez — Previdência"    dados={dadosPrev!} faixas={faixas} total={patrimonioTotal} />}
+                    {temRV   && <LiquidezCompacta titulo="Liquidez — Renda Variável" dados={dadosRV!}   faixas={faixas} total={patrimonioTotal} />}
+                </div>
+            )}
         </div>
     );
 }

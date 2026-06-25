@@ -10,8 +10,14 @@ export const fmtK = (v: number) => {
     return fmt(v);
 };
 
-export const fmtDate = (d?: string | null) =>
-    d ? new Date(d).toLocaleDateString('pt-BR') : '-';
+// Data de CALENDÁRIO (vencimento, aplicação, referência): formata a string DIRETO,
+// sem new Date() — senão 'YYYY-MM-DD' é lido como meia-noite UTC e, no fuso BR (-03),
+// a exibição volta 1 dia. Aceita 'YYYY-MM-DD' e 'YYYY-MM-DDTHH:...' (ignora a hora).
+export const fmtDate = (d?: string | null) => {
+    if (!d) return '-';
+    const [y, m, day] = String(d).slice(0, 10).split('-');
+    return y && m && day ? `${day}/${m}/${y}` : '-';
+};
 
 export const fmtNum = (v?: number | null, decimais = 2) =>
     v != null
@@ -68,4 +74,14 @@ export function formatarTaxa(
     if (bm && cupom) return `${bm} + ${cupom}`;
     if (!bm && cupom) return cupom;
     return bm ?? null;
+}
+
+// Regra de exibição do CDI (jun/2026): CDI puro → "100% CDI". Variações ("103% CDI",
+// "CDI + 2%") passam inalteradas. Espelha o padronizarTaxa do backend — só p/ a UI não
+// mostrar "CDI" cru quando o dado é antigo (pré-regra) ou cai no benchmark.
+export function padronizarTaxaExibicao(taxa: string | null | undefined): string | null {
+    if (!taxa) return null;
+    const s = String(taxa).trim();
+    if (/^(?:100(?:[.,]0+)?\s*%\s*(?:do\s+)?)?CDI$/i.test(s)) return '100% CDI';
+    return s;
 }

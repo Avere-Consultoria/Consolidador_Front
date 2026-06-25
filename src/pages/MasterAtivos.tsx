@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Typography, Card, Badge, Button, Spinner, TextField, toast } from 'avere-ui';
 import { Wand2, Search } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { padronizarTaxaExibicao } from '../utils/formatters';
 import { DrawerCanonico, type CanonicoDetalhe } from '../components/masterAtivos/DrawerCanonico';
 import { ModalFundirCanonicos, type CanonicoOpcaoDestino } from '../components/masterAtivos/ModalFundirCanonicos';
 
@@ -101,33 +102,43 @@ export default function MasterAtivos() {
     const [drawerCanonicoId, setDrawerCanonicoId] = useState<string | null>(null);
     const [modalFundirAberto, setModalFundirAberto] = useState(false);
 
+    // Busca TODAS as linhas paginando — o Supabase corta CADA request em 1000 linhas.
+    // Sem isto, com a base cheia os ativos além da 1000ª linha ficavam sem visão
+    // (sem instituição/ISIN) e canônicos além de 1000 sumiam da lista.
+    const selectAll = async (tabela: string, colunas: string, ordem?: string) => {
+        const PAGE = 1000;
+        const acc: any[] = [];
+        for (let from = 0; ; from += PAGE) {
+            let q = supabase.from(tabela).select(colunas).range(from, from + PAGE - 1);
+            if (ordem) q = q.order(ordem);
+            const { data, error } = await q;
+            if (error) throw error;
+            acc.push(...(data ?? []));
+            if (!data || data.length < PAGE) break;
+        }
+        return acc;
+    };
+
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [canonicosRes, emissoresRes, conglomeradosRes, classesRes, dicionarioRes] = await Promise.all([
-                supabase
-                    .from('ativos_canonicos')
-                    .select('id, nome_canonico, classe_avere, liquidez_avere, data_vencimento, emissor_id, conglomerado_id, taxa_canonica, taxa_formatada, benchmark_canonico, sub_tipo_canonico, is_fii, is_coe, notas')
-                    .order('nome_canonico'),
-                supabase.from('dicionario_emissores').select('id, nome_fantasia').order('nome_fantasia'),
-                supabase.from('dicionario_conglomerados').select('id, nome_lider').order('nome_lider'),
+            const [canonicosData, dicionarioData, emissoresData, conglomeradosData, classesRes] = await Promise.all([
+                selectAll('ativos_canonicos', 'id, nome_canonico, classe_avere, liquidez_avere, data_vencimento, emissor_id, conglomerado_id, taxa_canonica, taxa_formatada, benchmark_canonico, sub_tipo_canonico, is_fii, is_coe, notas', 'nome_canonico'),
+                selectAll('dicionario_ativos', 'ativo_canonico_id, instituicao_origem, codigo_identificador, tipo_identificador, nome_ativo, emissor_original, classe_original, liquidez_api_original, vencimento_api_original, index_rate, taxa_formatada'),
+                selectAll('dicionario_emissores', 'id, nome_fantasia', 'nome_fantasia'),
+                selectAll('dicionario_conglomerados', 'id, nome_lider', 'nome_lider'),
                 supabase.from('dicionario_classes').select('nome').order('ordem_exibicao'),
-                supabase.from('dicionario_ativos').select('ativo_canonico_id, instituicao_origem, codigo_identificador, tipo_identificador, nome_ativo, emissor_original, classe_original, liquidez_api_original, vencimento_api_original, index_rate, taxa_formatada'),
             ]);
 
-            if (canonicosRes.error) throw canonicosRes.error;
-            if (emissoresRes.error) throw emissoresRes.error;
-            if (conglomeradosRes.error) throw conglomeradosRes.error;
             if (classesRes.error) throw classesRes.error;
-            if (dicionarioRes.error) throw dicionarioRes.error;
 
-            setEmissores(emissoresRes.data || []);
-            setConglomerados(conglomeradosRes.data || []);
+            setEmissores(emissoresData || []);
+            setConglomerados(conglomeradosData || []);
             setClassesAvere(classesRes.data || []);
 
             // Agrupa visões institucionais por canonico_id
             const visoesPorCanonico = new Map<string, VisaoInstitucional[]>();
-            (dicionarioRes.data || []).forEach((d: any) => {
+            (dicionarioData || []).forEach((d: any) => {
                 if (!d.ativo_canonico_id) return;
                 const arr = visoesPorCanonico.get(d.ativo_canonico_id) ?? [];
                 arr.push({
@@ -145,7 +156,7 @@ export default function MasterAtivos() {
                 visoesPorCanonico.set(d.ativo_canonico_id, arr);
             });
 
-            const lista: AtivoCanonicoMaster[] = (canonicosRes.data || []).map((c: any) => {
+            const lista: AtivoCanonicoMaster[] = (canonicosData || []).map((c: any) => {
                 const base = {
                     ...c,
                     classe_avere:       c.classe_avere || '',
@@ -350,7 +361,7 @@ export default function MasterAtivos() {
                                                 const cor = CORES_INST[inst] ?? { bg: '#E5E7EB', fg: '#374151' };
                                                 return <span key={inst} style={{ background: cor.bg, color: cor.fg, fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>{inst}</span>;
                                             })}
-                                            {(item.taxa_formatada || item.taxa_canonica) && <Badge variant="ghost" style={{ fontSize: '9px' }}>{item.taxa_formatada || item.taxa_canonica}</Badge>}
+                                            {(item.taxa_formatada || item.taxa_canonica) && <Badge variant="ghost" style={{ fontSize: '9px' }}>{padronizarTaxaExibicao(item.taxa_formatada || item.taxa_canonica)}</Badge>}
                                         </div>
                                     </td>
 

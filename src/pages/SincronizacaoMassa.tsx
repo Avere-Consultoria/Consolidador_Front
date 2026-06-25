@@ -8,7 +8,7 @@ const FN: Record<string, string> = {
 };
 const OPCOES_INST = [
     { label: 'BTG', value: 'BTG' },
-    { label: 'XP (requer certificado)', value: 'XP' },
+    { label: 'XP', value: 'XP' },
     { label: 'Avenue', value: 'AVENUE' },
     { label: 'Ágora', value: 'AGORA' },
 ];

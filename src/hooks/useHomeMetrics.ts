@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useClient } from '../contexts/ClientContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
-import { pct, formatarTaxa } from '../utils/formatters';
+import { pct } from '../utils/formatters';
 import { CORES } from '../utils/colors';
 
 export interface ConsolidatedAtivo {
@@ -22,6 +22,7 @@ export interface ConsolidatedAtivo {
     rawData?: any;
     benchmark?: string | null;
     taxa?: string | null;
+    naoVerificado?: boolean;   // entrada manual sem canônico (Camada 1): dado raso, não vinculado
 }
 
 export interface CarteiraPersonalizada {
@@ -592,7 +593,7 @@ export function useHomeMetrics() {
     const [mesesFechados, setMesesFechados] = useState<string[]>([]);
     const [fechadoData, setFechadoData] = useState<{ fontes: FonteMeta[]; ativos: Map<string, ConsolidatedAtivo[]> } | null>(null);
 
-    const [diasVencimento, setDiasVencimento] = useState(30);
+    const [diasVencimento, setDiasVencimento] = useState(9999); // default: "Todos os Ativos"
     const [drawerCarteirasAberto, setDrawerCarteirasAberto] = useState(false);
     const [carteiraAtiva, setCarteiraAtiva] = useState<string>('CONSOLIDADA');
     const [carteirasPersonalizadas, setCarteirasPersonalizadas] = useState<CarteiraPersonalizada[]>([]);
@@ -602,6 +603,20 @@ export function useHomeMetrics() {
             if (!selectedClient?.id) return;
             setLoading(true);
             try {
+                // Pagina tabelas globais (o Supabase corta cada request em 1000 linhas) —
+                // mantém o shape {data,error}. Sem isto, com a base cheia os ativos além do
+                // 1000º canônico ficavam SEM classe/taxa na Home.
+                const selectAllRows = async (tabela: string, colunas: string) => {
+                    const PAGE = 1000; const acc: any[] = [];
+                    for (let from = 0; ; from += PAGE) {
+                        const { data, error } = await supabase.from(tabela).select(colunas).range(from, from + PAGE - 1);
+                        if (error) return { data: acc, error };
+                        acc.push(...(data ?? []));
+                        if (!data || data.length < PAGE) break;
+                    }
+                    return { data: acc, error: null };
+                };
+
                 // Índices fixos: 0=BTG, 1=XP, 2=Avenue, 3=Ágora, 4=canonicos, 5=emissores, 6=classes, 7=instituicoes
                 // Índice 8 (opcional): excecoes
                 const queries: any[] = [
@@ -689,12 +704,12 @@ export function useHomeMetrics() {
                         .order('data_referencia', { ascending: false }),
 
                     // 4, 5, 6, 7: Infraestrutura
-                    supabase.from('ativos_canonicos').select('id, nome_canonico, classe_avere, liquidez_avere, emissor_id, conglomerado_id, data_vencimento, taxa_canonica, benchmark_canonico, sub_tipo_canonico, is_fii, is_coe'),
-                    supabase.from('dicionario_emissores').select('id, nome_fantasia, cnpj_raiz, setor_id, setores(nome, cor_hex)'),
+                    selectAllRows('ativos_canonicos', 'id, nome_canonico, classe_avere, liquidez_avere, emissor_id, conglomerado_id, data_vencimento, taxa_canonica, benchmark_canonico, sub_tipo_canonico, is_fii, is_coe'),
+                    selectAllRows('dicionario_emissores', 'id, nome_fantasia, cnpj_raiz, setor_id, setores(nome, cor_hex)'),
                     supabase.from('dicionario_classes').select('*').order('ordem_exibicao'),
                     supabase.from('instituicoes').select('*'),
                     // 8: Conglomerados (com porte) p/ visão de crédito bancário FGC
-                    supabase.from('dicionario_conglomerados').select('id, nome_lider, porte'),
+                    selectAllRows('dicionario_conglomerados', 'id, nome_lider, porte'),
                     // 9: Posições manuais (todas instituições/datas do cliente; latest por instituição é escolhido no metrics)
                     supabase
                         .from('posicao_manual_snapshots')
@@ -869,7 +884,7 @@ export function useHomeMetrics() {
 
         const classificar = (ativoCanonicoId: string | null | undefined) => {
             if (!ativoCanonicoId) {
-                return { classe: 'Classificar', liquidez: null, liquidezCustomizada: null, apelido: null, emissorId: null, conglomeradoId: null, vencimento: null, taxa: null, subTipo: null };
+                return { classe: 'Classificar', liquidez: null, liquidezCustomizada: null, apelido: null, emissorId: null, conglomeradoId: null, vencimento: null, taxa: null, subTipo: null, benchmark: null };
             }
             const canonico = canonicoMap.get(ativoCanonicoId) ?? null;
             const eCliente = excecaoClienteMap.get(ativoCanonicoId);
@@ -884,6 +899,7 @@ export function useHomeMetrics() {
                 vencimento: eCliente?.vencimento_customizado  ?? eGlobal?.vencimento_customizado  ?? canonico?.data_vencimento    ?? null,
                 taxa:       canonico?.taxa_canonica ?? null,
                 subTipo:    canonico?.sub_tipo_canonico ?? null,
+                benchmark:  canonico?.benchmark_canonico ?? null,
             };
         };
 
@@ -925,14 +941,13 @@ export function useHomeMetrics() {
                     ativoCanonicoId: a.ativo_canonico_id,
                     liquidez: liquidezComFallback(a, cls),
                     rawData: a,
-                    benchmark: a.benchmark || '-',
+                    benchmark: cls.benchmark || '-',
                     taxa: cls.taxa,
                 };
                 if (f.baseInst === 'BTG') {
                     at.nome = cls.apelido || a.emissor || '-';
                     at.valorLiquido = parseFloat(a.valor_liquido || 0);
                     at.valorBruto = parseFloat(a.valor_bruto || 0);
-                    at.taxa = formatarTaxa(a.rentabilidade, a.benchmark, a.yield_avg) || cls.taxa;
                 } else if (f.baseInst === 'XP') {
                     at.nome = cls.apelido || a.nome || a.emissor || '-';
                     at.valorLiquido = parseFloat(a.valor_liquido || 0);
@@ -947,12 +962,17 @@ export function useHomeMetrics() {
                     at.nome = cls.apelido || a.emissor || '-';
                     at.valorLiquido = parseFloat(a.valor_liquido || 0);
                     at.valorBruto = parseFloat(a.valor_bruto || 0);
-                    at.benchmark = '-';
-                    at.taxa = a.taxa || cls.taxa || null;
                 } else { // MANUAL
                     at.nome = cls.apelido || a.emissor || '-';
                     at.valorLiquido = parseFloat(a.valor_liquido ?? a.valor_bruto ?? 0);
                     at.valorBruto = parseFloat(a.valor_bruto || 0);
+                    // Sem canônico = Camada 1: exibe o dado RASO da própria linha (ex.: o
+                    // benchmark "IPCA" que a IA extraiu) e marca como NÃO VERIFICADO. Com
+                    // canônico = Camada 2: já herdou o global acima. Ver posicao-manual-politica.
+                    if (!a.ativo_canonico_id) {
+                        at.benchmark = a.benchmark || '-';
+                        at.naoVerificado = true;
+                    }
                 }
                 at.liquidez = resolverLiquidez(at, a, cls);
                 if (naoZerado(at)) out.push(at);
