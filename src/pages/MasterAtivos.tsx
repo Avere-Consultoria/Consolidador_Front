@@ -334,6 +334,8 @@ export default function MasterAtivos() {
                         {canonicosFiltrados.map(item => {
                             const principal = item.visoes[0];
                             const instituicoesDistintas = Array.from(new Set(item.visoes.map(v => v.instituicao_origem)));
+                            // Emissor ORIGINAL (cru da API) — fato imutável; exibido ao lado do nome.
+                            const emissorOriginal = item.visoes.map(v => (v.emissor_original ?? '').trim()).find(e => e) ?? '';
                             const bancario = isBancario(item.sub_tipo_canonico);
                             const riscoNome = bancario ? conglomeradosMap.get(item.conglomerado_id) : emissoresMap.get(item.emissor_id);
                             return (
@@ -347,6 +349,7 @@ export default function MasterAtivos() {
                                     <td style={{ ...tdMA, minWidth: '260px' }}>
                                         <Typography variant="p" title={item.nome_canonico} style={{ fontWeight: 700, fontSize: '13px', color: '#111827' }}>
                                             {item.nome_canonico}
+                                            {emissorOriginal && <span style={{ fontWeight: 500, fontSize: '11px', color: '#6B7280', marginLeft: '8px' }}>· {emissorOriginal}</span>}
                                             {item.is_fii && <span style={{ fontSize: '9px', marginLeft: '6px', color: '#7C3AED', fontWeight: 700 }}>FII</span>}
                                             {item.is_coe && <span style={{ fontSize: '9px', marginLeft: '6px', color: '#DC2626', fontWeight: 700 }}>COE</span>}
                                         </Typography>

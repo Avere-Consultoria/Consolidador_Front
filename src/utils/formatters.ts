@@ -19,6 +19,21 @@ export const fmtDate = (d?: string | null) => {
     return y && m && day ? `${day}/${m}/${y}` : '-';
 };
 
+// Dias de calendário de hoje até uma data 'YYYY-MM-DD' (vencimento). Timezone-safe:
+// compara só a parte de data em UTC (como o fmtDate), sem o deslocamento de fuso do
+// new Date('YYYY-MM-DD'). Recalculado a cada chamada → não congela como o D+ do sync.
+// Retorna dias COM SINAL (negativo = já venceu, 0 = vence hoje); o chamador clampa
+// conforme o uso. null se a data for inválida/ausente.
+export function diasAteVencimento(d?: string | null): number | null {
+    if (!d) return null;
+    const [y, m, day] = String(d).slice(0, 10).split('-').map(Number);
+    if (!y || !m || !day) return null;
+    const venc = Date.UTC(y, m - 1, day);
+    const agora = new Date();
+    const hoje = Date.UTC(agora.getFullYear(), agora.getMonth(), agora.getDate());
+    return Math.ceil((venc - hoje) / 86_400_000);
+}
+
 export const fmtNum = (v?: number | null, decimais = 2) =>
     v != null
         ? v.toLocaleString('pt-BR', { minimumFractionDigits: decimais, maximumFractionDigits: decimais })

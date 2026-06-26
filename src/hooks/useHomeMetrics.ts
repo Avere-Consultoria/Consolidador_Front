@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useClient } from '../contexts/ClientContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../services/supabase';
-import { pct } from '../utils/formatters';
+import { pct, diasAteVencimento } from '../utils/formatters';
 import { CORES } from '../utils/colors';
 
 export interface ConsolidatedAtivo {
@@ -420,12 +420,12 @@ function computeMetrics(ctx: ComputeMetricsCtx) {
     const totalAtivos = fontesIncluidas.flatMap(f => ativosPorFonte.get(f.key) || []);
     const patrimonioTotal = fontesIncluidas.reduce((s, f) => s + totalFonte(f), 0);
 
-    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-    const limiteData = new Date(); limiteData.setDate(hoje.getDate() + diasVencimento);
+    // Agenda de vencimentos: estritamente futuros (dias > 0) dentro da janela escolhida
+    // (9999 = "Todos os Ativos"). Mesmo cálculo timezone-safe da liquidez.
     const vencimentosProx = totalAtivos.filter(a => {
-        if (!a.vencimento) return false;
-        const d = new Date(a.vencimento);
-        return d > hoje && (diasVencimento === 9999 || d <= limiteData);
+        const dias = diasAteVencimento(a.vencimento);
+        if (dias == null || dias <= 0) return false;
+        return diasVencimento === 9999 || dias <= diasVencimento;
     });
 
     const todosAtivos = [...totalAtivos].sort((a, b) => b.valorBruto - a.valorBruto);
@@ -908,14 +908,20 @@ export function useHomeMetrics() {
         const liquidezComFallback = (a: any, cls: any) => (isCash(a) && !cls.liquidez) ? '0' : cls.liquidez;
         const naoZerado = (a: ConsolidatedAtivo) => (a.valorLiquido && a.valorLiquido > 0) || (a.valorBruto && a.valorBruto > 0);
 
-        // Liquidez efetiva: exceção per-ativo > padronização por subtipo (se tem venc) > atual.
+        // Liquidez efetiva (alimenta só o gráfico de liquidez):
+        //   exceção per-ativo > padronização por subtipo > dias até o vencimento > D+ atual.
+        // Para renda fixa com vencimento, o D+ é os dias até a DATA de vencimento, calculados
+        // a cada render — a data é a verdade durável; o liquidez_avere do sync fica congelado
+        // no 1º sync (ignoreDuplicates) e drifta, então não o usamos quando há vencimento.
         const resolverLiquidez = (at: ConsolidatedAtivo, a: any, cls: any): string | null => {
             if (cls.liquidezCustomizada != null && cls.liquidezCustomizada !== '') return String(cls.liquidezCustomizada);
-            const temVenc = !!(cls.vencimento || a.maturity_date || a.data_vencimento);
-            if (temVenc) {
+            const venc = cls.vencimento || a.maturity_date || a.data_vencimento;
+            if (venc) {
                 const st = (cls.subTipo ?? a.sub_tipo ?? '').toUpperCase().trim();
                 const cfg = subtipoLiqMap.get(st);
                 if (cfg?.padronizar && cfg.dias != null) return String(cfg.dias);
+                const dias = diasAteVencimento(venc);
+                if (dias != null) return String(Math.max(0, dias));
             }
             return at.liquidez ?? null;
         };
