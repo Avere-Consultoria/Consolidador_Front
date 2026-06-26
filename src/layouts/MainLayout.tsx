@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home, LineChart, Database, SlidersHorizontal, Users, User, Building2, BookOpen, UserPlus, UsersRound, Lock, History, Wrench, RefreshCw } from 'lucide-react';
+import { Home, LineChart, Database, SlidersHorizontal, Users, User, Building2, BookOpen, UserPlus, UsersRound, Lock, History, Wrench, RefreshCw, FileStack } from 'lucide-react';
 import { SideBar, SideBarItem, TopBar, HierarchicalCombobox, Toaster, Spinner, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
@@ -230,6 +230,10 @@ export default function MainLayout() {
             <SideBarItem
               icon={Database} label="Master Ativos"
               active={location.pathname === '/master'} onClick={() => navigate('/master')}
+            />
+            <SideBarItem
+              icon={FileStack} label="Documentos Manuais"
+              active={location.pathname === '/documentos-manuais'} onClick={() => navigate('/documentos-manuais')}
             />
             <SideBarItem
               icon={BookOpen} label="Gestão Master"

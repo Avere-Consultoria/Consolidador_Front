@@ -7,8 +7,7 @@ import { fmt } from '../../../utils/formatters';
 import { CardHeaderComSwitch } from './CardHeaderComSwitch';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import { useFaixas, type Faixa } from '../../../hooks/useFaixas';
-
-type LiquidezItem = { name: string; value: number; pct: number };
+import { agregarLiquidez, FAIXAS_LIQUIDEZ_DEFAULT, type LiquidezItem } from '../../../utils/faixas';
 
 interface LiquidezVisaoProps {
     dados: LiquidezItem[];
@@ -17,47 +16,8 @@ interface LiquidezVisaoProps {
     patrimonioTotal: number;
 }
 
-// Faixas default (fallback se a tabela faixas_temporais estiver vazia)
-const FAIXAS_LIQUIDEZ_DEFAULT: Faixa[] = [
-    { label: 'D+0',        min: 0,   max: 0,        cor: '#10B981' },
-    { label: 'D+1–30',     min: 1,   max: 30,       cor: '#0083CB' },
-    { label: 'D+31–180',   min: 31,  max: 180,      cor: '#06B6D4' },
-    { label: 'D+181–720',  min: 181, max: 720,      cor: '#F59E0B' },
-    { label: 'D+720+',     min: 721, max: Infinity, cor: '#EF4444' },
-];
-const COR_NAO_CLASS = '#D1D5DB';
-
-function parseDias(name: string): number {
-    if (name === 'Não Classificada') return -1;
-    const match = name.match(/D\+(\d+)/);
-    return match ? parseInt(match[1], 10) : -1;
-}
-
-type FaixaAgregada = { label: string; cor: string; value: number; pct: number };
-
-// `denominador` (ex.: patrimônio total): quando informado, o % é calculado sobre ele —
-// assim os 3 gráficos de liquidez ficam normalizados pelo TODO da carteira (somam 100%
-// entre si), em vez de cada um fechar 100% isolado.
-function agregarPorFaixas(dados: LiquidezItem[], faixas: Faixa[], denominador?: number): FaixaAgregada[] {
-    const totalGrupo = dados.reduce((s, d) => s + d.value, 0);
-    const base = (denominador && denominador > 0) ? denominador : totalGrupo;
-    const acc = faixas.map(() => 0);
-    let naoClass = 0;
-    dados.forEach(d => {
-        const dias = parseDias(d.name);
-        if (dias === -1) { naoClass += d.value; return; }
-        const idx = faixas.findIndex(f => dias >= f.min && dias <= f.max);
-        if (idx >= 0) acc[idx] += d.value;
-    });
-    const out: FaixaAgregada[] = faixas.map((f, i) => ({
-        label: f.label, cor: f.cor, value: acc[i],
-        pct: base > 0 ? (acc[i] / base) * 100 : 0,
-    })).filter(f => f.value > 0);
-    if (naoClass > 0) {
-        out.push({ label: 'Não Classificada', cor: COR_NAO_CLASS, value: naoClass, pct: base > 0 ? (naoClass / base) * 100 : 0 });
-    }
-    return out;
-}
+// Faixas, parseDias e agregação de liquidez vivem em utils/faixas.ts
+// (fonte única compartilhada com o Relatório/PDF).
 
 function TooltipBarras({ active, payload }: any) {
     if (!active || !payload || !payload.length) return null;
@@ -72,7 +32,7 @@ function TooltipBarras({ active, payload }: any) {
 }
 
 function BarChartLiquidez({ dados, faixas, total }: { dados: LiquidezItem[]; faixas: Faixa[]; total: number }) {
-    const chartData = useMemo(() => agregarPorFaixas(dados, faixas, total), [dados, faixas, total]);
+    const chartData = useMemo(() => agregarLiquidez(dados, faixas, total), [dados, faixas, total]);
 
     if (chartData.length === 0) {
         return <div style={{ padding: '24px', textAlign: 'center', opacity: 0.5, fontSize: '13px' }}>Sem dados de liquidez.</div>;
@@ -108,7 +68,7 @@ const thStyle: React.CSSProperties = {
     textTransform: 'uppercase', fontWeight: 700, fontSize: '10px', letterSpacing: '0.05em',
 };
 function TabelaFaixas({ dados, faixas, total }: { dados: LiquidezItem[]; faixas: Faixa[]; total: number }) {
-    const agregadas = useMemo(() => agregarPorFaixas(dados, faixas, total), [dados, faixas, total]);
+    const agregadas = useMemo(() => agregarLiquidez(dados, faixas, total), [dados, faixas, total]);
     return (
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', fontFamily: 'Montserrat, sans-serif' }}>
             <thead>
@@ -162,7 +122,7 @@ function LiquidezBloco({ titulo, dados, faixas, total }: { titulo: string; dados
 // Versão COMPACTA p/ classes com poucas faixas (Previdência, Renda Variável):
 // barra horizontal empilhada (100%) + legenda com % E valor (R$) por faixa.
 function LiquidezCompacta({ titulo, dados, faixas, total }: { titulo: string; dados: LiquidezItem[]; faixas: Faixa[]; total: number }) {
-    const agregadas = useMemo(() => agregarPorFaixas(dados, faixas, total), [dados, faixas, total]);
+    const agregadas = useMemo(() => agregarLiquidez(dados, faixas, total), [dados, faixas, total]);
     if (!dados || dados.length === 0 || agregadas.length === 0) return null;
     return (
         <Card>

@@ -142,7 +142,7 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
     );
 
     return (
-        <Card style={{ border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+        <Card style={{ border: '1px solid rgba(0,0,0,0.08)' }}>
             <CardContent style={{ padding: '24px' }}>
 
                 <CardHeaderComSwitch

@@ -24,6 +24,7 @@ const MovimentacoesMes = lazy(() => import('./pages/MovimentacoesMes'));
 const SincronizacaoMassa = lazy(() => import('./pages/SincronizacaoMassa'));
 const HistoricoMensal = lazy(() => import('./pages/HistoricoMensal'));
 const Manutencao = lazy(() => import('./pages/Manutencao'));
+const DocumentosManuais = lazy(() => import('./pages/DocumentosManuais'));
 const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha'));
 
 const fallback = (
@@ -67,6 +68,7 @@ export default function App() {
               <Route element={<ProtectedRoute allowedRoles={['MASTER']} />}>
                 <Route element={<MainLayout />}>
                   <Route path="/master" element={<MasterAtivos />} />
+                  <Route path="/documentos-manuais" element={<DocumentosManuais />} />
                   <Route path="/gestao-master" element={<GestaoMaster />} />
                   <Route path="/cadastro-clientes" element={<CadastroClientes />} />
                   <Route path="/gestao-equipe" element={<GestaoEquipe />} />

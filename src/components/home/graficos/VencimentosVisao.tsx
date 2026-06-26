@@ -6,16 +6,8 @@ import {
 import { CardHeaderComSwitch } from './CardHeaderComSwitch';
 import { fmt, fmtDate } from '../../../utils/formatters';
 import { CORES } from '../../../utils/colors';
-import { useFaixas, type Faixa } from '../../../hooks/useFaixas';
-
-// Faixas default (fallback se faixas_temporais estiver vazia) — label = prazo
-const FAIXAS_VENC_DEFAULT: Faixa[] = [
-    { label: 'Até 30 dias',       min: 0,   max: 30,       cor: '#10B981' },
-    { label: '31 a 90 dias',      min: 31,  max: 90,       cor: '#0083CB' },
-    { label: '91 a 180 dias',     min: 91,  max: 180,      cor: '#06B6D4' },
-    { label: '181 a 365 dias',    min: 181, max: 365,      cor: '#F59E0B' },
-    { label: 'Acima de 365 dias', min: 366, max: Infinity, cor: '#EF4444' },
-];
+import { useFaixas } from '../../../hooks/useFaixas';
+import { agregarVencimentos, FAIXAS_VENC_DEFAULT } from '../../../utils/faixas';
 
 interface VencimentosVisaoProps {
     ativos: any[];
@@ -120,27 +112,15 @@ export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: 
     }, [ativosFiltrados]);
 
     // Agrupamento por FAIXA de prazo (visão clássica).
-    const faixasAgregadas = useMemo(() => {
-        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
-        const acc = faixas.map(() => 0);
-        ativosFiltrados.forEach(a => {
-            const dataStr = a.vencimento || a.data_vencimento;
-            if (!dataStr) return;
-            const dataVenc = new Date(dataStr); dataVenc.setHours(0, 0, 0, 0);
-            const dias = Math.round((dataVenc.getTime() - hoje.getTime()) / 86_400_000);
-            const idx = faixas.findIndex(f => dias >= f.min && dias <= f.max);
-            if (idx >= 0) acc[idx] += (a.valorBruto || 0);
-        });
-        return faixas.map((f, i) => ({
-            label: f.label, cor: f.cor, value: acc[i],
-            pct: patrimonioTotal > 0 ? (acc[i] / patrimonioTotal) * 100 : 0,
-        })).filter(f => f.value > 0);
-    }, [ativosFiltrados, patrimonioTotal, faixas]);
+    const faixasAgregadas = useMemo(
+        () => agregarVencimentos(ativosFiltrados, faixas, patrimonioTotal),
+        [ativosFiltrados, patrimonioTotal, faixas],
+    );
 
     const handleSelectChange = (value: string) => setDiasVencimento(Number(value));
 
     return (
-        <Card style={{ marginTop: '24px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+        <Card style={{ border: '1px solid rgba(0,0,0,0.08)' }}>
             <CardContent style={{ padding: '24px' }}>
 
                 <CardHeaderComSwitch titulo="Agenda de Vencimentos" modoTabela={modoTabela} setModoTabela={setModoTabela} />
