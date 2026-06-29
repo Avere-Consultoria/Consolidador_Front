@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Typography, Card, Spinner, Badge, Button, TextField, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, toast } from 'avere-ui';
-import { FileText, Search, FileStack, ArrowDownRight, Pencil, ArrowUp, Fingerprint, Link2, ChevronDown } from 'lucide-react';
+import { FileText, Search, FileStack, ArrowDownRight, Pencil, ArrowUp, Fingerprint, Link2, ChevronDown, AlertTriangle, Trash2 } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { fmt, fmtDate } from '../utils/formatters';
 
 interface Envio {
@@ -31,6 +32,9 @@ interface ManualAtivo {
     valor_bruto: number | null;
     benchmark: string | null;
     data_vencimento: string | null;
+    editado_em: string | null;
+    conflito_reimport: boolean | null;
+    conflito_dados: { tipo?: string; sub_tipo?: string; emissor?: string; benchmark?: string; data_vencimento?: string } | null;
 }
 
 // Data/hora do envio (ISO) → DD/MM HH:mm, timezone-safe o suficiente p/ exibição.
@@ -45,6 +49,19 @@ function StatusEnvio({ status }: { status: string }) {
     if (s === 'processado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(16,185,129,0.1)', color: '#059669' }}>Processado</Badge>;
     if (s === 'erro' || s === 'falha') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(239,68,68,0.1)', color: '#DC2626' }}>Com erro</Badge>;
     return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(245,158,11,0.12)', color: '#B45309' }}>Enviado</Badge>;
+}
+
+// Texto do selo de conflito: o que a IA reextraiu, diferente do que o master fixou.
+function conflitoTooltip(a: ManualAtivo): string {
+    const d = a.conflito_dados;
+    if (!d) return 'A reimportação trouxe dados diferentes da sua edição.';
+    const partes: string[] = [];
+    if (d.tipo) partes.push(`classe "${d.tipo}"`);
+    if (d.sub_tipo) partes.push(`sub-tipo "${d.sub_tipo}"`);
+    if (d.emissor) partes.push(`emissor "${d.emissor}"`);
+    if (d.benchmark) partes.push(`indexador "${d.benchmark}"`);
+    if (d.data_vencimento) partes.push(`venc. ${d.data_vencimento}`);
+    return `A IA reextraiu: ${partes.join(', ')}. Sua edição foi mantida — revise se quiser.`;
 }
 
 function identidade(a: ManualAtivo): { label: string; ok: boolean } {
@@ -114,7 +131,9 @@ export default function DocumentosManuais() {
     const [loading, setLoading] = useState(true);
     const [envios, setEnvios] = useState<Envio[]>([]);
     const [clientesMap, setClientesMap] = useState<Map<string, string>>(new Map());
-    const [consultoresMap, setConsultoresMap] = useState<Map<string, string>>(new Map());
+    // enviado_por (auth uid) → nome de quem realmente clicou enviar.
+    const [remetentesMap, setRemetentesMap] = useState<Map<string, string>>(new Map());
+    const { perfil } = useAuth();
 
     const [selecionado, setSelecionado] = useState<Envio | null>(null);
     const [ativos, setAtivos] = useState<ManualAtivo[]>([]);
@@ -129,19 +148,34 @@ export default function DocumentosManuais() {
     const [form, setForm] = useState({ classe: '', emissor_id: '', sub_tipo: '', benchmark: '', percentual: '', spread: '', vencimento: '', liquidez: '' });
     const [salvando, setSalvando] = useState(false);
 
+    const [editar, setEditar] = useState<ManualAtivo | null>(null);
+    const [formEdit, setFormEdit] = useState({ emissor: '', sub_tipo: '', benchmark: '', vencimento: '', cnpj: '', ticker: '', isin: '' });
+    const [salvandoEdit, setSalvandoEdit] = useState(false);
+
+    const [excluir, setExcluir] = useState<Envio | null>(null);
+    const [previewEx, setPreviewEx] = useState<any>(null);
+    const [removerPos, setRemoverPos] = useState(false);
+    const [excluindo, setExcluindo] = useState(false);
+
     useEffect(() => {
         (async () => {
             setLoading(true);
-            const [enviosRes, clientesRes, consultoresRes, classesRes, emissoresRes] = await Promise.all([
+            const [enviosRes, clientesRes, consultoresRes, classesRes, emissoresRes, perfisRes] = await Promise.all([
                 supabase.from('envio_pdf_manual').select('*').order('enviado_em', { ascending: false }).limit(500),
                 supabase.from('clientes').select('id, nome'),
-                supabase.from('consultores').select('id, nome'),
+                supabase.from('consultores').select('id, nome, perfil_id'),
                 supabase.from('dicionario_classes').select('nome').order('ordem_exibicao'),
                 supabase.from('dicionario_emissores').select('id, nome_fantasia').order('nome_fantasia'),
+                supabase.from('perfis').select('id, nome'),
             ]);
             setEnvios((enviosRes.data as Envio[]) || []);
             setClientesMap(new Map((clientesRes.data || []).map((c: any) => [c.id, c.nome])));
-            setConsultoresMap(new Map((consultoresRes.data || []).map((c: any) => [c.id, c.nome])));
+            // Remetente real = enviado_por (auth uid). Resolve por perfis + perfil_id do
+            // consultor; o que a RLS não devolver cai no fallback de exibição.
+            const rem = new Map<string, string>();
+            (perfisRes.data || []).forEach((p: any) => { if (p.id && p.nome) rem.set(p.id, p.nome); });
+            (consultoresRes.data || []).forEach((c: any) => { if (c.perfil_id && !rem.has(c.perfil_id)) rem.set(c.perfil_id, c.nome); });
+            setRemetentesMap(rem);
             setClasses((classesRes.data || []).map((c: any) => c.nome));
             setEmissores((emissoresRes.data || []).map((e: any) => ({ id: e.id, nome: e.nome_fantasia })));
             setLoading(false);
@@ -167,7 +201,7 @@ export default function DocumentosManuais() {
         if (!snapId) { setLoadingAtivos(false); return; }
         const { data } = await supabase
             .from('posicao_manual_ativos')
-            .select('id, ativo_canonico_id, tipo, sub_tipo, emissor, cnpj, ticker, isin, valor_bruto, benchmark, data_vencimento')
+            .select('id, ativo_canonico_id, tipo, sub_tipo, emissor, cnpj, ticker, isin, valor_bruto, benchmark, data_vencimento, editado_em, conflito_reimport, conflito_dados')
             .eq('snapshot_id', snapId)
             .order('valor_bruto', { ascending: false });
         setAtivos((data as ManualAtivo[]) || []);
@@ -187,7 +221,37 @@ export default function DocumentosManuais() {
         });
     }, [envios, busca, filtroStatus, clientesMap]);
 
-    const emBreve = () => toast('Ação em desenvolvimento — próxima etapa.');
+    const openEditar = (a: ManualAtivo) => {
+        setEditar(a);
+        setFormEdit({
+            emissor: a.emissor || '',
+            sub_tipo: (a.sub_tipo || '').toUpperCase(),
+            benchmark: (a.benchmark || '').toUpperCase(),
+            vencimento: a.data_vencimento ? a.data_vencimento.slice(0, 10) : '',
+            cnpj: a.cnpj || '',
+            ticker: a.ticker || '',
+            isin: a.isin || '',
+        });
+    };
+    const confirmarEditar = async () => {
+        if (!editar) return;
+        setSalvandoEdit(true);
+        const { data, error } = await supabase.rpc('editar_ativo_manual', {
+            p_id: editar.id,
+            p_emissor: formEdit.emissor || null,
+            p_sub_tipo: formEdit.sub_tipo || null,
+            p_benchmark: formEdit.benchmark || null,
+            p_data_vencimento: formEdit.vencimento || null,
+            p_cnpj: formEdit.cnpj || null,
+            p_ticker: formEdit.ticker || null,
+            p_isin: formEdit.isin || null,
+        });
+        setSalvandoEdit(false);
+        if (error) { toast.error(`Falha ao salvar: ${error.message}`); return; }
+        toast.success((data as any)?.vinculado ? 'Salvo e vinculado a um canônico existente.' : 'Correção salva (fica local até promover).');
+        setEditar(null);
+        if (selecionado) abrirDoc(selecionado);
+    };
 
     const openPromover = (a: ManualAtivo) => {
         setPromover(a);
@@ -215,6 +279,39 @@ export default function DocumentosManuais() {
         toast.success((data as any)?.novo ? 'Ativo promovido ao global.' : 'Vinculado a um canônico existente.');
         setPromover(null);
         if (selecionado) abrirDoc(selecionado);
+    };
+
+    const abrirExcluir = async (e: Envio) => {
+        setExcluir(e);
+        setPreviewEx(null);
+        setRemoverPos(false);
+        const { data, error } = await supabase.rpc('excluir_envio_manual', { p_envio_id: e.id, p_dry_run: true });
+        if (error) { toast.error(`Falha ao analisar: ${error.message}`); setExcluir(null); return; }
+        setPreviewEx(data);
+    };
+    const confirmarExcluir = async () => {
+        if (!excluir) return;
+        setExcluindo(true);
+        const removendoPos = removerPos && previewEx?.tem_posicao && !previewEx?.compartilhado;
+        const { data, error } = await supabase.rpc('excluir_envio_manual', {
+            p_envio_id: excluir.id,
+            p_remover_posicao: removendoPos,
+            p_dry_run: false,
+        });
+        setExcluindo(false);
+        if (error) { toast.error(`Falha ao excluir: ${error.message}`); return; }
+        const r = data as any;
+        toast.success(r?.posicao_removida ? `Envio e posição (${r.ativos_removidos} ativos) excluídos.` : 'Envio excluído do histórico.');
+        setEnvios(prev => prev.filter(x => x.id !== excluir.id));
+        if (selecionado?.id === excluir.id) { setSelecionado(null); setAtivos([]); }
+        setExcluir(null);
+    };
+
+    // Quem realmente enviou: pelo mapa de remetentes; senão o próprio master logado;
+    // senão (uid não resolvido — só masters/consultores enviam) rotula "Master".
+    const remetente = (uid: string | null): string => {
+        if (!uid) return '—';
+        return remetentesMap.get(uid) || (uid === perfil?.id ? (perfil?.nome ?? 'Master') : 'Master');
     };
 
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
@@ -263,14 +360,26 @@ export default function DocumentosManuais() {
                                     <td style={td}>{fmtEnvio(e.enviado_em)}</td>
                                     <td style={td}>
                                         <div style={{ fontWeight: 600 }}>{clientesMap.get(e.cliente_id) || '—'}</div>
-                                        <div style={{ fontSize: 11, color: '#9CA3AF' }}>por {consultoresMap.get(e.consultor_id || '') || e.enviado_por || '—'}</div>
+                                        <div style={{ fontSize: 11, color: '#9CA3AF' }}>enviado por {remetente(e.enviado_por)}</div>
                                     </td>
                                     <td style={td}><span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.12)' }}>{e.instituicao}</span></td>
                                     <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                         <FileText size={14} style={{ verticalAlign: -2, marginRight: 6, color: '#9CA3AF' }} />{e.arquivo_nome || '—'}
                                     </td>
                                     <td style={td}>{fmtDate(e.data_referencia)}</td>
-                                    <td style={td}><StatusEnvio status={e.status} /></td>
+                                    <td style={td}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between' }}>
+                                            <StatusEnvio status={e.status} />
+                                            <button
+                                                title="Excluir envio"
+                                                onClick={(ev) => { ev.stopPropagation(); abrirExcluir(e); }}
+                                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: '1px solid rgba(0,0,0,0.08)', background: '#fff', color: '#9CA3AF', cursor: 'pointer' }}
+                                                onMouseEnter={ev => { ev.currentTarget.style.color = '#DC2626'; ev.currentTarget.style.borderColor = 'rgba(220,38,38,0.3)'; ev.currentTarget.style.background = 'rgba(220,38,38,0.04)'; }}
+                                                onMouseLeave={ev => { ev.currentTarget.style.color = '#9CA3AF'; ev.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)'; ev.currentTarget.style.background = '#fff'; }}>
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             );
                         })}
@@ -315,17 +424,21 @@ export default function DocumentosManuais() {
                                                 <span style={{ color: id.ok ? '#059669' : '#9CA3AF', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                                                     {id.ok ? <Fingerprint size={12} /> : null}{id.label}
                                                 </span>
+                                                {a.editado_em && <span style={{ background: 'rgba(99,102,241,0.1)', color: '#4F46E5', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>editado</span>}
+                                                {a.conflito_reimport && (
+                                                    <span title={conflitoTooltip(a)} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(245,158,11,0.14)', color: '#B45309', padding: '1px 6px', borderRadius: 4, fontWeight: 600, cursor: 'help' }}>
+                                                        <AlertTriangle size={11} />a IA reextraiu diferente
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                         <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>{fmt(a.valor_bruto || 0)}</div>
                                         {verificado
                                             ? <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(16,185,129,0.1)', color: '#059669' }}><Link2 size={11} style={{ verticalAlign: -1, marginRight: 3 }} />Verificado</Badge>
                                             : <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(245,158,11,0.12)', color: '#B45309' }}>Classificar</Badge>}
-                                        <Button variant="outline" onClick={emBreve} style={{ fontSize: 12, padding: '5px 10px' }}><Pencil size={14} style={{ marginRight: 4 }} />Editar</Button>
-                                        {!verificado && (
-                                            id.ok
-                                                ? <Button variant="outline" onClick={() => openPromover(a)} style={{ fontSize: 12, padding: '5px 10px', borderColor: 'var(--color-primaria)', color: 'var(--color-primaria)' }}><ArrowUp size={14} style={{ marginRight: 4 }} />Promover</Button>
-                                                : <Button variant="outline" onClick={emBreve} style={{ fontSize: 12, padding: '5px 10px' }}>Classificar local</Button>
+                                        <Button variant="outline" onClick={() => openEditar(a)} style={{ fontSize: 12, padding: '5px 10px' }}><Pencil size={14} style={{ marginRight: 4 }} />Editar</Button>
+                                        {!verificado && id.ok && (
+                                            <Button variant="outline" onClick={() => openPromover(a)} style={{ fontSize: 12, padding: '5px 10px', borderColor: 'var(--color-primaria)', color: 'var(--color-primaria)' }}><ArrowUp size={14} style={{ marginRight: 4 }} />Promover</Button>
                                         )}
                                     </div>
                                 );
@@ -396,6 +509,113 @@ export default function DocumentosManuais() {
                     <ModalFooter>
                         <Button variant="outline" onClick={() => setPromover(null)}>Cancelar</Button>
                         <Button variant="solid" onClick={confirmarPromover} disabled={salvando}>{salvando ? <Spinner size="sm" /> : 'Promover'}</Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            <Modal open={!!editar} onOpenChange={(o: boolean) => { if (!o) setEditar(null); }}>
+                <ModalContent>
+                    <ModalHeader>
+                        <ModalTitle>Editar o que a IA extraiu</ModalTitle>
+                        <ModalDescription>Corrige os dados crus desta linha. Ao salvar com um identificador válido, religa a um canônico existente (se houver). A edição fica protegida de reimportações futuras.</ModalDescription>
+                    </ModalHeader>
+                    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        <div style={{ fontSize: 12, color: '#6B7280' }}>Valor da posição: <strong style={{ color: '#111827' }}>{fmt(editar?.valor_bruto || 0)}</strong> · não editável (vem do documento)</div>
+                        <div>
+                            <label style={lbl}>Emissor / nome</label>
+                            <input style={ctrl} value={formEdit.emissor} onChange={e => setFormEdit(f => ({ ...f, emissor: e.target.value }))} placeholder="Nome do emissor ou ativo" />
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                            <div>
+                                <label style={lbl}>Sub-tipo</label>
+                                <Combo value={formEdit.sub_tipo} onChange={v => setFormEdit(f => ({ ...f, sub_tipo: v }))} options={SUBTIPOS.map(s => ({ label: s, value: s }))} placeholder="—" />
+                            </div>
+                            <div>
+                                <label style={lbl}>Indexador</label>
+                                <Combo value={formEdit.benchmark} onChange={v => setFormEdit(f => ({ ...f, benchmark: v }))} options={[{ label: '—', value: '' }, ...INDEXADORES.map(o => ({ label: o, value: o }))]} placeholder="—" />
+                            </div>
+                        </div>
+                        <div>
+                            <label style={lbl}>Vencimento</label>
+                            <input type="date" style={ctrl} value={formEdit.vencimento} onChange={e => setFormEdit(f => ({ ...f, vencimento: e.target.value }))} />
+                        </div>
+                        <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 12 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: 8 }}>Identificadores (religam ao global)</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                                <div>
+                                    <label style={lbl}>CNPJ <span style={{ fontWeight: 400, textTransform: 'none' }}>(fundo)</span></label>
+                                    <input style={ctrl} value={formEdit.cnpj} onChange={e => setFormEdit(f => ({ ...f, cnpj: e.target.value }))} placeholder="só fundo" />
+                                </div>
+                                <div>
+                                    <label style={lbl}>Ticker</label>
+                                    <input style={ctrl} value={formEdit.ticker} onChange={e => setFormEdit(f => ({ ...f, ticker: e.target.value }))} />
+                                </div>
+                                <div>
+                                    <label style={lbl}>ISIN</label>
+                                    <input style={ctrl} value={formEdit.isin} onChange={e => setFormEdit(f => ({ ...f, isin: e.target.value }))} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <ModalFooter>
+                        <Button variant="outline" onClick={() => setEditar(null)}>Cancelar</Button>
+                        <Button variant="solid" onClick={confirmarEditar} disabled={salvandoEdit}>{salvandoEdit ? <Spinner size="sm" /> : 'Salvar correção'}</Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            <Modal open={!!excluir} onOpenChange={(o: boolean) => { if (!o) setExcluir(null); }}>
+                <ModalContent>
+                    <ModalHeader>
+                        <ModalTitle>Excluir envio</ModalTitle>
+                        <ModalDescription>
+                            {excluir ? `${clientesMap.get(excluir.cliente_id) || '—'} · ${excluir.instituicao} · ${fmtDate(excluir.data_referencia)}` : ''}
+                        </ModalDescription>
+                    </ModalHeader>
+                    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        {!previewEx ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#6B7280', fontSize: 13 }}><Spinner size="sm" /> Analisando o que será removido…</div>
+                        ) : !previewEx.tem_posicao ? (
+                            <div style={{ fontSize: 13, color: '#374151' }}>
+                                Este envio não gerou posição (ou ela já foi removida). Excluir remove <strong>apenas o registro do histórico</strong> — nenhuma carteira é afetada.
+                            </div>
+                        ) : (
+                            <>
+                                <div style={{ fontSize: 13, color: '#374151' }}>
+                                    Este envio importou uma posição: <strong>{previewEx.ativos} ativo{previewEx.ativos === 1 ? '' : 's'}</strong> · {fmt(previewEx.valor_total || 0)}.
+                                </div>
+                                {previewEx.compartilhado ? (
+                                    <div style={{ fontSize: 12, background: 'rgba(59,130,246,0.08)', color: '#1D4ED8', borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8 }}>
+                                        <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+                                        <span>A posição é <strong>compartilhada</strong> por outros envios na mesma conta/data. Pra não derrubar o que os outros trouxeram, a posição é <strong>preservada</strong> — só o registro deste envio é removido.</span>
+                                    </div>
+                                ) : (
+                                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#374151', cursor: 'pointer', background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: '12px 14px' }}>
+                                        <input type="checkbox" checked={removerPos} onChange={e => setRemoverPos(e.target.checked)} style={{ marginTop: 2 }} />
+                                        <span>Remover <strong>também a posição</strong> da carteira do cliente (desfaz o import).</span>
+                                    </label>
+                                )}
+                                {removerPos && !previewEx.compartilhado && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                        {previewEx.afeta_home && (
+                                            <div style={{ fontSize: 12, color: '#B45309', display: 'flex', gap: 6 }}><AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />É a posição mais recente — a carteira do cliente na Home vai mudar.</div>
+                                        )}
+                                        {previewEx.editados > 0 && (
+                                            <div style={{ fontSize: 12, color: '#B45309', display: 'flex', gap: 6 }}><AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />{previewEx.editados} ativo{previewEx.editados === 1 ? '' : 's'} com correções suas — serão descartadas.</div>
+                                        )}
+                                        {previewEx.promovidos > 0 && (
+                                            <div style={{ fontSize: 12, color: '#6B7280', display: 'flex', gap: 6 }}><Link2 size={14} style={{ flexShrink: 0, marginTop: 1 }} />{previewEx.promovidos} já promovido{previewEx.promovidos === 1 ? '' : 's'} ao global — o canônico global permanece.</div>
+                                        )}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                    <ModalFooter>
+                        <Button variant="outline" onClick={() => setExcluir(null)}>Cancelar</Button>
+                        <Button variant="solid" onClick={confirmarExcluir} disabled={excluindo || !previewEx} style={{ background: '#DC2626', borderColor: '#DC2626' }}>
+                            {excluindo ? <Spinner size="sm" /> : (removerPos && previewEx?.tem_posicao && !previewEx?.compartilhado ? 'Excluir envio + posição' : 'Excluir envio')}
+                        </Button>
                     </ModalFooter>
                 </ModalContent>
             </Modal>
