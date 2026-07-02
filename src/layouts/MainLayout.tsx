@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home, LineChart, Database, SlidersHorizontal, Users, User, Building2, BookOpen, UserPlus, UsersRound, Lock, History, Wrench, RefreshCw, FileStack } from 'lucide-react';
+import { Home, LineChart, Database, SlidersHorizontal, Users, User, Building2, BookOpen, UserPlus, UsersRound, Lock, History, Wrench, RefreshCw, FileStack, LayoutDashboard, Bell } from 'lucide-react';
 import { SideBar, SideBarItem, TopBar, HierarchicalCombobox, Toaster, Spinner, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
@@ -174,6 +174,18 @@ export default function MainLayout() {
         isOpenMobile={false}
         onCloseMobile={() => { }}
       >
+        {(isMaster || isConsultor) && (
+          <SideBarItem
+            icon={LayoutDashboard} label="Dashboard"
+            active={location.pathname === '/dashboard'} onClick={() => navigate('/dashboard')}
+          />
+        )}
+        {(isMaster || isConsultor) && (
+          <SideBarItem
+            icon={Bell} label="Alertas"
+            active={location.pathname === '/alertas'} onClick={() => navigate('/alertas')}
+          />
+        )}
         <SideBarItem
           icon={Home} label="Home"
           active={location.pathname === '/'} onClick={() => navigate('/')}

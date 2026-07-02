@@ -25,6 +25,8 @@ const SincronizacaoMassa = lazy(() => import('./pages/SincronizacaoMassa'));
 const HistoricoMensal = lazy(() => import('./pages/HistoricoMensal'));
 const Manutencao = lazy(() => import('./pages/Manutencao'));
 const DocumentosManuais = lazy(() => import('./pages/DocumentosManuais'));
+const DashboardConsultor = lazy(() => import('./pages/DashboardConsultor'));
+const AlertasConsultor = lazy(() => import('./pages/AlertasConsultor'));
 const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha'));
 
 const fallback = (
@@ -67,6 +69,8 @@ export default function App() {
               {/* ROTA MASTER + CONSULTOR — Documentos Manuais (master) / Meus Envios (consultor) */}
               <Route element={<ProtectedRoute allowedRoles={['MASTER', 'CONSULTOR_INTERNO']} />}>
                 <Route element={<MainLayout />}>
+                  <Route path="/dashboard" element={<DashboardConsultor />} />
+                  <Route path="/alertas" element={<AlertasConsultor />} />
                   <Route path="/documentos-manuais" element={<DocumentosManuais />} />
                 </Route>
               </Route>
