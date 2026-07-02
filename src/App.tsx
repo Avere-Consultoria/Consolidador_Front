@@ -64,11 +64,17 @@ export default function App() {
                 </Route>
               </Route>
 
+              {/* ROTA MASTER + CONSULTOR — Documentos Manuais (master) / Meus Envios (consultor) */}
+              <Route element={<ProtectedRoute allowedRoles={['MASTER', 'CONSULTOR_INTERNO']} />}>
+                <Route element={<MainLayout />}>
+                  <Route path="/documentos-manuais" element={<DocumentosManuais />} />
+                </Route>
+              </Route>
+
               {/* ROTAS RESTRITAS (Exigem Login E Perfil de MASTER) */}
               <Route element={<ProtectedRoute allowedRoles={['MASTER']} />}>
                 <Route element={<MainLayout />}>
                   <Route path="/master" element={<MasterAtivos />} />
-                  <Route path="/documentos-manuais" element={<DocumentosManuais />} />
                   <Route path="/gestao-master" element={<GestaoMaster />} />
                   <Route path="/cadastro-clientes" element={<CadastroClientes />} />
                   <Route path="/gestao-equipe" element={<GestaoEquipe />} />

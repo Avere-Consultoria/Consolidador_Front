@@ -44,11 +44,15 @@ function fmtEnvio(iso: string | null): string {
     return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-function StatusEnvio({ status }: { status: string }) {
-    const s = (status || '').toLowerCase();
-    if (s === 'processado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(16,185,129,0.1)', color: '#059669' }}>Processado</Badge>;
-    if (s === 'erro' || s === 'falha') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(239,68,68,0.1)', color: '#DC2626' }}>Com erro</Badge>;
-    return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(245,158,11,0.12)', color: '#B45309' }}>Enviado</Badge>;
+// Chave de negócio p/ casar envio↔snapshot (o loop de auditoria nem sempre fecha).
+function chaveNeg(clienteId: string | null, contaId: string | null, instituicao: string | null, dataRef: string | null): string {
+    return `${clienteId ?? ''}|${contaId ?? ''}|${(instituicao ?? '').toUpperCase()}|${dataRef ?? ''}`;
+}
+
+function StatusEnvio({ tipo }: { tipo: 'processado' | 'erro' | 'fila' }) {
+    if (tipo === 'processado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(16,185,129,0.1)', color: '#059669' }}>Processado</Badge>;
+    if (tipo === 'erro') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(239,68,68,0.1)', color: '#DC2626' }}>Com erro</Badge>;
+    return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(245,158,11,0.12)', color: '#B45309' }}>Na fila</Badge>;
 }
 
 // Texto do selo de conflito: o que a IA reextraiu, diferente do que o master fixou.
@@ -133,7 +137,9 @@ export default function DocumentosManuais() {
     const [clientesMap, setClientesMap] = useState<Map<string, string>>(new Map());
     // enviado_por (auth uid) → nome de quem realmente clicou enviar.
     const [remetentesMap, setRemetentesMap] = useState<Map<string, string>>(new Map());
+    const [snapKeys, setSnapKeys] = useState<Set<string>>(new Set());
     const { perfil } = useAuth();
+    const isMaster = perfil?.role === 'MASTER';
 
     const [selecionado, setSelecionado] = useState<Envio | null>(null);
     const [ativos, setAtivos] = useState<ManualAtivo[]>([]);
@@ -160,16 +166,20 @@ export default function DocumentosManuais() {
     useEffect(() => {
         (async () => {
             setLoading(true);
-            const [enviosRes, clientesRes, consultoresRes, classesRes, emissoresRes, perfisRes] = await Promise.all([
+            const [enviosRes, clientesRes, consultoresRes, classesRes, emissoresRes, perfisRes, snapsRes] = await Promise.all([
                 supabase.from('envio_pdf_manual').select('*').order('enviado_em', { ascending: false }).limit(500),
                 supabase.from('clientes').select('id, nome'),
                 supabase.from('consultores').select('id, nome, perfil_id'),
                 supabase.from('dicionario_classes').select('nome').order('ordem_exibicao'),
                 supabase.from('dicionario_emissores').select('id, nome_fantasia').order('nome_fantasia'),
                 supabase.from('perfis').select('id, nome'),
+                supabase.from('posicao_manual_snapshots').select('cliente_id, conta_id, instituicao, data_referencia'),
             ]);
             setEnvios((enviosRes.data as Envio[]) || []);
             setClientesMap(new Map((clientesRes.data || []).map((c: any) => [c.id, c.nome])));
+            // Status DERIVADO: existe snapshot pra esse cliente+instituição+data → processado,
+            // mesmo sem o envio_id ecoado (loop de auditoria aberto). Filtra pela RLS do papel.
+            setSnapKeys(new Set((snapsRes.data || []).map((s: any) => chaveNeg(s.cliente_id, s.conta_id, s.instituicao, s.data_referencia))));
             // Remetente real = enviado_por (auth uid). Resolve por perfis + perfil_id do
             // consultor; o que a RLS não devolver cai no fallback de exibição.
             const rem = new Map<string, string>();
@@ -208,18 +218,22 @@ export default function DocumentosManuais() {
         setLoadingAtivos(false);
     };
 
+    const statusDe = (e: Envio): 'processado' | 'erro' | 'fila' => {
+        const s = (e.status || '').toLowerCase();
+        if (s === 'erro' || s === 'falha') return 'erro';
+        if (s === 'processado' || e.snapshot_id || snapKeys.has(chaveNeg(e.cliente_id, e.conta_id, e.instituicao, e.data_referencia))) return 'processado';
+        return 'fila';
+    };
+
     const enviosFiltrados = useMemo(() => {
         const q = busca.trim().toLowerCase();
         return envios.filter(e => {
-            if (filtroStatus !== 'todos') {
-                const s = (e.status || '').toLowerCase();
-                if (filtroStatus === 'erro' ? !(s === 'erro' || s === 'falha') : s !== filtroStatus) return false;
-            }
+            if (filtroStatus !== 'todos' && statusDe(e) !== filtroStatus) return false;
             if (!q) return true;
             const cliente = (clientesMap.get(e.cliente_id) || '').toLowerCase();
             return cliente.includes(q) || (e.instituicao || '').toLowerCase().includes(q) || (e.arquivo_nome || '').toLowerCase().includes(q);
         });
-    }, [envios, busca, filtroStatus, clientesMap]);
+    }, [envios, busca, filtroStatus, clientesMap, snapKeys]);
 
     const openEditar = (a: ManualAtivo) => {
         setEditar(a);
@@ -321,10 +335,12 @@ export default function DocumentosManuais() {
             <header style={{ borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                     <FileStack size={28} color="var(--color-secundaria)" />
-                    <Typography variant="h1">Documentos Manuais</Typography>
+                    <Typography variant="h1">{isMaster ? 'Documentos Manuais' : 'Meus Envios'}</Typography>
                 </div>
                 <Typography variant="p" style={{ opacity: 0.6 }}>
-                    Histórico dos envios processados sem API — auditar, corrigir o que a IA extraiu e promover ao global.
+                    {isMaster
+                        ? 'Histórico dos envios processados sem API — auditar, corrigir o que a IA extraiu e promover ao global.'
+                        : 'Acompanhe seus envios manuais: veja se já foram processados e corrija o que a IA extraiu.'}
                 </Typography>
             </header>
 
@@ -360,7 +376,7 @@ export default function DocumentosManuais() {
                                     <td style={td}>{fmtEnvio(e.enviado_em)}</td>
                                     <td style={td}>
                                         <div style={{ fontWeight: 600 }}>{clientesMap.get(e.cliente_id) || '—'}</div>
-                                        <div style={{ fontSize: 11, color: '#9CA3AF' }}>enviado por {remetente(e.enviado_por)}</div>
+                                        {isMaster && <div style={{ fontSize: 11, color: '#9CA3AF' }}>enviado por {remetente(e.enviado_por)}</div>}
                                     </td>
                                     <td style={td}><span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.12)' }}>{e.instituicao}</span></td>
                                     <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -369,7 +385,7 @@ export default function DocumentosManuais() {
                                     <td style={td}>{fmtDate(e.data_referencia)}</td>
                                     <td style={td}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between' }}>
-                                            <StatusEnvio status={e.status} />
+                                            <StatusEnvio tipo={statusDe(e)} />
                                             <button
                                                 title="Excluir envio"
                                                 onClick={(ev) => { ev.stopPropagation(); abrirExcluir(e); }}
@@ -437,7 +453,7 @@ export default function DocumentosManuais() {
                                             ? <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(16,185,129,0.1)', color: '#059669' }}><Link2 size={11} style={{ verticalAlign: -1, marginRight: 3 }} />Verificado</Badge>
                                             : <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(245,158,11,0.12)', color: '#B45309' }}>Classificar</Badge>}
                                         <Button variant="outline" onClick={() => openEditar(a)} style={{ fontSize: 12, padding: '5px 10px' }}><Pencil size={14} style={{ marginRight: 4 }} />Editar</Button>
-                                        {!verificado && id.ok && (
+                                        {isMaster && !verificado && id.ok && (
                                             <Button variant="outline" onClick={() => openPromover(a)} style={{ fontSize: 12, padding: '5px 10px', borderColor: 'var(--color-primaria)', color: 'var(--color-primaria)' }}><ArrowUp size={14} style={{ marginRight: 4 }} />Promover</Button>
                                         )}
                                     </div>

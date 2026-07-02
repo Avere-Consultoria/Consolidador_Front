@@ -201,6 +201,13 @@ export default function MainLayout() {
           />
         )}
 
+        {isConsultor && (
+          <SideBarItem
+            icon={FileStack} label="Meus Envios"
+            active={location.pathname === '/documentos-manuais'} onClick={() => navigate('/documentos-manuais')}
+          />
+        )}
+
         {isMaster && (
           <>
             <div style={{
