@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Card, Spinner, TextField } from 'avere-ui';
-import { Eye, EyeOff, Search, Users, Wallet, ChevronRight, LayoutDashboard } from 'lucide-react';
+import { Eye, EyeOff, Search, Users, Wallet, ChevronRight, LayoutDashboard, Coins } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
 import { fmt } from '../utils/formatters';
+import { CORES } from '../utils/colors';
 
 interface ClienteRow {
     cliente_id: string;
@@ -17,23 +18,27 @@ interface ClienteRow {
     pl_avenue: number;
     pl_agora: number;
     pl_manual: number;
+    contas_xp?: number;
+    contas_btg?: number;
+    contas_avenue?: number;
+    contas_agora?: number;
 }
 interface Kpis {
     pl_total: number; pl_btg: number; pl_xp: number; pl_avenue: number; pl_agora: number; pl_manual: number;
-    num_clientes: number; num_clientes_com_pl: number;
+    num_clientes: number; num_clientes_com_pl: number; fee_mensal: number;
 }
 
 // Plataformas exibidas (na ordem e cor da identidade Avere).
-const PLATAFORMAS: { key: 'pl_xp' | 'pl_btg' | 'pl_avenue' | 'pl_agora'; label: string; cor: string }[] = [
-    { key: 'pl_xp', label: 'XP', cor: '#EAB308' },
-    { key: 'pl_btg', label: 'BTG', cor: '#1E3A8A' },
-    { key: 'pl_avenue', label: 'Avenue', cor: '#059669' },
-    { key: 'pl_agora', label: 'Ágora', cor: '#DC2626' },
+const PLATAFORMAS: { key: 'pl_xp' | 'pl_btg' | 'pl_avenue' | 'pl_agora'; contasKey: 'contas_xp' | 'contas_btg' | 'contas_avenue' | 'contas_agora'; label: string; cor: string }[] = [
+    { key: 'pl_xp', contasKey: 'contas_xp', label: 'XP', cor: CORES.xp },
+    { key: 'pl_btg', contasKey: 'contas_btg', label: 'BTG', cor: CORES.btg },
+    { key: 'pl_avenue', contasKey: 'contas_avenue', label: 'Avenue', cor: CORES.avenue },
+    { key: 'pl_agora', contasKey: 'contas_agora', label: 'Ágora', cor: CORES.agora },
 ];
 
 const MASCARA = 'R$ ••••••';
 
-const th: React.CSSProperties = { padding: '10px 12px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', textAlign: 'left', whiteSpace: 'nowrap' };
+const th: React.CSSProperties = { padding: '10px 12px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', textAlign: 'left', whiteSpace: 'nowrap', position: 'sticky', top: 0, zIndex: 1, background: '#F9FAFB', boxShadow: 'inset 0 -1px 0 #E5E7EB' };
 const thNum: React.CSSProperties = { ...th, textAlign: 'right' };
 const td: React.CSSProperties = { padding: '11px 12px', fontSize: 13, color: '#374151', borderTop: '1px solid #F3F4F6' };
 const tdNum: React.CSSProperties = { ...td, textAlign: 'right', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' };
@@ -49,6 +54,7 @@ export default function DashboardConsultor() {
     const [clientes, setClientes] = useState<ClienteRow[]>([]);
     const [busca, setBusca] = useState('');
     const [mostrar, setMostrar] = useState(false);   // valores discretos por padrão
+    const [coresInst, setCoresInst] = useState<Map<string, string>>(new Map());   // nome inst. (upper) → cor_primaria
 
     // Master foca 1 consultor pelo seletor da TopBar; consultor sempre null (a RLS corta).
     const pConsultor = isMaster && consultorSelecionado && consultorSelecionado !== 'todos' && consultorSelecionado !== 'meus'
@@ -58,21 +64,26 @@ export default function DashboardConsultor() {
     useEffect(() => {
         (async () => {
             setLoading(true);
-            const { data, error } = await supabase.rpc('dashboard_consultor', { p_consultor_id: pConsultor });
-            if (error) { setKpis(null); setClientes([]); setLoading(false); return; }
-            const d = data as any;
+            const [rpcRes, instRes] = await Promise.all([
+                supabase.rpc('dashboard_consultor', { p_consultor_id: pConsultor }),
+                supabase.from('instituicoes').select('nome, cor_primaria'),
+            ]);
+            const d = rpcRes.data as any;
             setKpis(d?.kpis ?? null);
             setClientes((d?.clientes ?? []) as ClienteRow[]);
+            setCoresInst(new Map((instRes.data || []).map((i: any) => [String(i.nome).toUpperCase(), i.cor_primaria as string])));
             setLoading(false);
         })();
     }, [pConsultor]);
 
     const v = (valor: number) => (mostrar ? fmt(valor) : MASCARA);
+    // Cor oficial da plataforma = cor_primaria da instituição (Gestão Master); fallback = colors.ts.
+    const corPlat = (label: string, fallback: string) => coresInst.get(label.toUpperCase()) || fallback;
 
     const enviosFiltrados = useMemo(() => {
         const q = busca.trim().toLowerCase();
         const base = q ? clientes.filter(c => c.nome.toLowerCase().includes(q) || (c.codigo_avere || '').includes(q)) : clientes;
-        return base;
+        return [...base].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     }, [clientes, busca]);
 
     const top10 = useMemo(() => clientes.filter(c => c.pl_total > 0).slice(0, 10), [clientes]);
@@ -114,32 +125,39 @@ export default function DashboardConsultor() {
             </header>
 
             {/* ── KPIs ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-                <Card style={{ padding: 20, background: 'linear-gradient(135deg, var(--color-primaria), var(--color-secundaria))', color: '#fff', border: 'none' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: 0.85, fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        <Wallet size={16} /> Patrimônio Consolidado
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
+                <Card style={{ padding: 20, borderTop: '3px solid var(--color-secundaria)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6B7280', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <Wallet size={16} color="var(--color-secundaria)" /> Patrimônio Consolidado
                     </div>
-                    <div style={{ fontSize: 28, fontWeight: 800, marginTop: 8, letterSpacing: '-0.02em' }}>{kpis ? v(kpis.pl_total) : '—'}</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, marginTop: 10, color: 'var(--color-primaria)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{kpis ? v(kpis.pl_total) : '—'}</div>
                 </Card>
                 <Card style={{ padding: 20 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6B7280', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         <Users size={16} /> Clientes
                     </div>
-                    <div style={{ fontSize: 28, fontWeight: 800, marginTop: 8 }}>
+                    <div style={{ fontSize: 26, fontWeight: 800, marginTop: 10 }}>
                         {kpis?.num_clientes_com_pl ?? 0}
-                        <span style={{ fontSize: 15, fontWeight: 600, color: '#9CA3AF' }}> de {kpis?.num_clientes ?? 0}</span>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}> de {kpis?.num_clientes ?? 0}</span>
                     </div>
                     <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>com posição / cadastrados</div>
                 </Card>
-                {PLATAFORMAS.map(p => {
+                <Card style={{ padding: 20 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6B7280', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <Coins size={16} /> Fee Mensal
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 800, marginTop: 10, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{kpis ? v(kpis.fee_mensal ?? 0) : '—'}</div>
+                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>estimado (PL × taxa ÷ 12)</div>
+                </Card>
+                {PLATAFORMAS.filter(p => ((kpis?.[p.key] as number) ?? 0) > 0).map(p => {
                     const val = (kpis?.[p.key] as number) ?? 0;
                     const pct = kpis && kpis.pl_total > 0 ? (val / kpis.pl_total) * 100 : 0;
                     return (
                         <Card key={p.key} style={{ padding: 20 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6B7280', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                <span style={{ width: 10, height: 10, borderRadius: 3, background: p.cor }} /> PL {p.label}
+                                <span style={{ width: 10, height: 10, borderRadius: 3, background: corPlat(p.label, p.cor) }} /> PL {p.label}
                             </div>
-                            <div style={{ fontSize: 22, fontWeight: 800, marginTop: 8 }}>{v(val)}</div>
+                            <div style={{ fontSize: 18, fontWeight: 800, marginTop: 10, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{v(val)}</div>
                             <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{pct.toFixed(1)}% do total</div>
                         </Card>
                     );
@@ -153,19 +171,13 @@ export default function DashboardConsultor() {
                     <div style={{ padding: '8px 0' }}>
                         {top10.map((c, i) => {
                             const pct = kpis && kpis.pl_total > 0 ? (c.pl_total / kpis.pl_total) * 100 : 0;
-                            const larguraBarra = top10[0].pl_total > 0 ? (c.pl_total / top10[0].pl_total) * 100 : 0;
                             return (
                                 <div key={c.cliente_id} onClick={() => abrirCliente(c)}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', cursor: 'pointer' }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 16px', cursor: 'pointer', borderTop: i === 0 ? 'none' : '1px solid #F3F4F6' }}
                                     onMouseEnter={e => (e.currentTarget.style.background = '#F9FAFB')}
                                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                                    <span style={{ width: 20, fontSize: 12, fontWeight: 700, color: '#9CA3AF', textAlign: 'right' }}>{i + 1}</span>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome}</div>
-                                        <div style={{ height: 6, background: '#F3F4F6', borderRadius: 3, marginTop: 4, overflow: 'hidden' }}>
-                                            <div style={{ height: '100%', width: `${larguraBarra}%`, background: 'var(--color-secundaria)', borderRadius: 3 }} />
-                                        </div>
-                                    </div>
+                                    <span style={{ width: 22, fontSize: 13, fontWeight: 700, color: i < 3 ? 'var(--color-primaria)' : '#9CA3AF', textAlign: 'right' }}>{i + 1}</span>
+                                    <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome}</div>
                                     <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                                         <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{v(c.pl_total)}</div>
                                         <div style={{ fontSize: 11, color: '#9CA3AF' }}>{pct.toFixed(1)}% da base</div>
@@ -186,12 +198,12 @@ export default function DashboardConsultor() {
             </div>
 
             <Card style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
+                <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 600 }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
                         <thead>
                             <tr style={{ background: '#F9FAFB' }}>
                                 <th style={th}>Cliente</th>
-                                <th style={th}>Plataformas</th>
+                                <th style={th}>Instituições</th>
                                 <th style={thNum}>XP</th>
                                 <th style={thNum}>BTG</th>
                                 <th style={thNum}>Avenue</th>
@@ -211,9 +223,14 @@ export default function DashboardConsultor() {
                                     </td>
                                     <td style={td}>
                                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                                            {plataformasDoCliente(c).map(p => (
-                                                <span key={p.key} style={{ fontSize: 10, fontWeight: 700, color: p.cor, background: `${p.cor}18`, padding: '2px 6px', borderRadius: 4 }}>{p.label}</span>
-                                            ))}
+                                            {plataformasDoCliente(c).map(p => {
+                                                const cor = corPlat(p.label, p.cor);
+                                                return (
+                                                    <span key={p.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700, color: '#374151', background: '#F3F4F6', padding: '2px 7px', borderRadius: 4 }}>
+                                                        <span style={{ width: 8, height: 8, borderRadius: 2, background: cor, flexShrink: 0 }} />{p.label}{(c[p.contasKey] ?? 0) > 1 ? ` ·${c[p.contasKey]}` : ''}
+                                                    </span>
+                                                );
+                                            })}
                                             {plataformasDoCliente(c).length === 0 && <span style={{ fontSize: 11, color: '#D1D5DB' }}>—</span>}
                                         </div>
                                     </td>

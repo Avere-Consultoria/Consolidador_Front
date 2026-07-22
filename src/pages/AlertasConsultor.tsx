@@ -55,7 +55,7 @@ export default function AlertasConsultor() {
     const navigate = useNavigate();
     const { perfil } = useAuth();
     const isMaster = perfil?.role === 'MASTER';
-    const { consultorSelecionado, consultorPerfilId, setSelectedClient } = useClient();
+    const { consultorSelecionado, consultorPerfilId, setSelectedClient, selectedClient } = useClient();
 
     const [loading, setLoading] = useState(true);
     const [vencs, setVencs] = useState<Vencimento[]>([]);
@@ -87,11 +87,18 @@ export default function AlertasConsultor() {
 
     const v = (valor: number) => (mostrar ? fmt(valor) : MASCARA);
 
+    // Foco em 1 cliente (seletor "Cliente Final" da TopBar) → filtra as 3 seções.
+    // Sem cliente selecionado = todos do escopo (consultor/casa).
+    const alvo = selectedClient?.id ?? null;
+    const vencsF = useMemo(() => (alvo ? vencs.filter(x => x.cliente_id === alvo) : vencs), [vencs, alvo]);
+    const fgcF = useMemo(() => (alvo ? fgc.filter(x => x.cliente_id === alvo) : fgc), [fgc, alvo]);
+    const creditoF = useMemo(() => (alvo ? credito.filter(x => x.cliente_id === alvo) : credito), [credito, alvo]);
+
     // Agrupa por mês (a lista já vem ordenada por data).
     const porMes = useMemo(() => {
         const grupos: { ym: string; itens: Vencimento[]; total: number; clientes: number }[] = [];
         const idx = new Map<string, number>();
-        for (const it of vencs) {
+        for (const it of vencsF) {
             const ym = (it.data_vencimento || '').slice(0, 7);
             if (!idx.has(ym)) { idx.set(ym, grupos.length); grupos.push({ ym, itens: [], total: 0, clientes: 0 }); }
             grupos[idx.get(ym)!].itens.push(it);
@@ -101,9 +108,9 @@ export default function AlertasConsultor() {
             g.clientes = new Set(g.itens.map(i => i.cliente_id)).size;
         });
         return grupos;
-    }, [vencs]);
+    }, [vencsF]);
 
-    const totalGeral = useMemo(() => vencs.reduce((s, i) => s + (i.valor || 0), 0), [vencs]);
+    const totalGeral = useMemo(() => vencsF.reduce((s, i) => s + (i.valor || 0), 0), [vencsF]);
 
     const abrirCliente = (clienteId: string, nome: string) => {
         setSelectedClient({
@@ -122,7 +129,7 @@ export default function AlertasConsultor() {
             <header style={{ borderBottom: '1px solid var(--color-borda)', paddingBottom: '20px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
                 <div>
                     <Typography variant="h1">Alertas</Typography>
-                    <Typography variant="p" style={{ opacity: 0.6 }}>Vencimentos e riscos consolidados da sua carteira.</Typography>
+                    <Typography variant="p" style={{ opacity: 0.6 }}>{selectedClient ? `Foco no cliente: ${selectedClient.nome}` : 'Vencimentos e riscos consolidados da sua carteira.'}</Typography>
                 </div>
                 <button
                     onClick={() => setMostrar(m => !m)}
@@ -137,7 +144,7 @@ export default function AlertasConsultor() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <CalendarClock size={20} color="var(--color-secundaria)" />
                     <Typography variant="p" style={{ fontWeight: 700, fontSize: 16 }}>Vencimentos próximos</Typography>
-                    <span style={{ fontSize: 12, color: '#9CA3AF' }}>{vencs.length} ativos · {v(totalGeral)}</span>
+                    <span style={{ fontSize: 12, color: '#9CA3AF' }}>{vencsF.length} ativos · {v(totalGeral)}</span>
                 </div>
 
                 {porMes.length === 0 && (
@@ -191,10 +198,10 @@ export default function AlertasConsultor() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <ShieldAlert size={20} color="#B45309" />
                     <Typography variant="p" style={{ fontWeight: 700, fontSize: 16 }}>Limite FGC</Typography>
-                    <span style={{ fontSize: 12, color: '#9CA3AF' }}>{fgc.length} alerta{fgc.length === 1 ? '' : 's'} · exposições ≥70% do teto R$250k por conglomerado</span>
+                    <span style={{ fontSize: 12, color: '#9CA3AF' }}>{fgcF.length} alerta{fgcF.length === 1 ? '' : 's'} · exposições ≥70% do teto R$250k por conglomerado</span>
                 </div>
 
-                {fgc.length === 0 ? (
+                {fgcF.length === 0 ? (
                     <Card style={{ padding: '28px', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>Nenhuma exposição FGC acima de 70% do limite. 👍</Card>
                 ) : (
                     <Card style={{ padding: 0, overflow: 'hidden' }}>
@@ -213,7 +220,7 @@ export default function AlertasConsultor() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {fgc.map((f, i) => {
+                                    {fgcF.map((f, i) => {
                                         const pct = Math.min(f.pct_limite, 1) * 100;
                                         const critico = f.pct_limite >= 0.9;
                                         return (
@@ -253,10 +260,10 @@ export default function AlertasConsultor() {
                     <Landmark size={20} color="var(--color-secundaria)" />
                     <Typography variant="p" style={{ fontWeight: 700, fontSize: 16 }}>Crédito privado</Typography>
                     <span style={{ fontSize: 12, color: '#9CA3AF' }}>concentração por emissor (% do PL do cliente)</span>
-                    {credito.length > 0 && (
+                    {creditoF.length > 0 && (
                         <div style={{ display: 'flex', gap: 6 }}>
                             {(['Crítico', 'Alto', 'Médio'] as const).map(n => {
-                                const q = credito.filter(c => c.nivel === n).length;
+                                const q = creditoF.filter(c => c.nivel === n).length;
                                 if (!q) return null;
                                 const cor = n === 'Crítico' ? '#DC2626' : n === 'Alto' ? '#EA580C' : '#B45309';
                                 return <span key={n} style={{ fontSize: 11, fontWeight: 700, color: cor, background: `${cor}18`, padding: '2px 8px', borderRadius: 6 }}>{q} {n.toLowerCase()}{q > 1 ? 's' : ''}</span>;
@@ -265,7 +272,7 @@ export default function AlertasConsultor() {
                     )}
                 </div>
 
-                {credito.length === 0 ? (
+                {creditoF.length === 0 ? (
                     <Card style={{ padding: '28px', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>Nenhuma concentração de crédito privado acima de 5% do PL. 👍</Card>
                 ) : (
                     <Card style={{ padding: 0, overflow: 'hidden' }}>
@@ -283,7 +290,7 @@ export default function AlertasConsultor() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {credito.map((c, i) => {
+                                    {creditoF.map((c, i) => {
                                         const cor = c.nivel === 'Crítico' ? '#DC2626' : c.nivel === 'Alto' ? '#EA580C' : '#B45309';
                                         const pctBar = Math.min(c.pct_pl, 0.5) / 0.5 * 100;
                                         return (
