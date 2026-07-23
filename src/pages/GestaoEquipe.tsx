@@ -215,25 +215,26 @@ export default function GestaoEquipe() {
                                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingRight: '16px', alignItems: 'center' }}>
                                     {convite === item.id
                                         ? <Loader2 size={16} color="var(--color-primaria)" style={{ animation: 'spin 1s linear infinite' }} />
-                                        : (item.perfil_id ? <KeyRound
-                                            size={16} color="var(--color-primaria)" style={{ cursor: 'pointer', opacity: 0.7 }}
+                                        : (item.perfil_id ? <span
                                             title="Redefinir senha de acesso"
+                                            style={{ display: 'inline-flex', cursor: 'pointer' }}
                                             onClick={() => {
                                                 toast(`Redefinir a senha de ${item.nome}? Será gerada uma nova senha temporária.`, {
                                                     action: { label: 'Redefinir', onClick: () => handleConvidar(item) },
                                                     cancel: { label: 'Cancelar', onClick: () => {} },
                                                 });
                                             }}
-                                        /> : <Mail
-                                            size={16} color="var(--color-primaria)" style={{ cursor: 'pointer', opacity: 0.7 }}
+                                        ><KeyRound size={16} color="var(--color-primaria)" style={{ opacity: 0.7 }} /></span>
+                                        : <span
                                             title="Criar acesso (senha temporária)"
+                                            style={{ display: 'inline-flex', cursor: 'pointer' }}
                                             onClick={() => {
                                                 toast(`Criar acesso para ${item.nome}? Será gerada uma senha temporária para você repassar.`, {
                                                     action: { label: 'Criar acesso', onClick: () => handleConvidar(item) },
                                                     cancel: { label: 'Cancelar', onClick: () => {} },
                                                 });
                                             }}
-                                        />)}
+                                        ><Mail size={16} color="var(--color-primaria)" style={{ opacity: 0.7 }} /></span>)}
                                     <Edit2
                                         size={16} color="#9CA3AF" style={{ cursor: 'pointer' }}
                                         onClick={() => handleEditar(item)}

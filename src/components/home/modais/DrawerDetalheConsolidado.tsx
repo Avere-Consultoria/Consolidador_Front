@@ -81,7 +81,7 @@ function AquisicaoCard({ acq }: { acq: any }) {
 
 // ── Conteúdo das tabs ─────────────────────────────────────────────────────────
 
-function TabGeral({ ativo, raw, pesoPct, isBTG, isAvenue, isAgora }: {
+function TabGeral({ ativo, raw, pesoPct, isAvenue }: {
     ativo: ConsolidatedAtivo; raw: any; pesoPct: number;
     isBTG: boolean; isXP: boolean; isAvenue: boolean; isAgora: boolean;
 }) {

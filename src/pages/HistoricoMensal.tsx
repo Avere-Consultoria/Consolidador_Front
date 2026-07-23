@@ -4,7 +4,7 @@ import { History, Eye, AlertCircle } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 import { supabase } from '../services/supabase';
 import { useClient } from '../contexts/ClientContext';
-import { DrawerAtivosFechados } from '../components/historicoMensal/DrawerAtivosFechados';
+import { DrawerAtivosFechados, type PosicaoFechadaDrawer } from '../components/historicoMensal/DrawerAtivosFechados';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface SnapshotFechado {
@@ -16,21 +16,6 @@ interface SnapshotFechado {
     patrimonio_total: number;
     frozen_at: string;
 }
-interface PosicaoFechada {
-    id: string;
-    snapshot_fechado_id: string;
-    instituicao: string;
-    nome_exibicao: string;
-    classe_avere: string | null;
-    liquidez_avere: string | null;
-    emissor_nome: string | null;
-    data_vencimento: string | null;
-    taxa: string | null;
-    valor_bruto: number;
-    valor_liquido: number | null;
-    quantidade: number | null;
-}
-
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const MESES_PT_SHORT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 function formatarMesCurto(mes: string): string {
@@ -64,7 +49,7 @@ export default function HistoricoMensal() {
 
     const [loading, setLoading]           = useState(false);
     const [snapshots, setSnapshots]       = useState<SnapshotFechado[]>([]);
-    const [posicoes, setPosicoes]         = useState<PosicaoFechada[]>([]);
+    const [posicoes, setPosicoes]         = useState<PosicaoFechadaDrawer[]>([]);
     const [coresClasses, setCoresClasses] = useState<Map<string, string>>(new Map());
     const [drawerMes, setDrawerMes]       = useState<string | null>(null);
 
@@ -99,7 +84,7 @@ export default function HistoricoMensal() {
                     .select('id, snapshot_fechado_id, instituicao, nome_exibicao, classe_avere, liquidez_avere, emissor_nome, data_vencimento, taxa, valor_bruto, valor_liquido, quantidade')
                     .in('snapshot_fechado_id', snapIds);
                 if (posErr) throw posErr;
-                setPosicoes((posRes ?? []) as PosicaoFechada[]);
+                setPosicoes((posRes ?? []) as PosicaoFechadaDrawer[]);
             } else {
                 setPosicoes([]);
             }
@@ -227,7 +212,7 @@ export default function HistoricoMensal() {
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
                                 <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
                                 <YAxis tickFormatter={formatarMoedaCurta} tick={{ fontSize: 11 }} width={80} />
-                                <Tooltip formatter={(v: number) => formatarMoeda(v)} labelStyle={{ fontWeight: 700 }} />
+                                <Tooltip formatter={(v) => formatarMoeda(Number(v))} labelStyle={{ fontWeight: 700 }} />
                                 <Legend wrapperStyle={{ fontSize: 12 }} />
                                 <Line type="monotone" dataKey="Total" stroke="#111827" strokeWidth={3} dot={{ r: 4 }} />
                                 {instituicoesPresentes.map(inst => (
@@ -246,7 +231,7 @@ export default function HistoricoMensal() {
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
                                 <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
                                 <YAxis tickFormatter={formatarMoedaCurta} tick={{ fontSize: 11 }} width={80} />
-                                <Tooltip formatter={(v: number) => formatarMoeda(v)} labelStyle={{ fontWeight: 700 }} />
+                                <Tooltip formatter={(v) => formatarMoeda(Number(v))} labelStyle={{ fontWeight: 700 }} />
                                 <Legend wrapperStyle={{ fontSize: 11 }} />
                                 {classesAtivas.map((c, i) => (
                                     <Bar key={c} dataKey={c} stackId="a" fill={coresClasses.get(c) || PALETA_CLASSES[i % PALETA_CLASSES.length]} />

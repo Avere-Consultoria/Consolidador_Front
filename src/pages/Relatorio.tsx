@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Printer, ArrowLeft, ShieldAlert, Briefcase, LayoutList, BarChart2 } from 'lucide-react';
 import {
-    PieChart, Pie, Cell, Legend, Label,
+    PieChart, Pie, Cell, Label,
     BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList, ReferenceLine,
 } from 'recharts';
 

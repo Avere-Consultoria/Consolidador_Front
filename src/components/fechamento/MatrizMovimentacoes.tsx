@@ -68,7 +68,7 @@ function lastDayISO(mes: string): string {
     return `${mes}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`;
 }
 
-export function MatrizMovimentacoes({ clienteId, mes, mesLabel, apelidoMap }: Props) {
+export function MatrizMovimentacoes({ clienteId, mes, apelidoMap }: Props) {
     const [loading, setLoading] = useState(true);
     const [posicoes, setPosicoes] = useState<Posicao[]>([]);
     const [caixaRaw, setCaixaRaw] = useState<CaixaRow[]>([]);

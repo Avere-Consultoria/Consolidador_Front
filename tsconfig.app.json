@@ -8,6 +8,19 @@
     "types": ["vite/client"],
     "skipLibCheck": true,
 
+    /* Força resolução única de tipos: avere-ui é symlink local (file:../avere-ui)
+       com node_modules próprio (lucide-react 0.473 + @types/react). Sem isso, o TS
+       enxerga duas cópias de LucideProps/@types/react e acusa TS2322 ao passar
+       ícones para props da avere-ui. Só afeta type-check (Vite/runtime intactos). */
+    "baseUrl": ".",
+    "paths": {
+      "lucide-react": ["./node_modules/lucide-react"],
+      "react": ["./node_modules/@types/react"],
+      "react/*": ["./node_modules/@types/react/*"],
+      "react-dom": ["./node_modules/@types/react-dom"],
+      "react-dom/*": ["./node_modules/@types/react-dom/*"]
+    },
+
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
