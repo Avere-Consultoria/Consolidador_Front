@@ -1,6 +1,9 @@
 ﻿node_modules/
 dist/
 .claude/
+# lockfile fora do repo: gerado no Windows trava o rollup errado no CI Linux
+# (npm bug de optionalDependencies). Sem lock, o Cloudflare faz npm install fresco.
+package-lock.json
 # Exceção: o build da lib avere-ui é vendorizado de propósito (necessário no CI/Cloudflare).
 !vendor/avere-ui/dist/
 !vendor/avere-ui/dist/**
