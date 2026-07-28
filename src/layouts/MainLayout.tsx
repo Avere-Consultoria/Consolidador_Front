@@ -254,7 +254,7 @@ export default function MainLayout() {
           </div>
         </TopBar>
         <div style={{ padding: '32px', flex: 1, overflowY: 'auto' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', maxWidth: '1760px', margin: '0 auto', width: '100%' }}>
             <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>}>
               <Outlet />
             </Suspense>

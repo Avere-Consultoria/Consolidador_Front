@@ -62,6 +62,8 @@ export default function ClienteWorkspace() {
     }, [clienteId, isMaster, perfil?.id]);
 
     const cliente = selectedClient?.id === clienteId ? selectedClient : null;
+    // Rentabilidade fica só para o master por enquanto (não exibir para o consultor).
+    const tabs = isMaster ? TABS : TABS.filter(t => t.to !== 'rentabilidade');
 
     if (carregando || !cliente) {
         return <div style={{ display: 'flex', justifyContent: 'center', padding: 100 }}><Spinner size="lg" /></div>;
@@ -69,20 +71,9 @@ export default function ClienteWorkspace() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            {/* Cabeçalho do cliente */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid var(--color-borda)', paddingBottom: 16 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--color-primaria)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <User size={20} />
-                </div>
-                <div>
-                    <Typography variant="h1" style={{ margin: 0 }}>{cliente.nome}</Typography>
-                    <span style={{ fontSize: 12, color: '#9CA3AF' }}>Código Avere: {cliente.codigoAvere}</span>
-                </div>
-            </div>
-
-            {/* Abas */}
+            {/* Abas (mesmo padrão das seções do master; a página-filha já mostra o cliente) */}
             <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--color-borda)', flexWrap: 'wrap' }}>
-                {TABS.map(t => (
+                {tabs.map(t => (
                     <NavLink key={t.to} to={t.to} style={({ isActive }) => ({
                         padding: '10px 16px', fontSize: 14, fontWeight: 600, textDecoration: 'none',
                         color: isActive ? 'var(--color-primaria)' : '#6B7280',

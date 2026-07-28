@@ -152,7 +152,16 @@ export default function AlertasConsultor() {
                             <span style={{ fontWeight: 700, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{v(g.total)}</span>
                         </div>
                         <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680 }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680, tableLayout: 'fixed' }}>
+                                <colgroup>
+                                    <col style={{ width: '22%' }} />
+                                    <col style={{ width: '9%' }} />
+                                    <col style={{ width: '29%' }} />
+                                    <col style={{ width: '9%' }} />
+                                    <col style={{ width: '12%' }} />
+                                    <col style={{ width: '15%' }} />
+                                    <col style={{ width: '4%' }} />
+                                </colgroup>
                                 <thead>
                                     <tr>
                                         <th style={th}>Cliente</th>
@@ -169,7 +178,7 @@ export default function AlertasConsultor() {
                                         <tr key={i} onClick={() => abrirCliente(it.cliente_id, it.cliente_nome)} style={{ cursor: 'pointer' }}
                                             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,131,203,0.04)')}
                                             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                                            <td style={{ ...td, fontWeight: 600 }}>{it.cliente_nome}</td>
+                                            <td style={{ ...td, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.cliente_nome}</td>
                                             <td style={td}>{it.sub_tipo ? <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-secundaria)', background: 'rgba(0,131,203,0.08)', padding: '2px 6px', borderRadius: 4 }}>{it.sub_tipo}</span> : '—'}</td>
                                             <td style={{ ...td, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.nome}</td>
                                             <td style={td}><span style={{ fontSize: 11, color: '#6B7280' }}>{it.instituicao}</span></td>

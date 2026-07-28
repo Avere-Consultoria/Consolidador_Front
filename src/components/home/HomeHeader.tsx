@@ -3,6 +3,7 @@ import { Typography, Select, Button, Badge } from 'avere-ui';
 import { FileText, Lock, Calendar, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { fmtDate } from '../../utils/formatters';
+import { useAuth } from '../../contexts/AuthContext';
 import { ModalEnvioPDF } from './modais/ModalEnvioPDF';
 
 const MESES_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -36,6 +37,8 @@ export function HomeHeader({
     mesesFechados,
 }: HomeHeaderProps) {
     const navigate = useNavigate();
+    const { perfil } = useAuth();
+    const isMaster = perfil?.role === 'MASTER';
     const [modalPdf, setModalPdf] = useState(false);
     const fechado = periodo !== 'LIVE';
     const opcoesPeriodo = [
@@ -80,10 +83,12 @@ export function HomeHeader({
                     )}
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                    <Button variant="outline" onClick={() => navigate('/relatorio')}>
-                        <FileText size={15} style={{ marginRight: 6 }} />
-                        Exportar PDF
-                    </Button>
+                    {isMaster && (
+                        <Button variant="outline" onClick={() => navigate('/relatorio')}>
+                            <FileText size={15} style={{ marginRight: 6 }} />
+                            Exportar PDF
+                        </Button>
+                    )}
                     <Button variant="outline" onClick={() => setModalPdf(true)} disabled={!cliente?.id}>
                         <Upload size={15} style={{ marginRight: 6 }} />
                         Enviar arquivos
