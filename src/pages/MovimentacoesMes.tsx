@@ -14,7 +14,7 @@ function formatarMesReferencia(mes: string): string {
 }
 
 export default function MovimentacoesMes() {
-    const { mes } = useParams<{ mes: string }>();
+    const { clienteId, mes } = useParams<{ clienteId: string; mes: string }>();
     const navigate = useNavigate();
     const { selectedClient } = useClient();
     const { perfil } = useAuth();
@@ -66,7 +66,7 @@ export default function MovimentacoesMes() {
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', opacity: 0.6 }}>
                     <AlertCircle size={32} />
                     <Typography variant="p">Selecione um cliente para ver as movimentações.</Typography>
-                    <Button variant="outline" onClick={() => navigate('/fechamento')}><ArrowLeft size={16} style={{ marginRight: 6 }} /> Voltar ao fechamento</Button>
+                    <Button variant="outline" onClick={() => navigate(`/cliente/${clienteId}/fechamento`)}><ArrowLeft size={16} style={{ marginRight: 6 }} /> Voltar ao fechamento</Button>
                 </div>
             </div>
         );
@@ -89,7 +89,7 @@ export default function MovimentacoesMes() {
                     </Typography>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <Button variant="outline" onClick={() => navigate('/fechamento')}>
+                    <Button variant="outline" onClick={() => navigate(`/cliente/${clienteId}/fechamento`)}>
                         <ArrowLeft size={16} style={{ marginRight: 6 }} /> Voltar
                     </Button>
                     <Button variant={fechado ? 'outline' : 'solid'} onClick={handleFechar} disabled={fechando}>

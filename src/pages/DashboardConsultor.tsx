@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Card, Spinner, TextField } from 'avere-ui';
-import { Eye, EyeOff, Search, Users, Wallet, ChevronRight, LayoutDashboard, Coins } from 'lucide-react';
+import { Search, Users, Wallet, ChevronRight, LayoutDashboard } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
@@ -25,7 +25,7 @@ interface ClienteRow {
 }
 interface Kpis {
     pl_total: number; pl_btg: number; pl_xp: number; pl_avenue: number; pl_agora: number; pl_manual: number;
-    num_clientes: number; num_clientes_com_pl: number; fee_mensal: number;
+    num_clientes: number; num_clientes_com_pl: number;
 }
 
 // Plataformas exibidas (na ordem e cor da identidade Avere).
@@ -36,7 +36,6 @@ const PLATAFORMAS: { key: 'pl_xp' | 'pl_btg' | 'pl_avenue' | 'pl_agora'; contasK
     { key: 'pl_agora', contasKey: 'contas_agora', label: 'Ágora', cor: CORES.agora },
 ];
 
-const MASCARA = 'R$ ••••••';
 
 const th: React.CSSProperties = { padding: '10px 12px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', textAlign: 'left', whiteSpace: 'nowrap', position: 'sticky', top: 0, zIndex: 1, background: '#F9FAFB', boxShadow: 'inset 0 -1px 0 #E5E7EB' };
 const thNum: React.CSSProperties = { ...th, textAlign: 'right' };
@@ -53,7 +52,6 @@ export default function DashboardConsultor() {
     const [kpis, setKpis] = useState<Kpis | null>(null);
     const [clientes, setClientes] = useState<ClienteRow[]>([]);
     const [busca, setBusca] = useState('');
-    const [mostrar, setMostrar] = useState(false);   // valores discretos por padrão
     const [coresInst, setCoresInst] = useState<Map<string, string>>(new Map());   // nome inst. (upper) → cor_primaria
 
     // Master foca 1 consultor pelo seletor da TopBar; consultor sempre null (a RLS corta).
@@ -76,7 +74,7 @@ export default function DashboardConsultor() {
         })();
     }, [pConsultor]);
 
-    const v = (valor: number) => (mostrar ? fmt(valor) : MASCARA);
+    const v = (valor: number) => fmt(valor);
     // Cor oficial da plataforma = cor_primaria da instituição (Gestão Master); fallback = colors.ts.
     const corPlat = (label: string, fallback: string) => coresInst.get(label.toUpperCase()) || fallback;
 
@@ -95,7 +93,7 @@ export default function DashboardConsultor() {
             nome: c.nome,
             consultorId: isMaster ? consultorPerfilId : (perfil?.id ?? null),
         });
-        navigate('/');
+        navigate(`/cliente/${c.cliente_id}/posicao`);
     };
 
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
@@ -115,13 +113,6 @@ export default function DashboardConsultor() {
                         {isMaster && !pConsultor ? 'Visão da casa toda — selecione um consultor na barra do topo para focar.' : 'Visão global da sua carteira de clientes.'}
                     </Typography>
                 </div>
-                <button
-                    onClick={() => setMostrar(m => !m)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 38, padding: '0 14px', borderRadius: 8, border: '1px solid rgba(0,0,0,0.12)', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-                    title={mostrar ? 'Ocultar valores' : 'Mostrar valores'}>
-                    {mostrar ? <EyeOff size={16} /> : <Eye size={16} />}
-                    {mostrar ? 'Ocultar valores' : 'Mostrar valores'}
-                </button>
             </header>
 
             {/* ── KPIs ── */}
@@ -141,13 +132,6 @@ export default function DashboardConsultor() {
                         <span style={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}> de {kpis?.num_clientes ?? 0}</span>
                     </div>
                     <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>com posição / cadastrados</div>
-                </Card>
-                <Card style={{ padding: 20 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6B7280', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        <Coins size={16} /> Fee Mensal
-                    </div>
-                    <div style={{ fontSize: 20, fontWeight: 800, marginTop: 10, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{kpis ? v(kpis.fee_mensal ?? 0) : '—'}</div>
-                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>estimado (PL × taxa ÷ 12)</div>
                 </Card>
                 {PLATAFORMAS.filter(p => ((kpis?.[p.key] as number) ?? 0) > 0).map(p => {
                     const val = (kpis?.[p.key] as number) ?? 0;

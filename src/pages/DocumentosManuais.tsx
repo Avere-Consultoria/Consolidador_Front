@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Typography, Card, Spinner, Badge, Button, TextField, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, toast } from 'avere-ui';
-import { FileText, Search, FileStack, ArrowDownRight, Pencil, ArrowUp, Fingerprint, Link2, ChevronDown, AlertTriangle, Trash2 } from 'lucide-react';
+import { FileText, Search, FileStack, ArrowDownRight, Pencil, ArrowUp, Fingerprint, Link2, ChevronDown, AlertTriangle, Trash2, Loader2, RotateCcw, Ban } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt, fmtDate } from '../utils/formatters';
@@ -15,6 +15,7 @@ interface Envio {
     enviado_por: string | null;
     arquivo_nome: string | null;
     status: string;
+    detalhe: string | null;
     enviado_em: string | null;
     processado_em: string | null;
     snapshot_id: string | null;
@@ -49,9 +50,19 @@ function chaveNeg(clienteId: string | null, contaId: string | null, instituicao:
     return `${clienteId ?? ''}|${contaId ?? ''}|${(instituicao ?? '').toUpperCase()}|${dataRef ?? ''}`;
 }
 
-function StatusEnvio({ tipo }: { tipo: 'processado' | 'erro' | 'fila' }) {
+// Envio 'enviado' há mais de X horas sem snapshot casado → provavelmente travado
+// no pipeline (Zapier/IA/import). Sinaliza que precisa de atenção, não é fila normal.
+const HORAS_TRAVADO = 48;
+
+type StatusTipo = 'processado' | 'processando' | 'quarentena' | 'descartado' | 'erro' | 'travado' | 'fila';
+
+function StatusEnvio({ tipo }: { tipo: StatusTipo }) {
     if (tipo === 'processado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(16,185,129,0.1)', color: '#059669' }}>Processado</Badge>;
+    if (tipo === 'processando') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(37,99,235,0.1)', color: '#2563EB', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />Processando</Badge>;
+    if (tipo === 'quarentena') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(245,158,11,0.15)', color: '#92400E', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}><AlertTriangle size={11} />Quarentena</Badge>;
+    if (tipo === 'descartado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(107,114,128,0.12)', color: '#6B7280' }}>Descartado</Badge>;
     if (tipo === 'erro') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(239,68,68,0.1)', color: '#DC2626' }}>Com erro</Badge>;
+    if (tipo === 'travado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(234,88,12,0.12)', color: '#C2410C' }}>Travado</Badge>;
     return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(245,158,11,0.12)', color: '#B45309' }}>Na fila</Badge>;
 }
 
@@ -146,7 +157,7 @@ export default function DocumentosManuais() {
     const [loadingAtivos, setLoadingAtivos] = useState(false);
 
     const [busca, setBusca] = useState('');
-    const [filtroStatus, setFiltroStatus] = useState<'todos' | 'processado' | 'erro'>('todos');
+    const [filtroStatus, setFiltroStatus] = useState<'todos' | 'quarentena' | 'processando' | 'processado' | 'descartado' | 'erro'>('todos');
 
     const [classes, setClasses] = useState<string[]>([]);
     const [emissores, setEmissores] = useState<{ id: string; nome: string }[]>([]);
@@ -162,6 +173,28 @@ export default function DocumentosManuais() {
     const [previewEx, setPreviewEx] = useState<any>(null);
     const [removerPos, setRemoverPos] = useState(false);
     const [excluindo, setExcluindo] = useState(false);
+
+    const [corrigir, setCorrigir] = useState<Envio | null>(null);
+    const [corrigirData, setCorrigirData] = useState('');
+    const [corrigindo, setCorrigindo] = useState(false);
+    const [descartarEnvio, setDescartarEnvio] = useState<Envio | null>(null);
+    const [descartando, setDescartando] = useState(false);
+
+    // Re-busca só a fila + snapshots (silencioso). Usado no polling e após ações.
+    const carregarEnvios = async () => {
+        const [enviosRes, snapsRes] = await Promise.all([
+            supabase.from('envio_pdf_manual').select('*').order('enviado_em', { ascending: false }).limit(500),
+            supabase.from('posicao_manual_snapshots').select('cliente_id, conta_id, instituicao, data_referencia'),
+        ]);
+        setEnvios((enviosRes.data as Envio[]) || []);
+        setSnapKeys(new Set((snapsRes.data || []).map((s: any) => chaveNeg(s.cliente_id, s.conta_id, s.instituicao, s.data_referencia))));
+    };
+
+    // Auto-refresh: o worker muda o status no banco; a tela reflete sozinha (~15s).
+    useEffect(() => {
+        const id = setInterval(() => { carregarEnvios(); }, 15000);
+        return () => clearInterval(id);
+    }, []);
 
     useEffect(() => {
         (async () => {
@@ -218,10 +251,15 @@ export default function DocumentosManuais() {
         setLoadingAtivos(false);
     };
 
-    const statusDe = (e: Envio): 'processado' | 'erro' | 'fila' => {
+    const statusDe = (e: Envio): StatusTipo => {
         const s = (e.status || '').toLowerCase();
-        if (s === 'erro' || s === 'falha') return 'erro';
+        // processado vence (posição existe, via loop ou casamento por chave de negócio).
         if (s === 'processado' || e.snapshot_id || snapKeys.has(chaveNeg(e.cliente_id, e.conta_id, e.instituicao, e.data_referencia))) return 'processado';
+        if (s === 'descartado') return 'descartado';
+        if (s === 'quarentena') return 'quarentena';
+        if (s === 'erro' || s === 'falha') return 'erro';
+        if (s === 'processando') return 'processando';
+        if (e.enviado_em && (Date.now() - new Date(e.enviado_em).getTime()) / 3_600_000 > HORAS_TRAVADO) return 'travado';
         return 'fila';
     };
 
@@ -321,6 +359,35 @@ export default function DocumentosManuais() {
         setExcluir(null);
     };
 
+    // ── Resolução de quarentena (master) ────────────────────────────────────
+    const abrirCorrigir = (e: Envio) => {
+        setCorrigir(e);
+        setCorrigirData(e.data_referencia ? e.data_referencia.slice(0, 10) : '');
+    };
+    const confirmarCorrigir = async () => {
+        if (!corrigir) return;
+        setCorrigindo(true);
+        const { error } = await supabase.rpc('corrigir_reenviar_envio', {
+            p_envio_id: corrigir.id,
+            p_data_referencia: corrigirData || null,
+        });
+        setCorrigindo(false);
+        if (error) { toast.error(`Falha: ${error.message}`); return; }
+        toast.success('Envio corrigido e reenfileirado — o worker vai reprocessar.');
+        setCorrigir(null);
+        carregarEnvios();
+    };
+    const confirmarDescartar = async () => {
+        if (!descartarEnvio) return;
+        setDescartando(true);
+        const { error } = await supabase.rpc('descartar_envio', { p_envio_id: descartarEnvio.id });
+        setDescartando(false);
+        if (error) { toast.error(`Falha: ${error.message}`); return; }
+        toast.success('Envio descartado.');
+        setDescartarEnvio(null);
+        carregarEnvios();
+    };
+
     // Quem realmente enviou: pelo mapa de remetentes; senão o próprio master logado;
     // senão (uid não resolvido — só masters/consultores enviam) rotula "Master".
     const remetente = (uid: string | null): string => {
@@ -348,9 +415,9 @@ export default function DocumentosManuais() {
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <TextField leftIcon={Search} placeholder="Buscar por cliente, instituição ou arquivo..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '320px' }} />
                 <div style={{ display: 'flex', gap: 4, background: 'rgba(0,0,0,0.05)', padding: 4, borderRadius: 8 }}>
-                    {(['todos', 'processado', 'erro'] as const).map(s => (
+                    {(['todos', 'quarentena', 'processando', 'processado', 'descartado', 'erro'] as const).map(s => (
                         <button key={s} onClick={() => setFiltroStatus(s)} style={{ height: 28, padding: '0 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: filtroStatus === s ? '#fff' : 'transparent', color: filtroStatus === s ? 'var(--color-primaria)' : '#6B7280', boxShadow: filtroStatus === s ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
-                            {s === 'todos' ? 'Todos' : s === 'processado' ? 'Processados' : 'Com erro'}
+                            {({ todos: 'Todos', quarentena: 'Quarentena', processando: 'Processando', processado: 'Processados', descartado: 'Descartados', erro: 'Com erro' } as const)[s]}
                         </button>
                     ))}
                 </div>
@@ -371,6 +438,7 @@ export default function DocumentosManuais() {
                     <tbody>
                         {enviosFiltrados.map(e => {
                             const sel = selecionado?.id === e.id;
+                            const st = statusDe(e);
                             return (
                                 <tr key={e.id} onClick={() => abrirDoc(e)} style={{ cursor: 'pointer', background: sel ? 'rgba(0,131,203,0.06)' : undefined }}>
                                     <td style={td}>{fmtEnvio(e.enviado_em)}</td>
@@ -384,16 +452,33 @@ export default function DocumentosManuais() {
                                     </td>
                                     <td style={td}>{fmtDate(e.data_referencia)}</td>
                                     <td style={td}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between' }}>
-                                            <StatusEnvio tipo={statusDe(e)} />
-                                            <button
-                                                title="Excluir envio"
-                                                onClick={(ev) => { ev.stopPropagation(); abrirExcluir(e); }}
-                                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: '1px solid rgba(0,0,0,0.08)', background: '#fff', color: '#9CA3AF', cursor: 'pointer' }}
-                                                onMouseEnter={ev => { ev.currentTarget.style.color = '#DC2626'; ev.currentTarget.style.borderColor = 'rgba(220,38,38,0.3)'; ev.currentTarget.style.background = 'rgba(220,38,38,0.04)'; }}
-                                                onMouseLeave={ev => { ev.currentTarget.style.color = '#9CA3AF'; ev.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)'; ev.currentTarget.style.background = '#fff'; }}>
-                                                <Trash2 size={14} />
-                                            </button>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between', width: '100%' }}>
+                                                <StatusEnvio tipo={st} />
+                                                <button
+                                                    title="Excluir envio"
+                                                    onClick={(ev) => { ev.stopPropagation(); abrirExcluir(e); }}
+                                                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: '1px solid rgba(0,0,0,0.08)', background: '#fff', color: '#9CA3AF', cursor: 'pointer' }}
+                                                    onMouseEnter={ev => { ev.currentTarget.style.color = '#DC2626'; ev.currentTarget.style.borderColor = 'rgba(220,38,38,0.3)'; ev.currentTarget.style.background = 'rgba(220,38,38,0.04)'; }}
+                                                    onMouseLeave={ev => { ev.currentTarget.style.color = '#9CA3AF'; ev.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)'; ev.currentTarget.style.background = '#fff'; }}>
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                            {(st === 'quarentena' || st === 'erro') && e.detalhe && (
+                                                <div style={{ fontSize: 11, color: st === 'quarentena' ? '#92400E' : '#DC2626', maxWidth: 320, lineHeight: 1.35 }}>{e.detalhe}</div>
+                                            )}
+                                            {isMaster && st === 'quarentena' && (
+                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                    <button onClick={(ev) => { ev.stopPropagation(); abrirCorrigir(e); }}
+                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 26, padding: '0 10px', borderRadius: 6, border: '1px solid var(--color-primaria)', background: '#fff', color: 'var(--color-primaria)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                                                        <RotateCcw size={12} />Corrigir e reenviar
+                                                    </button>
+                                                    <button onClick={(ev) => { ev.stopPropagation(); setDescartarEnvio(e); }}
+                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 26, padding: '0 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.12)', background: '#fff', color: '#6B7280', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                                                        <Ban size={12} />Descartar
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -631,6 +716,58 @@ export default function DocumentosManuais() {
                         <Button variant="outline" onClick={() => setExcluir(null)}>Cancelar</Button>
                         <Button variant="solid" onClick={confirmarExcluir} disabled={excluindo || !previewEx} style={{ background: '#DC2626', borderColor: '#DC2626' }}>
                             {excluindo ? <Spinner size="sm" /> : (removerPos && previewEx?.tem_posicao && !previewEx?.compartilhado ? 'Excluir envio + posição' : 'Excluir envio')}
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            {/* Corrigir e reenviar (quarentena → enviado) */}
+            <Modal open={!!corrigir} onOpenChange={(o: boolean) => { if (!o) setCorrigir(null); }}>
+                <ModalContent>
+                    <ModalHeader>
+                        <ModalTitle>Corrigir e reenviar</ModalTitle>
+                        <ModalDescription>
+                            {corrigir ? `${clientesMap.get(corrigir.cliente_id) || '—'} · ${corrigir.instituicao}` : ''}
+                        </ModalDescription>
+                    </ModalHeader>
+                    <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                        {corrigir?.detalhe && (
+                            <div style={{ fontSize: 12, background: 'rgba(245,158,11,0.1)', color: '#92400E', borderRadius: 8, padding: '10px 12px', lineHeight: 1.4 }}>
+                                <strong>Motivo da quarentena:</strong> {corrigir.detalhe}
+                            </div>
+                        )}
+                        <div>
+                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Data de referência</label>
+                            <input type="date" value={corrigirData} onChange={ev => setCorrigirData(ev.target.value)}
+                                style={{ height: 40, padding: '0 12px', borderRadius: 8, border: '1px solid rgba(0,0,0,0.15)', fontSize: 14, width: '100%', boxSizing: 'border-box' }} />
+                        </div>
+                        <p style={{ margin: 0, fontSize: 11, color: '#9CA3AF' }}>Ao salvar, o envio volta pra fila e o worker reprocessa automaticamente.</p>
+                    </div>
+                    <ModalFooter>
+                        <Button variant="outline" onClick={() => setCorrigir(null)}>Cancelar</Button>
+                        <Button variant="solid" onClick={confirmarCorrigir} disabled={corrigindo || !corrigirData}>
+                            {corrigindo ? <Spinner size="sm" /> : 'Corrigir e reenviar'}
+                        </Button>
+                    </ModalFooter>
+                </ModalContent>
+            </Modal>
+
+            {/* Descartar (quarentena → descartado) */}
+            <Modal open={!!descartarEnvio} onOpenChange={(o: boolean) => { if (!o) setDescartarEnvio(null); }}>
+                <ModalContent>
+                    <ModalHeader>
+                        <ModalTitle>Descartar envio</ModalTitle>
+                        <ModalDescription>
+                            {descartarEnvio ? `${clientesMap.get(descartarEnvio.cliente_id) || '—'} · ${descartarEnvio.instituicao} · ${fmtDate(descartarEnvio.data_referencia)}` : ''}
+                        </ModalDescription>
+                    </ModalHeader>
+                    <div style={{ padding: 24, fontSize: 13, color: '#374151', lineHeight: 1.5 }}>
+                        Marca este envio em quarentena como <strong>descartado</strong> — sai da fila e não será processado. Não afeta nenhuma carteira.
+                    </div>
+                    <ModalFooter>
+                        <Button variant="outline" onClick={() => setDescartarEnvio(null)}>Cancelar</Button>
+                        <Button variant="solid" onClick={confirmarDescartar} disabled={descartando} style={{ background: '#6B7280', borderColor: '#6B7280' }}>
+                            {descartando ? <Spinner size="sm" /> : 'Descartar'}
                         </Button>
                     </ModalFooter>
                 </ModalContent>

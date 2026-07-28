@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Typography, Card, Button, Badge, Spinner, toast } from 'avere-ui';
 import { Calendar, CheckCircle2, AlertCircle, Lock, GitCompareArrows } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { useClient } from '../contexts/ClientContext';
 
@@ -148,6 +148,7 @@ function CardMes({ mes, apelidoMap, onRevisar }: {
 // ── Página principal ─────────────────────────────────────────────────────────
 export default function FechamentoMes() {
     const { selectedClient } = useClient();
+    const { clienteId } = useParams();
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
@@ -213,7 +214,7 @@ export default function FechamentoMes() {
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {meses.map(mes => (
-                        <CardMes key={mes.mes_referencia} mes={mes} apelidoMap={apelidoMap} onRevisar={(m) => navigate(`/fechamento/movimentacoes/${m}`)} />
+                        <CardMes key={mes.mes_referencia} mes={mes} apelidoMap={apelidoMap} onRevisar={(m) => navigate(`/cliente/${clienteId}/fechamento/movimentacoes/${m}`)} />
                     ))}
                 </div>
             )}

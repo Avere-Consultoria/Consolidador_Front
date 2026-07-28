@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Card, Spinner } from 'avere-ui';
-import { Eye, EyeOff, CalendarClock, ChevronRight, ShieldAlert, Landmark } from 'lucide-react';
+import { CalendarClock, ChevronRight, ShieldAlert, Landmark } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
@@ -44,7 +44,6 @@ interface CreditoAlerta {
 
 const MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 const mesLabel = (ym: string) => { const [a, m] = ym.split('-'); return `${MESES[Number(m) - 1]}/${a}`; };
-const MASCARA = 'R$ ••••••';
 
 const th: React.CSSProperties = { padding: '9px 12px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', textAlign: 'left', whiteSpace: 'nowrap' };
 const thNum: React.CSSProperties = { ...th, textAlign: 'right' };
@@ -62,7 +61,6 @@ export default function AlertasConsultor() {
     const [fgc, setFgc] = useState<FgcAlerta[]>([]);
     const [credito, setCredito] = useState<CreditoAlerta[]>([]);
     const [clientesMap, setClientesMap] = useState<Map<string, string>>(new Map());
-    const [mostrar, setMostrar] = useState(false);
 
     const pConsultor = isMaster && consultorSelecionado && consultorSelecionado !== 'todos' && consultorSelecionado !== 'meus'
         ? consultorSelecionado
@@ -85,10 +83,10 @@ export default function AlertasConsultor() {
         })();
     }, [pConsultor]);
 
-    const v = (valor: number) => (mostrar ? fmt(valor) : MASCARA);
+    const v = (valor: number) => fmt(valor);
 
-    // Foco em 1 cliente (seletor "Cliente Final" da TopBar) → filtra as 3 seções.
-    // Sem cliente selecionado = todos do escopo (consultor/casa).
+    // Foco em 1 cliente via o seletor "Cliente Final" do topo (na página de Alertas
+    // ele filtra em vez de navegar). Sem cliente = todos do escopo (consultor/casa).
     const alvo = selectedClient?.id ?? null;
     const vencsF = useMemo(() => (alvo ? vencs.filter(x => x.cliente_id === alvo) : vencs), [vencs, alvo]);
     const fgcF = useMemo(() => (alvo ? fgc.filter(x => x.cliente_id === alvo) : fgc), [fgc, alvo]);
@@ -119,7 +117,7 @@ export default function AlertasConsultor() {
             nome,
             consultorId: isMaster ? consultorPerfilId : (perfil?.id ?? null),
         });
-        navigate('/');
+        navigate(`/cliente/${clienteId}/posicao`);
     };
 
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
@@ -131,12 +129,6 @@ export default function AlertasConsultor() {
                     <Typography variant="h1">Alertas</Typography>
                     <Typography variant="p" style={{ opacity: 0.6 }}>{selectedClient ? `Foco no cliente: ${selectedClient.nome}` : 'Vencimentos e riscos consolidados da sua carteira.'}</Typography>
                 </div>
-                <button
-                    onClick={() => setMostrar(m => !m)}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 38, padding: '0 14px', borderRadius: 8, border: '1px solid rgba(0,0,0,0.12)', background: '#fff', color: '#374151', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-                    {mostrar ? <EyeOff size={16} /> : <Eye size={16} />}
-                    {mostrar ? 'Ocultar valores' : 'Mostrar valores'}
-                </button>
             </header>
 
             {/* ── Seção: Vencimentos ── */}

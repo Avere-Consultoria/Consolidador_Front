@@ -223,7 +223,7 @@ export default function Relatorio() {
             `}</style>
 
             <div className="no-print" style={{ position: 'fixed', top: 24, right: 24, zIndex: 9999, gap: '8px', alignItems: 'center' }}>
-                <button onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'Montserrat, sans-serif', color: '#374151' }}>
+                <button onClick={() => navigate(`/cliente/${selectedClient.id}/posicao`)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'Montserrat, sans-serif', color: '#374151' }}>
                     <ArrowLeft size={14} /> Voltar
                 </button>
                 <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 8, padding: 3, gap: 2 }}>

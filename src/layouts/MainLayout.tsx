@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home, LineChart, Database, SlidersHorizontal, Users, User, Building2, BookOpen, UserPlus, UsersRound, Lock, History, Wrench, RefreshCw, FileStack, LayoutDashboard, Bell } from 'lucide-react';
+import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell } from 'lucide-react';
 import { SideBar, SideBarItem, TopBar, HierarchicalCombobox, Toaster, Spinner, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
@@ -94,6 +94,12 @@ export default function MainLayout() {
           ? (consultores.find(c => c.id === clienteEncontrado.consultor_id)?.perfil_id ?? null)
           : (perfil?.id ?? null),
       });
+      // Escolher um cliente abre o workspace dele, mantendo a aba atual (se houver).
+      // Exceção: na página de Alertas o seletor filtra a lista no lugar (não navega).
+      if (!location.pathname.startsWith('/alertas')) {
+        const tab = location.pathname.match(/^\/cliente\/[^/]+\/([^/]+)/)?.[1] ?? 'posicao';
+        navigate(`/cliente/${clienteEncontrado.id}/${tab}`);
+      }
     } else {
       setSelectedClient(null);
     }
@@ -141,7 +147,7 @@ export default function MainLayout() {
       value: selectedClient?.id ?? '',
       // Se não houver clientes, mostramos a opção informativa sem a prop 'disabled'
       options: clientes.length > 0
-        ? clientes.map(c => ({ value: c.id, label: c.nome }))
+        ? [{ value: "", label: "Todos os clientes" }, ...clientes.map(c => ({ value: c.id, label: c.nome }))]
         : [{ value: "vazio", label: "⚠️ Nenhum cliente vinculado" }],
       onChange: (value: any) => {
         // Bloqueamos a execução da lógica de seleção se o valor for o de "vazio"
@@ -154,6 +160,18 @@ export default function MainLayout() {
       }
     },
   ];
+
+  // Divisória de seção da sidebar (rótulo suave + linha).
+  const secao = (label: string) => (
+    <div style={{ padding: isCollapsed ? '24px 12px 8px' : '24px 20px 8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+      {!isCollapsed && (
+        <span style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
+          {label}
+        </span>
+      )}
+      <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+    </div>
+  );
 
   return (
     <div className={styles.shell}>
@@ -187,29 +205,13 @@ export default function MainLayout() {
           />
         )}
         <SideBarItem
-          icon={Home} label="Home"
-          active={location.pathname === '/'} onClick={() => navigate('/')}
+          icon={User} label="Cliente"
+          active={location.pathname.startsWith('/cliente')} onClick={() => navigate('/cliente')}
         />
-        <SideBarItem
-          icon={LineChart} label="Rentabilidade"
-          active={location.pathname === '/rentabilidade'} onClick={() => navigate('/rentabilidade')}
-        />
-        {(isMaster || isConsultor) && (
+        {isConsultor && (
           <SideBarItem
             icon={SlidersHorizontal} label="Personalizar Ativos"
             active={location.pathname === '/personalizar'} onClick={() => navigate('/personalizar')}
-          />
-        )}
-        {(isMaster || isConsultor) && (
-          <SideBarItem
-            icon={Lock} label="Fechamento de Mês"
-            active={location.pathname === '/fechamento'} onClick={() => navigate('/fechamento')}
-          />
-        )}
-        {(isMaster || isConsultor) && (
-          <SideBarItem
-            icon={History} label="Histórico Mensal"
-            active={location.pathname === '/historico'} onClick={() => navigate('/historico')}
           />
         )}
 
@@ -222,57 +224,18 @@ export default function MainLayout() {
 
         {isMaster && (
           <>
-            <div style={{
-              padding: isCollapsed ? '24px 12px 8px' : '24px 20px 8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px'
-            }}>
-              {!isCollapsed && (
-                <span style={{
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  color: 'rgba(255,255,255,0.3)', // Cor suave para não distrair
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  whiteSpace: 'nowrap'
-                }}>
-                  Administração
-                </span>
-              )}
-              <div style={{
-                flex: 1,
-                height: '1px',
-                background: 'rgba(255,255,255,0.1)'
-              }} />
-            </div>
+            {secao('Administração')}
             <SideBarItem
-              icon={Database} label="Master Ativos"
-              active={location.pathname === '/master'} onClick={() => navigate('/master')}
+              icon={UsersRound} label="Cadastros"
+              active={location.pathname.startsWith('/cadastros')} onClick={() => navigate('/cadastros')}
             />
             <SideBarItem
-              icon={FileStack} label="Documentos Manuais"
-              active={location.pathname === '/documentos-manuais'} onClick={() => navigate('/documentos-manuais')}
+              icon={Database} label="Inteligência"
+              active={location.pathname.startsWith('/inteligencia')} onClick={() => navigate('/inteligencia')}
             />
             <SideBarItem
-              icon={BookOpen} label="Gestão Master"
-              active={location.pathname === '/gestao-master'} onClick={() => navigate('/gestao-master')}
-            />
-            <SideBarItem
-              icon={UserPlus} label="Cadastro Clientes"
-              active={location.pathname === '/cadastro-clientes'} onClick={() => navigate('/cadastro-clientes')}
-            />
-            <SideBarItem
-              icon={UsersRound} label="Gestão de Equipe"
-              active={location.pathname === '/gestao-equipe'} onClick={() => navigate('/gestao-equipe')}
-            />
-            <SideBarItem
-              icon={Wrench} label="Manutenção"
-              active={location.pathname === '/manutencao'} onClick={() => navigate('/manutencao')}
-            />
-            <SideBarItem
-              icon={RefreshCw} label="Sincronização em Massa"
-              active={location.pathname === '/sincronizacao'} onClick={() => navigate('/sincronizacao')}
+              icon={Wrench} label="Operação"
+              active={location.pathname.startsWith('/operacao')} onClick={() => navigate('/operacao')}
             />
           </>
         )}

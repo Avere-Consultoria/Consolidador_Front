@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Spinner } from 'avere-ui';
 import { AuthProvider } from './contexts/AuthContext';
 import { ClientProvider } from './contexts/ClientContext';
@@ -8,6 +8,8 @@ import { ClientProvider } from './contexts/ClientContext';
 import MainLayout from './layouts/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
+import ClienteWorkspace, { ClienteIndex, LegacyClienteRedirect } from './pages/cliente/ClienteWorkspace';
+import AbasWorkspace from './pages/admin/AbasWorkspace';
 
 // Páginas — lazy (só baixam quando a rota é aberta).
 const Home = lazy(() => import('./pages/Home'));
@@ -56,13 +58,28 @@ export default function App() {
               {/* ROTAS PRIVADAS (Exigem Login Básico) */}
               <Route element={<ProtectedRoute />}>
                 <Route element={<MainLayout />}>
-                  <Route index element={<Home />} />
-                  <Route path="rentabilidade" element={<Rentabilidade />} />
+                  {/* Pouso: Dashboard (visão do consultor) */}
+                  <Route index element={<Navigate to="/dashboard" replace />} />
+
+                  {/* Workspace do cliente — abas de um cliente selecionado */}
+                  <Route path="cliente" element={<ClienteIndex />} />
+                  <Route path="cliente/:clienteId" element={<ClienteWorkspace />}>
+                    <Route index element={<Navigate to="posicao" replace />} />
+                    <Route path="posicao" element={<Home />} />
+                    <Route path="rentabilidade" element={<Rentabilidade />} />
+                    <Route path="historico" element={<HistoricoMensal />} />
+                    <Route path="fechamento" element={<FechamentoMes />} />
+                    <Route path="fechamento/movimentacoes/:mes" element={<MovimentacoesMes />} />
+                  </Route>
+
+                  {/* Redirects legados (bookmarks antigos) → workspace do cliente atual */}
+                  <Route path="rentabilidade" element={<LegacyClienteRedirect tab="rentabilidade" />} />
+                  <Route path="historico" element={<LegacyClienteRedirect tab="historico" />} />
+                  <Route path="fechamento" element={<LegacyClienteRedirect tab="fechamento" />} />
+
+                  {/* Fora do workspace */}
                   <Route path="/dev" element={<EmDesenvolvimento />} />
                   <Route path="/personalizar" element={<PersonalizarAtivos />} />
-                  <Route path="/fechamento" element={<FechamentoMes />} />
-                  <Route path="/fechamento/movimentacoes/:mes" element={<MovimentacoesMes />} />
-                  <Route path="/historico" element={<HistoricoMensal />} />
                 </Route>
               </Route>
 
@@ -78,12 +95,36 @@ export default function App() {
               {/* ROTAS RESTRITAS (Exigem Login E Perfil de MASTER) */}
               <Route element={<ProtectedRoute allowedRoles={['MASTER']} />}>
                 <Route element={<MainLayout />}>
-                  <Route path="/master" element={<MasterAtivos />} />
-                  <Route path="/gestao-master" element={<GestaoMaster />} />
-                  <Route path="/cadastro-clientes" element={<CadastroClientes />} />
-                  <Route path="/gestao-equipe" element={<GestaoEquipe />} />
-                  <Route path="/manutencao" element={<Manutencao />} />
-                  <Route path="/sincronizacao" element={<SincronizacaoMassa />} />
+                  {/* Cadastros */}
+                  <Route path="cadastros" element={<AbasWorkspace tabs={[{ to: 'clientes', label: 'Clientes' }, { to: 'equipe', label: 'Equipe' }]} />}>
+                    <Route index element={<Navigate to="clientes" replace />} />
+                    <Route path="clientes" element={<CadastroClientes />} />
+                    <Route path="equipe" element={<GestaoEquipe />} />
+                  </Route>
+
+                  {/* Inteligência */}
+                  <Route path="inteligencia" element={<AbasWorkspace tabs={[{ to: 'ativos', label: 'Master Ativos' }, { to: 'gestao', label: 'Gestão Master' }, { to: 'personalizar', label: 'Personalizar Ativos' }]} />}>
+                    <Route index element={<Navigate to="ativos" replace />} />
+                    <Route path="ativos" element={<MasterAtivos />} />
+                    <Route path="gestao" element={<GestaoMaster />} />
+                    <Route path="personalizar" element={<PersonalizarAtivos />} />
+                  </Route>
+
+                  {/* Operação */}
+                  <Route path="operacao" element={<AbasWorkspace tabs={[{ to: 'sincronizacao', label: 'Sincronização em Massa' }, { to: 'manutencao', label: 'Manutenção' }, { to: 'documentos', label: 'Documentos Manuais' }]} />}>
+                    <Route index element={<Navigate to="sincronizacao" replace />} />
+                    <Route path="sincronizacao" element={<SincronizacaoMassa />} />
+                    <Route path="manutencao" element={<Manutencao />} />
+                    <Route path="documentos" element={<DocumentosManuais />} />
+                  </Route>
+
+                  {/* Redirects legados (bookmarks antigos) */}
+                  <Route path="master" element={<Navigate to="/inteligencia/ativos" replace />} />
+                  <Route path="gestao-master" element={<Navigate to="/inteligencia/gestao" replace />} />
+                  <Route path="cadastro-clientes" element={<Navigate to="/cadastros/clientes" replace />} />
+                  <Route path="gestao-equipe" element={<Navigate to="/cadastros/equipe" replace />} />
+                  <Route path="manutencao" element={<Navigate to="/operacao/manutencao" replace />} />
+                  <Route path="sincronizacao" element={<Navigate to="/operacao/sincronizacao" replace />} />
                 </Route>
               </Route>
 
