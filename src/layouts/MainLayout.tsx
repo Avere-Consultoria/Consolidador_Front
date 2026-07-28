@@ -144,14 +144,15 @@ export default function MainLayout() {
       icon: User as any,
       // Controlado pelo cliente do contexto: ao trocar o consultor (que faz
       // setSelectedClient(null)), este nível perde a seleção automaticamente.
-      value: selectedClient?.id ?? '',
+      // '__todos__' = sem cliente (Radix Select proíbe value=""); mapeia p/ null no contexto.
+      value: selectedClient?.id ?? '__todos__',
       // Se não houver clientes, mostramos a opção informativa sem a prop 'disabled'
       options: clientes.length > 0
-        ? [{ value: "", label: "Todos os clientes" }, ...clientes.map(c => ({ value: c.id, label: c.nome }))]
+        ? [{ value: "__todos__", label: "Todos os clientes" }, ...clientes.map(c => ({ value: c.id, label: c.nome }))]
         : [{ value: "vazio", label: "⚠️ Nenhum cliente vinculado" }],
       onChange: (value: any) => {
-        // Bloqueamos a execução da lógica de seleção se o valor for o de "vazio"
-        if (value && value !== "vazio") {
+        // Bloqueamos a lógica de seleção nos valores-sentinela ('vazio'/'__todos__')
+        if (value && value !== "vazio" && value !== "__todos__") {
           handleSelectCliente(value);
         } else {
           // Garante que nenhum cliente fique selecionado no contexto
