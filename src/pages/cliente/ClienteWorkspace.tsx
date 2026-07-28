@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Outlet, NavLink, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { Typography, Spinner } from 'avere-ui';
 import { User } from 'lucide-react';
@@ -23,33 +23,43 @@ export default function ClienteWorkspace() {
     const isMaster = perfil?.role === 'MASTER';
     const [carregando, setCarregando] = useState(false);
 
+    // Lê o cliente atual sem virar dependência do efeito (senão o efeito, que SETA
+    // o cliente, se re-dispara em loop). O efeito depende só do clienteId da URL.
+    const selRef = useRef(selectedClient);
+    selRef.current = selectedClient;
+
     // Sincroniza o cliente da URL com o contexto (deep-link / refresh / troca).
     // As páginas-filhas leem selectedClient do contexto — não precisam mudar.
     useEffect(() => {
-        if (!clienteId || selectedClient?.id === clienteId) return;
+        if (!clienteId) return;
+        // Já é o cliente certo no contexto (ex.: veio de um drill-down)? não refaz.
+        if (selRef.current?.id === clienteId) { setCarregando(false); return; }
         let ativo = true;
+        setCarregando(true);
         (async () => {
-            setCarregando(true);
-            const { data: cli } = await supabase
-                .from('clientes')
-                .select('id, nome, codigo_avere, consultor_id')
-                .eq('id', clienteId)
-                .maybeSingle();
-            if (!ativo) return;
-            if (!cli) { navigate('/dashboard', { replace: true }); return; }  // RLS negou / inexistente
-            // consultorId = perfil_id (auth) do dono — chave usada em excecoes.consultor_id.
-            let ownerPerfil: string | null = perfil?.id ?? null;
-            if (isMaster && cli.consultor_id) {
-                const { data: cons } = await supabase
-                    .from('consultores').select('perfil_id').eq('id', cli.consultor_id).maybeSingle();
+            try {
+                const { data: cli } = await supabase
+                    .from('clientes')
+                    .select('id, nome, codigo_avere, consultor_id')
+                    .eq('id', clienteId)
+                    .maybeSingle();
                 if (!ativo) return;
-                ownerPerfil = cons?.perfil_id ?? null;
+                if (!cli) { navigate('/dashboard', { replace: true }); return; }  // RLS negou / inexistente
+                // consultorId = perfil_id (auth) do dono — chave usada em excecoes.consultor_id.
+                let ownerPerfil: string | null = perfil?.id ?? null;
+                if (isMaster && cli.consultor_id) {
+                    const { data: cons } = await supabase
+                        .from('consultores').select('perfil_id').eq('id', cli.consultor_id).maybeSingle();
+                    if (!ativo) return;
+                    ownerPerfil = cons?.perfil_id ?? null;
+                }
+                setSelectedClient({ id: cli.id, codigoAvere: cli.codigo_avere, nome: cli.nome, consultorId: ownerPerfil });
+            } finally {
+                if (ativo) setCarregando(false);   // sempre libera o loading (sem preso)
             }
-            setSelectedClient({ id: cli.id, codigoAvere: cli.codigo_avere, nome: cli.nome, consultorId: ownerPerfil });
-            setCarregando(false);
         })();
         return () => { ativo = false; };
-    }, [clienteId, selectedClient?.id, isMaster, perfil?.id]);
+    }, [clienteId, isMaster, perfil?.id]);
 
     const cliente = selectedClient?.id === clienteId ? selectedClient : null;
 

@@ -155,8 +155,10 @@ export default function MainLayout() {
         if (value && value !== "vazio" && value !== "__todos__") {
           handleSelectCliente(value);
         } else {
-          // Garante que nenhum cliente fique selecionado no contexto
+          // "Todos os clientes": limpa o foco. Se estiver DENTRO do workspace, sai
+          // pro Dashboard (senão a casca re-busca o cliente da URL e "volta").
           setSelectedClient(null);
+          if (location.pathname.startsWith('/cliente')) navigate('/dashboard');
         }
       }
     },
