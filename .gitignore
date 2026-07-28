@@ -1,5 +1,9 @@
 ﻿node_modules/
 dist/
+.claude/
+# Exceção: o build da lib avere-ui é vendorizado de propósito (necessário no CI/Cloudflare).
+!vendor/avere-ui/dist/
+!vendor/avere-ui/dist/**
 .env
 .env.local
 .env.*.local
