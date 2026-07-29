@@ -88,7 +88,11 @@ export declare interface ColumnDef<T> {
     sortable?: boolean;
 }
 
-export declare const Combobox: default_2.ForwardRefExoticComponent<ComboboxProps & default_2.RefAttributes<HTMLInputElement>>;
+export declare function Combobox({ options, value, onChange, label, error, placeholder, className, disabled, }: ComboboxProps): JSX.Element;
+
+export declare namespace Combobox {
+    var displayName: string;
+}
 
 export declare interface ComboboxLevel {
     id: string;
@@ -107,12 +111,15 @@ export declare interface ComboboxOption {
     value: string;
 }
 
-export declare interface ComboboxProps extends Omit<default_2.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
+export declare interface ComboboxProps {
     options: ComboboxOption[];
     value?: string;
     onChange?: (value: string) => void;
     label?: string;
     error?: string;
+    placeholder?: string;
+    className?: string;
+    disabled?: boolean;
 }
 
 export declare function DataTable<T>({ data, columns, keyExtractor, actions, onSelectionChange, className, selectable, }: DataTableProps<T>): JSX.Element;

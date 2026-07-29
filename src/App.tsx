@@ -28,6 +28,7 @@ const HistoricoMensal = lazy(() => import('./pages/HistoricoMensal'));
 const Manutencao = lazy(() => import('./pages/Manutencao'));
 const DocumentosManuais = lazy(() => import('./pages/DocumentosManuais'));
 const DashboardConsultor = lazy(() => import('./pages/DashboardConsultor'));
+const Pendencias = lazy(() => import('./pages/Pendencias'));
 const AlertasConsultor = lazy(() => import('./pages/AlertasConsultor'));
 const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha'));
 
@@ -95,6 +96,9 @@ export default function App() {
               {/* ROTAS RESTRITAS (Exigem Login E Perfil de MASTER) */}
               <Route element={<ProtectedRoute allowedRoles={['MASTER']} />}>
                 <Route element={<MainLayout />}>
+                  {/* Fila de curadoria dos rascunhos criados por consultores */}
+                  <Route path="pendencias" element={<Pendencias />} />
+
                   {/* Cadastros */}
                   <Route path="cadastros" element={<AbasWorkspace tabs={[{ to: 'clientes', label: 'Clientes' }, { to: 'equipe', label: 'Equipe' }]} />}>
                     <Route index element={<Navigate to="clientes" replace />} />

@@ -587,6 +587,9 @@ export function useHomeMetrics() {
     const [instituicoesDb, setInstituicoesDb] = useState<InstituicaoDb[]>([]);
     const [excecoes, setExcecoes] = useState<ExcecaoClassificacao[]>([]);
     const [liquidezSubtipo, setLiquidezSubtipo] = useState<any[]>([]);
+    // Bump p/ forçar recarga completa do snapshot (ex.: após criar rascunho, que
+    // muda o ativo_canonico_id da posição no banco).
+    const [reloadKey, setReloadKey] = useState(0);
 
     // Período: 'LIVE' (posição atual) ou 'YYYY-MM' (relatório fechado, read-only).
     const [periodo, setPeriodo] = useState<string>('LIVE');
@@ -777,7 +780,7 @@ export function useHomeMetrics() {
             }
         }
         fetchLatestSnapshots();
-    }, [selectedClient?.id, consultorPerfilId, perfil?.id]);
+    }, [selectedClient?.id, consultorPerfilId, perfil?.id, reloadKey]);
 
     useEffect(() => {
         async function fetchCarteirasPersonalizadas() {
@@ -997,5 +1000,20 @@ export function useHomeMetrics() {
         return computeMetrics({ fontesIncluidas, fontesTodas: fontes, ativosPorFonte, emissores, emissorMap, conglomeradoMap, colorMap, orderMap, diasVencimento });
     }, [periodo, fechadoData, snapshotData, contas, manualSnapshots, liquidezSubtipo, consultorPerfilId, diasVencimento, carteiraAtiva, carteirasPersonalizadas, canonicos, emissores, conglomeradosDb, classesMaster, instituicoesDb, excecoes, selectedClient]);
 
-    return { selectedClient, loading, metrics, snapshotData, diasVencimento, setDiasVencimento, drawerCarteirasAberto, setDrawerCarteirasAberto, carteiraAtiva, setCarteiraAtiva, opcoesCarteira, instituicoesManuais, periodo, setPeriodo, mesesFechados };
+    // Re-busca só as exceções (o que muda ao personalizar um ativo pelo drawer da
+    // carteira). Não recarrega o snapshot inteiro nem reseta a visão selecionada —
+    // metrics recomputa sozinho porque depende de `excecoes`.
+    async function recarregar() {
+        if (!consultorPerfilId) { setExcecoes([]); return; }
+        const { data } = await supabase
+            .from('excecoes_classificacao').select('*')
+            .eq('consultor_id', consultorPerfilId);
+        setExcecoes(data ?? []);
+    }
+
+    // Recarga completa do snapshot (posições + exceções). Usada quando a posição
+    // muda de canônico no banco (criação de rascunho) — o reload leve não basta.
+    function recarregarTudo() { setReloadKey(k => k + 1); }
+
+    return { selectedClient, loading, metrics, snapshotData, diasVencimento, setDiasVencimento, drawerCarteirasAberto, setDrawerCarteirasAberto, carteiraAtiva, setCarteiraAtiva, opcoesCarteira, instituicoesManuais, periodo, setPeriodo, mesesFechados, recarregar, recarregarTudo };
 }

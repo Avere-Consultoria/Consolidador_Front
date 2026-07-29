@@ -25,6 +25,7 @@ export default function Home() {
     opcoesCarteira,
     instituicoesManuais,
     periodo, setPeriodo, mesesFechados,
+    recarregar, recarregarTudo,
   } = useHomeMetrics();
 
   // <-- 1. NOVO ESTADO: Se não houver cliente, mostra o Empty State amigável -->
@@ -107,7 +108,7 @@ export default function Home() {
             />
           )}
 
-          <TabelaAtivos ativos={metrics.todosAtivos} patrimonioTotal={metrics.patrimonioTotal} />
+          <TabelaAtivos ativos={metrics.todosAtivos} patrimonioTotal={metrics.patrimonioTotal} onPersonalizado={recarregar} onPersonalizadoTudo={recarregarTudo} />
         </>
       )}
 

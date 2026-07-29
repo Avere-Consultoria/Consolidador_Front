@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Typography, Card, Badge, Button, Spinner, TextField, toast } from 'avere-ui';
 import { Wand2, Search } from 'lucide-react';
 import { supabase } from '../services/supabase';
@@ -101,6 +102,17 @@ export default function MasterAtivos() {
     // ── Drawer e modal de fundir ─────────────────────────────────────────
     const [drawerCanonicoId, setDrawerCanonicoId] = useState<string | null>(null);
     const [modalFundirAberto, setModalFundirAberto] = useState(false);
+
+    // Deep-link da fila de Pendências (?focar=<id>) → abre o drawer do ativo direto.
+    const [searchParams, setSearchParams] = useSearchParams();
+    const focar = searchParams.get('focar');
+    useEffect(() => {
+        if (focar && canonicos.some(c => c.id === focar)) {
+            setDrawerCanonicoId(focar);
+            searchParams.delete('focar');
+            setSearchParams(searchParams, { replace: true });
+        }
+    }, [focar, canonicos]);
 
     // Busca TODAS as linhas paginando — o Supabase corta CADA request em 1000 linhas.
     // Sem isto, com a base cheia os ativos além da 1000ª linha ficavam sem visão

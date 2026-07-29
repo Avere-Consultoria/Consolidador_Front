@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import {
     Drawer, DrawerContent, DrawerHeader, DrawerBody,
-    DrawerTitle, DrawerDescription, DrawerSeparator, Badge,
+    DrawerTitle, DrawerDescription, DrawerSeparator, Badge, Button,
 } from 'avere-ui';
+import { SlidersHorizontal } from 'lucide-react';
 import type { ConsolidatedAtivo } from '../../../hooks/useHomeMetrics';
 import { fmt, fmtUsd, fmtDate, fmtNum, padronizarTaxaExibicao } from '../../../utils/formatters';
 import { DetalheItem, Secao } from '../../shared/DrawerDetalhe';
@@ -14,6 +15,13 @@ interface DrawerDetalheConsolidadoProps {
     aberto: boolean;
     onClose: (aberto: boolean) => void;
     patrimonioTotal: number;
+    // Abre o atalho de personalização da classificação deste ativo. Se ausente, o
+    // botão não aparece. `personalizavel` habilita/desabilita (ativo sem canônico
+    // nem identificador não pode ser personalizado ainda).
+    onPersonalizar?: () => void;
+    personalizavel?: boolean;
+    // true = ativo sem canônico → o clique cria um rascunho (rótulo diferente).
+    modoRascunho?: boolean;
 }
 
 // ── Tabs inline (avere-ui não tem Tabs) ───────────────────────────────────────
@@ -578,7 +586,7 @@ function TabAgora({ raw }: { raw: any }) {
 // ── Componente Principal ──────────────────────────────────────────────────────
 
 export function DrawerDetalheConsolidado({
-    ativo, aberto, onClose, patrimonioTotal
+    ativo, aberto, onClose, patrimonioTotal, onPersonalizar, personalizavel, modoRascunho
 }: DrawerDetalheConsolidadoProps) {
     const [activeTab, setActiveTab] = useState<TabId>('geral');
 
@@ -628,7 +636,25 @@ export function DrawerDetalheConsolidado({
                         {raw.is_liquidity  && <Badge intent="primaria" variant="ghost" style={{ fontSize: '11px' }}>Liquidez</Badge>}
                         {raw.liquidez_diaria && <Badge intent="primaria" variant="ghost" style={{ fontSize: '11px' }}>Liquidez Diária</Badge>}
                     </div>
-                    <DrawerTitle>{ativo.nome}</DrawerTitle>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+                        <DrawerTitle>{ativo.nome}</DrawerTitle>
+                        {onPersonalizar && (
+                            personalizavel ? (
+                                <Button variant="outline" onClick={onPersonalizar}
+                                    style={{ flexShrink: 0, fontSize: '12px', padding: '6px 12px', whiteSpace: 'nowrap' }}>
+                                    <SlidersHorizontal size={14} style={{ marginRight: 6 }} />
+                                    {modoRascunho ? 'Criar e personalizar' : 'Personalizar'}
+                                </Button>
+                            ) : (
+                                <Button variant="outline" disabled
+                                    title="Ativo sem identificador (ISIN/ticker/CNPJ) — só o master consegue cadastrar"
+                                    style={{ flexShrink: 0, fontSize: '12px', padding: '6px 12px', whiteSpace: 'nowrap' }}>
+                                    <SlidersHorizontal size={14} style={{ marginRight: 6 }} />
+                                    Personalizar
+                                </Button>
+                            )
+                        )}
+                    </div>
                     <DrawerDescription>
                         {ativo.tipo}{ticker ? ` · ${ticker}` : ''}
                     </DrawerDescription>

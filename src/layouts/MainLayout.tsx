@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell } from 'lucide-react';
+import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, ClipboardCheck } from 'lucide-react';
 import { SideBar, SideBarItem, TopBar, HierarchicalCombobox, Toaster, Spinner, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
@@ -16,6 +16,7 @@ export default function MainLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [clientes, setClientes] = useState<any[]>([]);
   const [consultores, setConsultores] = useState<any[]>([]);
+  const [pendenciasCount, setPendenciasCount] = useState(0);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -69,6 +70,18 @@ export default function MainLayout() {
 
     if (perfil) loadClientes();
   }, [perfil, consultorSelecionado, isMaster]);
+
+  // Contador de pendências (rascunhos de consultor aguardando curadoria) — só master.
+  useEffect(() => {
+    async function loadPendencias() {
+      if (!isMaster) return;
+      const { count } = await supabase
+        .from('pendencias_curadoria')
+        .select('id', { count: 'exact', head: true });
+      setPendenciasCount(count ?? 0);
+    }
+    if (perfil) loadPendencias();
+  }, [perfil, isMaster, location.pathname]);
 
   // Resolve o perfil_id (auth) do consultor selecionado no header → chave das exceções.
   useEffect(() => {
@@ -228,6 +241,11 @@ export default function MainLayout() {
         {isMaster && (
           <>
             {secao('Administração')}
+            <SideBarItem
+              icon={ClipboardCheck}
+              label={pendenciasCount > 0 ? `Pendências (${pendenciasCount})` : 'Pendências'}
+              active={location.pathname.startsWith('/pendencias')} onClick={() => navigate('/pendencias')}
+            />
             <SideBarItem
               icon={UsersRound} label="Cadastros"
               active={location.pathname.startsWith('/cadastros')} onClick={() => navigate('/cadastros')}

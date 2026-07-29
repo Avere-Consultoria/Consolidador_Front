@@ -5,16 +5,37 @@ import { fmt, fmtDate, padronizarTaxaExibicao } from '../../utils/formatters';
 import { CORES } from '../../utils/colors';
 import type { ConsolidatedAtivo } from '../../hooks/useHomeMetrics';
 import { DrawerDetalheConsolidado } from './modais/DrawerDetalheConsolidado';
+import { DrawerPersonalizarInline, type RascunhoInfo } from './modais/DrawerPersonalizarInline';
 
 interface TabelaAtivosProps {
     ativos: ConsolidatedAtivo[];
     patrimonioTotal: number;
+    // Recarga leve (só exceções) — ativo já tinha canônico.
+    onPersonalizado?: () => void;
+    // Recarga completa (a posição mudou de canônico) — usada ao criar rascunho.
+    onPersonalizadoTudo?: () => void;
 }
 
-export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
+// Identificador durável do ativo cru (p/ criar rascunho): ISIN > TICKER > CNPJ > código.
+function extrairIdentidade(raw: any): { codigo: string; tipo: string } | null {
+    if (!raw) return null;
+    const pick = (v: any) => (v != null && String(v).trim() !== '' ? String(v).trim() : null);
+    const isin = pick(raw.isin);
+    if (isin) return { codigo: isin, tipo: 'ISIN' };
+    const ticker = pick(raw.ticker);
+    if (ticker) return { codigo: ticker, tipo: 'TICKER' };
+    const cnpj = pick(raw.cnpj) || pick(raw.fund_cnpj);
+    if (cnpj) return { codigo: cnpj, tipo: 'CNPJ' };
+    const cod = pick(raw.codigo_ativo) || pick(raw.security_code) || pick(raw.cusip) || pick(raw.cetip_code) || pick(raw.selic_code);
+    if (cod) return { codigo: cod, tipo: 'CODIGO' };
+    return null;
+}
+
+export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPersonalizadoTudo }: TabelaAtivosProps) {
     const [gruposAbertos, setGruposAbertos] = useState<Record<string, boolean>>({});
     const [ativoSelecionado, setAtivoSelecionado] = useState<ConsolidatedAtivo | null>(null);
     const [drawerAberto, setDrawerAberto] = useState(false);
+    const [personalizar, setPersonalizar] = useState<{ canonicoId?: string; rascunho?: RascunhoInfo } | null>(null);
 
     const grupos = useMemo(() => {
         const map: Record<string, ConsolidatedAtivo[]> = {};
@@ -286,12 +307,46 @@ export function TabelaAtivos({ ativos, patrimonioTotal }: TabelaAtivosProps) {
             </Card>
 
             {/* DRAWER DE DETALHES */}
-            {ativoSelecionado && (
-                <DrawerDetalheConsolidado
-                    ativo={ativoSelecionado}
-                    aberto={drawerAberto}
-                    onClose={setDrawerAberto}
-                    patrimonioTotal={patrimonioTotal}
+            {ativoSelecionado && (() => {
+                const ident = extrairIdentidade(ativoSelecionado.rawData);
+                const personalizavel = !!(ativoSelecionado.ativoCanonicoId || ident);
+                const modoRascunho = !ativoSelecionado.ativoCanonicoId && !!ident;
+                return (
+                    <DrawerDetalheConsolidado
+                        ativo={ativoSelecionado}
+                        aberto={drawerAberto}
+                        onClose={setDrawerAberto}
+                        patrimonioTotal={patrimonioTotal}
+                        personalizavel={personalizavel}
+                        modoRascunho={modoRascunho}
+                        onPersonalizar={() => {
+                            if (ativoSelecionado.ativoCanonicoId) {
+                                setPersonalizar({ canonicoId: ativoSelecionado.ativoCanonicoId });
+                            } else if (ident && ativoSelecionado.rawData?.id) {
+                                setPersonalizar({
+                                    rascunho: {
+                                        nome: ativoSelecionado.nome,
+                                        codigo: ident.codigo,
+                                        tipo: ident.tipo,
+                                        base: ativoSelecionado.instituicaoBase ?? 'MANUAL',
+                                        posicaoId: ativoSelecionado.rawData.id,
+                                        subTipo: ativoSelecionado.subTipo ?? null,
+                                    },
+                                });
+                            }
+                        }}
+                    />
+                );
+            })()}
+
+            {/* ATALHO DE PERSONALIZAÇÃO (por cima do drawer de detalhes) */}
+            {personalizar && (
+                <DrawerPersonalizarInline
+                    canonicoId={personalizar.canonicoId}
+                    rascunho={personalizar.rascunho}
+                    onClose={() => setPersonalizar(null)}
+                    onSaved={() => { onPersonalizado?.(); setDrawerAberto(false); }}
+                    onSavedRascunho={() => { onPersonalizadoTudo?.(); setDrawerAberto(false); }}
                 />
             )}
         </section>

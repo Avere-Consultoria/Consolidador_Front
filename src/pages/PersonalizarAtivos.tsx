@@ -109,6 +109,20 @@ export default function PersonalizarAtivos() {
     const [busca, setBusca]               = useState('');
     const [aba, setAba]                   = useState<'REGRAS' | 'LIQUIDEZ'>('REGRAS');
 
+    // Busca TODAS as linhas em páginas de 1000 (o PostgREST corta em 1000 por request;
+    // a base de ativos passa disso, então sem paginar faltavam ~1400 no combobox).
+    const fetchAllRows = async (table: string, columns: string, orderCol: string) => {
+        const pageSize = 1000;
+        const all: any[] = [];
+        for (let from = 0; ; from += pageSize) {
+            const { data, error } = await supabase.from(table).select(columns).order(orderCol).range(from, from + pageSize - 1);
+            if (error) return { data: null, error };
+            all.push(...(data || []));
+            if (!data || data.length < pageSize) break;
+        }
+        return { data: all, error: null };
+    };
+
     const fetchData = async () => {
         if (!perfil) return;
         if (!consultorContextoId) { setRegras([]); setLoading(false); return; }
@@ -116,8 +130,8 @@ export default function PersonalizarAtivos() {
         try {
             const [clientesRes, canonicosRes, dicionarioRes, classRes, regrasRes, emissoresRes] = await Promise.all([
                 supabase.from('clientes').select('id, nome').order('nome'),
-                supabase.from('ativos_canonicos').select('id, nome_canonico, classe_avere, liquidez_avere, data_vencimento, emissor_id, sub_tipo_canonico, taxa_canonica, taxa_formatada, benchmark_canonico').order('nome_canonico'),
-                supabase.from('dicionario_ativos').select('ativo_canonico_id, instituicao_origem, codigo_identificador, tipo_identificador, nome_ativo, emissor_original, classe_original, liquidez_api_original, vencimento_api_original, index_rate, taxa_formatada'),
+                fetchAllRows('ativos_canonicos', 'id, nome_canonico, classe_avere, liquidez_avere, data_vencimento, emissor_id, sub_tipo_canonico, taxa_canonica, taxa_formatada, benchmark_canonico', 'nome_canonico'),
+                fetchAllRows('dicionario_ativos', 'ativo_canonico_id, instituicao_origem, codigo_identificador, tipo_identificador, nome_ativo, emissor_original, classe_original, liquidez_api_original, vencimento_api_original, index_rate, taxa_formatada', 'ativo_canonico_id'),
                 supabase.from('dicionario_classes').select('nome').order('ordem_exibicao'),
                 supabase.from('excecoes_classificacao').select('*').eq('consultor_id', consultorContextoId),
                 supabase.from('dicionario_emissores').select('id, nome_fantasia').order('nome_fantasia'),

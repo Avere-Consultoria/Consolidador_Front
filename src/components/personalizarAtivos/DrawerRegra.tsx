@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Typography, Badge, Button, Spinner, toast } from 'avere-ui';
+import { Typography, Badge, Button, Spinner, toast, Combobox } from 'avere-ui';
 import { X, Save, Trash2 } from 'lucide-react';
 import type { AtivoCanonicoOption, VisaoInstitucional } from '../../pages/PersonalizarAtivos';
 
@@ -59,6 +59,8 @@ export interface DrawerRegraProps {
     emissores: { id: string; nome_fantasia: string }[];
     classesDisponiveis: string[];
     clientes: { id: string; nome: string }[];
+    // Banner opcional no topo do corpo (ex.: aviso de criação de rascunho).
+    aviso?: React.ReactNode;
 }
 
 const labelStyle: React.CSSProperties = {
@@ -81,7 +83,7 @@ function RefMaster({ children }: { children: React.ReactNode }) {
 
 export function DrawerRegra({
     isOpen, onClose, onSave, onDelete, salvando, regraEdicao,
-    canonicos, emissores, classesDisponiveis, clientes,
+    canonicos, emissores, classesDisponiveis, clientes, aviso,
 }: DrawerRegraProps) {
     const [formCanonicoId, setFormCanonicoId] = useState('');
     const [formApelido,    setFormApelido]    = useState('');
@@ -164,6 +166,12 @@ export function DrawerRegra({
                 {/* ── Corpo ── (overflow visible: dropdowns dos Combobox não são cortados) */}
                 <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '22px', overflowY: 'auto' }}>
 
+                    {aviso && (
+                        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#92400E', lineHeight: 1.5 }}>
+                            {aviso}
+                        </div>
+                    )}
+
                     {/* ── Alcance (topo) ── */}
                     <section style={{ position: 'relative', zIndex: 60 }}>
                         <Typography variant="p" style={{ fontSize: '11px', fontWeight: 800, color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
@@ -181,10 +189,7 @@ export function DrawerRegra({
                                 </label>
                             </div>
                             {formEscopo === 'CLIENTE' && (
-                                <select style={ctrlStyle} value={formClienteId} onChange={e => setFormClienteId(e.target.value)}>
-                                    <option value="">Selecione o cliente...</option>
-                                    {opcoesClientes.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                                </select>
+                                <Combobox options={opcoesClientes} value={formClienteId} onChange={setFormClienteId} placeholder="Pesquise o cliente..." />
                             )}
                         </div>
                     </section>
@@ -199,10 +204,7 @@ export function DrawerRegra({
                                 style={{ ...ctrlStyle, background: '#F3F4F6', color: '#6B7280' }}
                             />
                         ) : (
-                            <select style={ctrlStyle} value={formCanonicoId} onChange={e => setFormCanonicoId(e.target.value)}>
-                                <option value="">Selecione o ativo canônico...</option>
-                                {opcoesAtivos.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                            </select>
+                            <Combobox options={opcoesAtivos} value={formCanonicoId} onChange={setFormCanonicoId} placeholder="Pesquise o ativo canônico..." />
                         )}
                     </div>
 
@@ -223,9 +225,7 @@ export function DrawerRegra({
                             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '14px', alignItems: 'start', position: 'relative', zIndex: 20 }}>
                                 <div>
                                     <label style={labelStyle}>Nova classe (opcional)</label>
-                                    <select style={ctrlStyle} value={formClasse} onChange={e => setFormClasse(e.target.value)}>
-                                        {opcoesClasses.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                                    </select>
+                                    <Combobox options={opcoesClasses} value={formClasse} onChange={setFormClasse} placeholder="Manter original" />
                                     {canonicoSelecionado?.classe_avere && <RefMaster>{canonicoSelecionado.classe_avere}</RefMaster>}
                                 </div>
                                 <div>
@@ -239,9 +239,7 @@ export function DrawerRegra({
                             {/* Emissor */}
                             <div style={{ position: 'relative', zIndex: 10 }}>
                                 <label style={labelStyle}>Novo emissor (opcional)</label>
-                                <select style={ctrlStyle} value={formEmissorId} onChange={e => setFormEmissorId(e.target.value)}>
-                                    {opcoesEmissores.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                                </select>
+                                <Combobox options={opcoesEmissores} value={formEmissorId} onChange={setFormEmissorId} placeholder="Manter original" />
                                 {emissorMasterNome && <RefMaster>{emissorMasterNome}</RefMaster>}
                             </div>
                         </div>
