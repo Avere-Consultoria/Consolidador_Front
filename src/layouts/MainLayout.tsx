@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, ClipboardCheck } from 'lucide-react';
+import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, ClipboardCheck, LayoutGrid, ListTodo } from 'lucide-react';
 import { SideBar, SideBarItem, TopBar, HierarchicalCombobox, Toaster, Spinner, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
@@ -108,8 +108,8 @@ export default function MainLayout() {
           : (perfil?.id ?? null),
       });
       // Escolher um cliente abre o workspace dele, mantendo a aba atual (se houver).
-      // Exceção: na página de Alertas o seletor filtra a lista no lugar (não navega).
-      if (!location.pathname.startsWith('/alertas')) {
+      // Exceção: em Alertas e Tarefas o seletor filtra a lista no lugar (não navega).
+      if (!location.pathname.startsWith('/alertas') && !location.pathname.startsWith('/tarefas')) {
         const tab = location.pathname.match(/^\/cliente\/[^/]+\/([^/]+)/)?.[1] ?? 'posicao';
         navigate(`/cliente/${clienteEncontrado.id}/${tab}`);
       }
@@ -220,9 +220,19 @@ export default function MainLayout() {
             active={location.pathname === '/alertas'} onClick={() => navigate('/alertas')}
           />
         )}
+        {(isMaster || isConsultor) && (
+          <SideBarItem
+            icon={ListTodo} label="Tarefas"
+            active={location.pathname === '/tarefas'} onClick={() => navigate('/tarefas')}
+          />
+        )}
         <SideBarItem
           icon={User} label="Cliente"
           active={location.pathname.startsWith('/cliente')} onClick={() => navigate('/cliente')}
+        />
+        <SideBarItem
+          icon={LayoutGrid} label="Hub"
+          active={location.pathname === '/hub'} onClick={() => navigate('/hub')}
         />
         {isConsultor && (
           <SideBarItem

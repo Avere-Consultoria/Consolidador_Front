@@ -31,6 +31,8 @@ const DashboardConsultor = lazy(() => import('./pages/DashboardConsultor'));
 const Pendencias = lazy(() => import('./pages/Pendencias'));
 const AlertasConsultor = lazy(() => import('./pages/AlertasConsultor'));
 const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha'));
+const Hub = lazy(() => import('./pages/Hub'));
+const Tarefas = lazy(() => import('./pages/Tarefas'));
 
 const fallback = (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -80,6 +82,7 @@ export default function App() {
 
                   {/* Fora do workspace */}
                   <Route path="/dev" element={<EmDesenvolvimento />} />
+                  <Route path="/hub" element={<Hub />} />
                   <Route path="/personalizar" element={<PersonalizarAtivos />} />
                 </Route>
               </Route>
@@ -89,6 +92,7 @@ export default function App() {
                 <Route element={<MainLayout />}>
                   <Route path="/dashboard" element={<DashboardConsultor />} />
                   <Route path="/alertas" element={<AlertasConsultor />} />
+                  <Route path="/tarefas" element={<Tarefas />} />
                   <Route path="/documentos-manuais" element={<DocumentosManuais />} />
                 </Route>
               </Route>
