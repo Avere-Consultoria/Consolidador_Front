@@ -21,19 +21,19 @@ interface Props {
 }
 
 const CORES_INST: Record<string, { bg: string; fg: string }> = {
-    BTG:    { bg: '#E0F2FE', fg: '#0369A1' },
-    XP:     { bg: '#FFEDD5', fg: '#C2410C' },
-    AVENUE: { bg: '#FEF3C7', fg: '#92400E' },
-    AGORA:  { bg: '#DCFCE7', fg: '#15803D' },
+    BTG:    { bg: 'var(--color-info-bg)', fg: 'var(--color-info-text)' },
+    XP:     { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)' },
+    AVENUE: { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)' },
+    AGORA:  { bg: 'var(--color-success-bg)', fg: 'var(--color-success-text)' },
 };
 
 function CardCanonico({ titulo, nome, classe, instituicoes }: { titulo: string; nome: string; classe: string | null; instituicoes: string[] }) {
     return (
-        <div style={{ background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px', padding: '14px 16px' }}>
-            <Typography variant="p" style={{ fontSize: '10px', fontWeight: 800, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+        <div style={{ background: 'var(--gray-50)', border: '1px solid var(--color-border-subtle)', borderRadius: '8px', padding: '14px 16px' }}>
+            <Typography variant="p" style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
                 {titulo}
             </Typography>
-            <Typography variant="p" style={{ fontSize: '14px', fontWeight: 700, color: '#111827', marginBottom: '6px' }}>
+            <Typography variant="p" style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '6px' }}>
                 {nome}
             </Typography>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -43,11 +43,11 @@ function CardCanonico({ titulo, nome, classe, instituicoes }: { titulo: string; 
                     </Badge>
                 )}
                 {instituicoes.map(inst => {
-                    const cor = CORES_INST[inst] ?? { bg: '#E5E7EB', fg: '#374151' };
+                    const cor = CORES_INST[inst] ?? { bg: 'var(--color-border-subtle)', fg: 'var(--color-text-primary)' };
                     return (
                         <span key={inst} style={{
                             background: cor.bg, color: cor.fg,
-                            fontSize: '9px', fontWeight: 800,
+                            fontSize: '9px', fontWeight: 700,
                             padding: '3px 7px', borderRadius: '4px',
                         }}>
                             {inst}
@@ -130,14 +130,14 @@ export function ModalFundirCanonicos({ isOpen, onClose, origem, candidatosDestin
                 onClick={e => e.stopPropagation()}
             >
                 {/* ── Cabeçalho ── */}
-                <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <GitMerge size={20} color="var(--color-primaria)" />
                         <Typography variant="h2" style={{ fontSize: '18px', margin: 0, color: 'var(--color-secundaria)' }}>
                             Fundir Canônicos
                         </Typography>
                     </div>
-                    <X size={20} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={onClose} />
+                    <X size={20} color="var(--color-text-muted)" style={{ cursor: 'pointer' }} onClick={onClose} />
                 </div>
 
                 {/* ── Corpo ── */}
@@ -152,11 +152,11 @@ export function ModalFundirCanonicos({ isOpen, onClose, origem, candidatosDestin
                     />
 
                     {/* Seta */}
-                    <div style={{ textAlign: 'center', color: '#9CA3AF', fontSize: '20px' }}>↓</div>
+                    <div style={{ textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '20px' }}>↓</div>
 
                     {/* Selecionar destino */}
                     <div style={{ position: 'relative', zIndex: 50 }}>
-                        <Typography variant="p" style={{ fontSize: '10px', fontWeight: 800, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
+                        <Typography variant="p" style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
                             Destino (vai absorver as visões da origem)
                         </Typography>
                         <Combobox
@@ -179,13 +179,13 @@ export function ModalFundirCanonicos({ isOpen, onClose, origem, candidatosDestin
 
                     {/* Aviso */}
                     {destino && (
-                        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '8px', padding: '14px 16px', display: 'flex', gap: '12px' }}>
-                            <AlertTriangle size={20} color="#D97706" style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid var(--color-warning-border)', borderRadius: '8px', padding: '14px 16px', display: 'flex', gap: '12px' }}>
+                            <AlertTriangle size={20} color="var(--color-warning-solid)" style={{ flexShrink: 0, marginTop: '2px' }} />
                             <div style={{ flex: 1 }}>
-                                <Typography variant="p" style={{ fontSize: '12px', fontWeight: 700, color: '#92400E', marginBottom: '6px' }}>
+                                <Typography variant="p" style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-warning-text)', marginBottom: '6px' }}>
                                     Ao confirmar:
                                 </Typography>
-                                <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12px', color: '#92400E', lineHeight: 1.6 }}>
+                                <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12px', color: 'var(--color-warning-text)', lineHeight: 1.6 }}>
                                     <li>Todas as visões institucionais da origem serão re-linkadas ao destino.</li>
                                     <li>Todas as posições (BTG/XP/Avenue/Ágora) que apontavam pra origem passam a apontar pro destino.</li>
                                     <li>Exceções de classificação são preservadas (duplicatas exatas são removidas).</li>
@@ -198,7 +198,7 @@ export function ModalFundirCanonicos({ isOpen, onClose, origem, candidatosDestin
                 </div>
 
                 {/* ── Rodapé ── */}
-                <div style={{ padding: '16px 24px', background: '#F9FAFB', borderTop: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderBottomLeftRadius: '14px', borderBottomRightRadius: '14px', flexShrink: 0 }}>
+                <div style={{ padding: '16px 24px', background: 'var(--gray-50)', borderTop: '1px solid var(--color-surface-sunken)', display: 'flex', justifyContent: 'flex-end', gap: '12px', borderBottomLeftRadius: '14px', borderBottomRightRadius: '14px', flexShrink: 0 }}>
                     <Button variant="outline" onClick={onClose} disabled={fundindo}>Cancelar</Button>
                     <Button variant="solid" onClick={handleFundir} disabled={fundindo || !destinoId}>
                         {fundindo ? <Spinner size="sm" /> : <GitMerge size={16} style={{ marginRight: '8px' }} />}

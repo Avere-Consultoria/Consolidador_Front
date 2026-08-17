@@ -71,7 +71,7 @@ export default function LiquidezSubtipoTab() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', background: 'rgba(0,131,203,0.06)', border: '1px solid rgba(0,131,203,0.15)', borderRadius: '8px', padding: '12px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', background: 'var(--color-accent-subtle)', border: '1px solid var(--primary-100)', borderRadius: '8px', padding: '12px 14px' }}>
                 <Info size={16} color="#0083CB" style={{ marginTop: 1, flexShrink: 0 }} />
                 <Typography variant="p" style={{ fontSize: '12px', color: 'var(--color-secundaria)', opacity: 0.85, margin: 0, lineHeight: 1.4 }}>
                     Liquidez padrão por subtipo (D+N) usada nos gráficos de liquidez. Com <strong>Padronizar</strong> ligado, ativos
@@ -81,14 +81,14 @@ export default function LiquidezSubtipoTab() {
             </div>
 
             <Card style={{ padding: '20px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 130px', gap: '12px', padding: '0 4px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#9CA3AF' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 130px', gap: '12px', padding: '0 4px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>
                     <span>Subtipo</span>
                     <span>Liquidez (D+)</span>
                     <span>Padronizar</span>
                 </div>
 
                 {rows.length === 0 ? (
-                    <p style={{ fontSize: '13px', color: '#9CA3AF', padding: '20px', textAlign: 'center' }}>Nenhum subtipo no sistema ainda. Sincronize posições para popular.</p>
+                    <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', padding: '20px', textAlign: 'center' }}>Nenhum subtipo no sistema ainda. Sincronize posições para popular.</p>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {rows.map((r, i) => (
@@ -100,9 +100,9 @@ export default function LiquidezSubtipoTab() {
                                     onClick={() => update(i, { padronizar: !r.padronizar })}
                                     style={{
                                         height: '34px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 700,
-                                        fontFamily: 'Montserrat, sans-serif',
-                                        background: r.padronizar ? 'rgba(16,185,129,0.12)' : 'rgba(0,0,0,0.05)',
-                                        color: r.padronizar ? '#047857' : '#9CA3AF',
+                                        fontFamily: 'var(--font-sans)',
+                                        background: r.padronizar ? 'rgba(16,185,129,0.12)' : 'var(--color-surface-sunken)',
+                                        color: r.padronizar ? 'var(--color-success-text)' : 'var(--color-text-muted)',
                                     }}
                                 >
                                     {r.padronizar ? '● Padronizado' : '○ Desligado'}

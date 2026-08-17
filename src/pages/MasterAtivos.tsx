@@ -77,15 +77,15 @@ function calcularStatus(c: { classe_avere: string; liquidez_avere: string; sub_t
 }
 
 const CORES_INST: Record<string, { bg: string; fg: string }> = {
-    BTG:    { bg: '#E0F2FE', fg: '#0369A1' },
-    XP:     { bg: '#FFEDD5', fg: '#C2410C' },
-    AVENUE: { bg: '#FEF3C7', fg: '#92400E' },
-    AGORA:  { bg: '#DCFCE7', fg: '#15803D' },
+    BTG:    { bg: 'var(--color-info-bg)', fg: 'var(--color-info-text)' },
+    XP:     { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)' },
+    AVENUE: { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)' },
+    AGORA:  { bg: 'var(--color-success-bg)', fg: 'var(--color-success-text)' },
 };
 
 const thMA: React.CSSProperties = {
     padding: '12px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase',
-    letterSpacing: '0.05em', color: '#9CA3AF', textAlign: 'left', whiteSpace: 'nowrap',
+    letterSpacing: '0.05em', color: 'var(--color-text-muted)', textAlign: 'left', whiteSpace: 'nowrap',
 };
 const tdMA: React.CSSProperties = { padding: '12px 16px', verticalAlign: 'middle' };
 
@@ -271,7 +271,7 @@ export default function MasterAtivos() {
             <style>{`
                 input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
                 input[type=number] { -moz-appearance: textfield; }
-                .master-row:hover { background: rgba(0,131,203,0.04); }
+                .master-row:hover { background: var(--color-accent-subtle); }
             `}</style>
 
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
@@ -282,7 +282,7 @@ export default function MasterAtivos() {
                             {pendentesCount} a classificar
                         </Badge>
                     </div>
-                    <Typography variant="p" style={{ opacity: 0.6 }}>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
                         Dicionário Universal de Classificação e Risco da Avere
                     </Typography>
                 </div>
@@ -315,16 +315,16 @@ export default function MasterAtivos() {
                                 display: 'flex', alignItems: 'center', gap: '7px', whiteSpace: 'nowrap',
                                 padding: '8px 14px', borderRadius: '999px', cursor: 'pointer',
                                 border: `1px solid ${ativa ? 'transparent' : 'var(--color-borda)'}`,
-                                background: ativa ? (fila ? '#D97706' : 'var(--color-secundaria)') : '#fff',
-                                color: ativa ? '#fff' : (fila && n > 0 ? '#D97706' : '#6B7280'),
+                                background: ativa ? (fila ? 'var(--color-warning-solid)' : 'var(--color-secundaria)') : '#fff',
+                                color: ativa ? '#fff' : (fila && n > 0 ? 'var(--color-warning-solid)' : 'var(--color-text-secondary)'),
                                 fontSize: '12px', fontWeight: 700,
                             }}
                         >
                             {aba.label}
                             <span style={{
-                                fontSize: '10px', fontWeight: 800, padding: '1px 7px', borderRadius: '999px',
-                                background: ativa ? 'rgba(255,255,255,0.25)' : (fila && n > 0 ? 'rgba(217,119,6,0.12)' : '#F3F4F6'),
-                                color: ativa ? '#fff' : (fila && n > 0 ? '#D97706' : '#6B7280'),
+                                fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: '999px',
+                                background: ativa ? 'rgba(255,255,255,0.25)' : (fila && n > 0 ? 'rgba(217,119,6,0.12)' : 'var(--color-surface-sunken)'),
+                                color: ativa ? '#fff' : (fila && n > 0 ? 'var(--color-warning-solid)' : 'var(--color-text-secondary)'),
                             }}>{n}</span>
                         </button>
                     );
@@ -334,7 +334,7 @@ export default function MasterAtivos() {
             <Card style={{ padding: 0, overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                        <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #EEEEEE' }}>
+                        <tr style={{ background: 'var(--gray-50)', borderBottom: '1px solid var(--color-border-subtle)' }}>
                             <th style={thMA}>Ativo</th>
                             <th style={thMA}>Risco</th>
                             <th style={thMA}>Classe Avere</th>
@@ -355,25 +355,25 @@ export default function MasterAtivos() {
                                     key={item.id}
                                     className="master-row"
                                     onClick={() => setDrawerCanonicoId(item.id)}
-                                    style={{ borderBottom: '1px solid #F3F4F6', cursor: 'pointer' }}
+                                    style={{ borderBottom: '1px solid var(--color-surface-sunken)', cursor: 'pointer' }}
                                 >
                                     {/* Ativo */}
                                     <td style={{ ...tdMA, minWidth: '260px' }}>
-                                        <Typography variant="p" title={item.nome_canonico} style={{ fontWeight: 700, fontSize: '13px', color: '#111827' }}>
+                                        <Typography variant="p" title={item.nome_canonico} style={{ fontWeight: 700, fontSize: '13px', color: 'var(--color-text-primary)' }}>
                                             {item.nome_canonico}
-                                            {emissorOriginal && <span style={{ fontWeight: 500, fontSize: '11px', color: '#6B7280', marginLeft: '8px' }}>· {emissorOriginal}</span>}
+                                            {emissorOriginal && <span style={{ fontWeight: 500, fontSize: '11px', color: 'var(--color-text-secondary)', marginLeft: '8px' }}>· {emissorOriginal}</span>}
                                             {item.is_fii && <span style={{ fontSize: '9px', marginLeft: '6px', color: '#7C3AED', fontWeight: 700 }}>FII</span>}
-                                            {item.is_coe && <span style={{ fontSize: '9px', marginLeft: '6px', color: '#DC2626', fontWeight: 700 }}>COE</span>}
+                                            {item.is_coe && <span style={{ fontSize: '9px', marginLeft: '6px', color: 'var(--color-danger-solid)', fontWeight: 700 }}>COE</span>}
                                         </Typography>
                                         {principal && (
                                             <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '2px' }}>
-                                                <span style={{ fontWeight: 600, fontSize: '11px', fontFamily: 'monospace', color: '#6B7280' }}>{principal.codigo_identificador}</span>
-                                                <span style={{ fontSize: '9px', color: '#9CA3AF', fontWeight: 600 }}>{principal.tipo_identificador}</span>
+                                                <span style={{ fontWeight: 600, fontSize: '11px', fontFamily: 'monospace', color: 'var(--color-text-secondary)' }}>{principal.codigo_identificador}</span>
+                                                <span style={{ fontSize: '9px', color: 'var(--color-text-muted)', fontWeight: 600 }}>{principal.tipo_identificador}</span>
                                             </div>
                                         )}
                                         <div style={{ display: 'flex', gap: '4px', marginTop: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
                                             {instituicoesDistintas.map(inst => {
-                                                const cor = CORES_INST[inst] ?? { bg: '#E5E7EB', fg: '#374151' };
+                                                const cor = CORES_INST[inst] ?? { bg: 'var(--color-border-subtle)', fg: 'var(--color-text-primary)' };
                                                 return <span key={inst} style={{ background: cor.bg, color: cor.fg, fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>{inst}</span>;
                                             })}
                                             {(item.taxa_formatada || item.taxa_canonica) && <Badge variant="ghost" style={{ fontSize: '9px' }}>{padronizarTaxaExibicao(item.taxa_formatada || item.taxa_canonica)}</Badge>}
@@ -384,26 +384,26 @@ export default function MasterAtivos() {
                                     <td style={{ ...tdMA, minWidth: '170px' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                             {riscoNome
-                                                ? <span style={{ fontSize: '13px', fontWeight: 600, color: '#111827' }}>{riscoNome}</span>
-                                                : <span style={{ fontSize: '13px', fontWeight: 700, color: '#EF4444' }}>—</span>}
-                                            <span style={{ fontSize: '9px', color: '#9CA3AF', fontWeight: 600 }}>{bancario ? '🏦 Bancário/FGC' : '🏭 Privado'}</span>
+                                                ? <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)' }}>{riscoNome}</span>
+                                                : <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-danger-solid)' }}>—</span>}
+                                            <span style={{ fontSize: '9px', color: 'var(--color-text-muted)', fontWeight: 600 }}>{bancario ? '🏦 Bancário/FGC' : '🏭 Privado'}</span>
                                         </div>
                                     </td>
 
                                     {/* Classe */}
                                     <td style={tdMA}>
                                         {item.classe_avere
-                                            ? <span style={{ fontSize: '13px', color: '#111827' }}>{item.classe_avere}</span>
-                                            : <span style={{ fontSize: '12px', color: '#D97706', fontStyle: 'italic' }}>Não classificado</span>}
+                                            ? <span style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>{item.classe_avere}</span>
+                                            : <span style={{ fontSize: '12px', color: 'var(--color-warning-solid)', fontStyle: 'italic' }}>Não classificado</span>}
                                     </td>
 
                                     {/* Vencimento / Liquidez (modelo Home: vencimento quando existe, senão liquidez) */}
                                     <td style={tdMA}>
                                         {item.data_vencimento
-                                            ? <span style={{ fontSize: '13px', color: '#111827' }}>{formatarDataBR(item.data_vencimento)}</span>
+                                            ? <span style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>{formatarDataBR(item.data_vencimento)}</span>
                                             : (item.liquidez_avere !== '' && item.liquidez_avere != null
-                                                ? <span style={{ fontSize: '13px', color: '#111827' }}>D+{item.liquidez_avere}</span>
-                                                : <span style={{ color: '#9CA3AF' }}>—</span>)}
+                                                ? <span style={{ fontSize: '13px', color: 'var(--color-text-primary)' }}>D+{item.liquidez_avere}</span>
+                                                : <span style={{ color: 'var(--color-text-muted)' }}>—</span>)}
                                     </td>
 
                                     {/* Status */}

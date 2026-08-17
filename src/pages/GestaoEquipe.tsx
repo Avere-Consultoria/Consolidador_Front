@@ -164,7 +164,7 @@ export default function GestaoEquipe() {
                         <Users size={28} color="var(--color-secundaria)" />
                         <Typography variant="h1">Gestão de Equipe</Typography>
                     </div>
-                    <Typography variant="p" style={{ opacity: 0.6 }}>Administração de Consultores e Vínculos de Acesso</Typography>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>Administração de Consultores e Vínculos de Acesso</Typography>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <TextField
@@ -194,7 +194,7 @@ export default function GestaoEquipe() {
                         {
                             header: 'E-mail',
                             accessorKey: 'email_professional',
-                            cell: (item) => <Typography variant="p" style={{ opacity: 0.6 }}>{item.email_professional}</Typography>
+                            cell: (item) => <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>{item.email_professional}</Typography>
                         },
                         {
                             header: 'Status',
@@ -236,11 +236,11 @@ export default function GestaoEquipe() {
                                             }}
                                         ><Mail size={16} color="var(--color-primaria)" style={{ opacity: 0.7 }} /></span>)}
                                     <Edit2
-                                        size={16} color="#9CA3AF" style={{ cursor: 'pointer' }}
+                                        size={16} color="var(--color-text-muted)" style={{ cursor: 'pointer' }}
                                         onClick={() => handleEditar(item)}
                                     />
                                     <Trash2
-                                        size={16} color="#EF4444" style={{ cursor: 'pointer', opacity: 0.8 }}
+                                        size={16} color="var(--color-danger-solid)" style={{ cursor: 'pointer', opacity: 0.8 }}
                                         onClick={() => {
                                             toast(`Excluir o consultor ${item.nome}?`, {
                                                 action: { label: 'Excluir', onClick: async () => {
@@ -279,7 +279,7 @@ export default function GestaoEquipe() {
                                 onChange={e => onChangeNome(e.target.value)}
                             />
                             {erros.nome && (
-                                <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#EF4444' }}>{erros.nome}</p>
+                                <p style={{ margin: '4px 0 0', fontSize: '11px', color: 'var(--color-danger-solid)' }}>{erros.nome}</p>
                             )}
                         </div>
                         <div>
@@ -290,12 +290,12 @@ export default function GestaoEquipe() {
                                 onChange={e => onChangeEmail(e.target.value)}
                             />
                             {erros.email
-                                ? <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#EF4444' }}>{erros.email}</p>
-                                : <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#9CA3AF' }}>
+                                ? <p style={{ margin: '4px 0 0', fontSize: '11px', color: 'var(--color-danger-solid)' }}>{erros.email}</p>
+                                : <p style={{ margin: '4px 0 0', fontSize: '11px', color: 'var(--color-text-muted)' }}>
                                     Sugerido pelo padrão <strong>{`primeironome${DOMINIO_AVERE}`}</strong> — ajuste se necessário.
                                   </p>}
                         </div>
-                        <p style={{ margin: '0', fontSize: '12px', color: '#9CA3AF', lineHeight: 1.5 }}>
+                        <p style={{ margin: '0', fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
                             Após salvar, use o ícone <strong style={{ color: 'var(--color-primaria)' }}>✉ Criar acesso</strong> na tabela. Será gerada uma <strong>senha temporária</strong> e o vínculo de login criado na hora — você repassa a senha ao consultor (peça para trocá-la no primeiro acesso).
                         </p>
                     </div>
@@ -318,12 +318,12 @@ export default function GestaoEquipe() {
                     </ModalHeader>
                     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                         <div>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, marginBottom: '4px', color: '#6B7280' }}>E-MAIL</label>
-                            <div style={{ padding: '10px 12px', background: '#F3F4F6', borderRadius: 8, fontFamily: 'monospace', fontSize: 13 }}>{acessoResult?.email}</div>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, marginBottom: '4px', color: 'var(--color-text-secondary)' }}>E-MAIL</label>
+                            <div style={{ padding: '10px 12px', background: 'var(--color-surface-sunken)', borderRadius: 8, fontFamily: 'monospace', fontSize: 13 }}>{acessoResult?.email}</div>
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, marginBottom: '4px', color: '#6B7280' }}>SENHA TEMPORÁRIA</label>
-                            <div style={{ padding: '10px 12px', background: '#F3F4F6', borderRadius: 8, fontFamily: 'monospace', fontSize: 13, fontWeight: 700 }}>{acessoResult?.senha}</div>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, marginBottom: '4px', color: 'var(--color-text-secondary)' }}>SENHA TEMPORÁRIA</label>
+                            <div style={{ padding: '10px 12px', background: 'var(--color-surface-sunken)', borderRadius: 8, fontFamily: 'monospace', fontSize: 13, fontWeight: 700 }}>{acessoResult?.senha}</div>
                         </div>
                         <Button variant="outline" onClick={() => {
                             navigator.clipboard?.writeText(`E-mail: ${acessoResult?.email}\nSenha temporária: ${acessoResult?.senha}`);

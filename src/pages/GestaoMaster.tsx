@@ -23,7 +23,7 @@ export default function GestaoMaster() {
                 </div>
             </header>
 
-            <div style={{ display: 'flex', gap: '12px', borderBottom: '1px solid rgba(0,0,0,0.1)', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', gap: '12px', borderBottom: '1px solid var(--color-border-subtle)', paddingBottom: '12px' }}>
                 <Button variant={activeTab === 'EMISSORES' ? 'solid' : 'ghost'} onClick={() => setActiveTab('EMISSORES')}>
                     <Building2 size={16} style={{ marginRight: 8 }} /> Emissores
                 </Button>

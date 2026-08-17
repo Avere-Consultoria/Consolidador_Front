@@ -125,7 +125,7 @@ export default function ManutencaoTab() {
                         <Database size={22} color="var(--color-secundaria)" />
                         <Typography variant="h2" style={{ fontWeight: 700, fontSize: '20px' }}>Reprocessar canônicos do raw</Typography>
                     </div>
-                    <Typography variant="p" style={{ opacity: 0.6, fontSize: '13px', maxWidth: 720 }}>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)', fontSize: '13px', maxWidth: 720 }}>
                         Reaplica a classificação, a taxa e os detalhes <strong>atuais</strong> ao que já entrou, lendo o
                         payload cru arquivado — <strong>sem gastar a janela de chamada</strong> da corretora. Use após
                         mudar um mapeamento. Não toca em posições nem em curadorias manuais.
@@ -154,20 +154,20 @@ export default function ManutencaoTab() {
                     </div>
                 </div>
                 <div style={{ position: 'relative', maxWidth: 320 }}>
-                    <Search size={14} style={{ position: 'absolute', left: 10, top: 9, color: '#9CA3AF' }} />
+                    <Search size={14} style={{ position: 'absolute', left: 10, top: 9, color: 'var(--color-text-muted)' }} />
                     <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por cliente, código ou conta…"
                         style={{ width: '100%', padding: '7px 10px 7px 30px', border: '1px solid var(--color-borda)', borderRadius: 6, fontSize: 13 }} />
                 </div>
-                <div style={{ height: 8, background: '#F1F5F9', borderRadius: 6, overflow: 'hidden' }}>
+                <div style={{ height: 8, background: 'var(--color-surface-sunken)', borderRadius: 6, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${pct}%`, background: 'var(--color-primaria)', transition: 'width 0.3s ease' }} />
                 </div>
-                {rodando && <Typography variant="p" style={{ fontSize: 11, color: '#9CA3AF' }}>{run.feitos}/{run.total} nesta execução ({pct}%)</Typography>}
+                {rodando && <Typography variant="p" style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{run.feitos}/{run.total} nesta execução ({pct}%)</Typography>}
             </Card>
 
             {loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}><Spinner size="lg" /></div>
             ) : itens.length === 0 ? (
-                <Card style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF' }}><Typography variant="p">Nenhuma conta {inst} encontrada.</Typography></Card>
+                <Card style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-muted)' }}><Typography variant="p">Nenhuma conta {inst} encontrada.</Typography></Card>
             ) : (
                 <Card style={{ padding: 0, overflow: 'hidden' }}>
                     <div style={{ maxHeight: 'calc(100vh - 360px)', overflow: 'auto' }}>
@@ -180,13 +180,13 @@ export default function ManutencaoTab() {
                             </thead>
                             <tbody>
                                 {itensVisiveis.map(it => (
-                                    <tr key={it.id} style={{ borderTop: '1px solid #F1F5F9', background: it.status === 'erro' ? '#FEF2F2' : it.status === 'ok' ? '#F0FDF4' : 'transparent' }}>
+                                    <tr key={it.id} style={{ borderTop: '1px solid var(--color-surface-sunken)', background: it.status === 'erro' ? 'var(--color-danger-bg)' : it.status === 'ok' ? '#F0FDF4' : 'transparent' }}>
                                         <td style={{ ...td, fontWeight: 600 }}>{it.nome}</td>
-                                        <td style={{ ...td, color: '#6B7280' }}>{it.codigoAvere}</td>
-                                        <td style={{ ...td, color: '#6B7280' }}>{it.conta ?? '—'}</td>
+                                        <td style={{ ...td, color: 'var(--color-text-secondary)' }}>{it.codigoAvere}</td>
+                                        <td style={{ ...td, color: 'var(--color-text-secondary)' }}>{it.conta ?? '—'}</td>
                                         <td style={td}>{badge(it.status)}</td>
-                                        <td style={{ ...td, color: it.ultimaSync ? '#374151' : '#9CA3AF' }} title={it.ultimaSync ? new Date(it.ultimaSync).toLocaleString('pt-BR') : ''}>{fmtSync(it.ultimaSync)}</td>
-                                        <td style={{ ...td, color: it.status === 'erro' ? '#DC2626' : '#9CA3AF', fontSize: 11, maxWidth: 280, whiteSpace: 'normal' }}>{it.msg}</td>
+                                        <td style={{ ...td, color: it.ultimaSync ? 'var(--color-text-primary)' : 'var(--color-text-muted)' }} title={it.ultimaSync ? new Date(it.ultimaSync).toLocaleString('pt-BR') : ''}>{fmtSync(it.ultimaSync)}</td>
+                                        <td style={{ ...td, color: it.status === 'erro' ? 'var(--color-danger-solid)' : 'var(--color-text-muted)', fontSize: 11, maxWidth: 280, whiteSpace: 'normal' }}>{it.msg}</td>
                                         <td style={td}>
                                             <Button variant="ghost" onClick={() => reprocessar([it])} disabled={rodando} title="Reprocessar esta conta">
                                                 <RefreshCw size={14} />
@@ -195,7 +195,7 @@ export default function ManutencaoTab() {
                                     </tr>
                                 ))}
                                 {itensVisiveis.length === 0 && (
-                                    <tr><td colSpan={7} style={{ padding: 28, textAlign: 'center', color: '#9CA3AF' }}>Nenhuma conta com esses filtros.</td></tr>
+                                    <tr><td colSpan={7} style={{ padding: 28, textAlign: 'center', color: 'var(--color-text-muted)' }}>Nenhuma conta com esses filtros.</td></tr>
                                 )}
                             </tbody>
                         </table>
@@ -206,8 +206,8 @@ export default function ManutencaoTab() {
     );
 }
 
-const th: React.CSSProperties = { position: 'sticky', top: 0, background: '#F8FAFC', textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '1px solid var(--color-borda)' };
+const th: React.CSSProperties = { position: 'sticky', top: 0, background: 'var(--gray-50)', textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '1px solid var(--color-borda)' };
 const td: React.CSSProperties = { padding: '8px 14px', whiteSpace: 'nowrap', verticalAlign: 'middle' };
 const pill: React.CSSProperties = { fontSize: 10, display: 'inline-flex', alignItems: 'center', gap: 4 };
-const chipS: React.CSSProperties = { padding: '5px 12px', fontSize: 12, border: '1px solid var(--color-borda)', borderRadius: 16, background: '#fff', color: '#6B7280', cursor: 'pointer' };
+const chipS: React.CSSProperties = { padding: '5px 12px', fontSize: 12, border: '1px solid var(--color-borda)', borderRadius: 16, background: '#fff', color: 'var(--color-text-secondary)', cursor: 'pointer' };
 const chipA: React.CSSProperties = { background: 'var(--color-primaria)', color: '#fff', borderColor: 'var(--color-primaria)', fontWeight: 700 };

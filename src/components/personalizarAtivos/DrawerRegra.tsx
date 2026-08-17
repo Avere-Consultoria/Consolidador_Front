@@ -10,29 +10,29 @@ function formatarDataBR(iso: string | null | undefined): string {
 }
 
 const CORES_INST: Record<string, { bg: string; fg: string; border: string }> = {
-    BTG:    { bg: '#E0F2FE', fg: '#0369A1', border: '#7DD3FC' },
-    XP:     { bg: '#FFEDD5', fg: '#C2410C', border: '#FDBA74' },
-    AVENUE: { bg: '#FEF3C7', fg: '#92400E', border: '#FCD34D' },
-    AGORA:  { bg: '#DCFCE7', fg: '#15803D', border: '#86EFAC' },
+    BTG:    { bg: 'var(--color-info-bg)', fg: 'var(--color-info-text)', border: '#7DD3FC' },
+    XP:     { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)', border: 'var(--color-warning-border)' },
+    AVENUE: { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)', border: 'var(--color-warning-border)' },
+    AGORA:  { bg: 'var(--color-success-bg)', fg: 'var(--color-success-text)', border: 'var(--color-success-border)' },
 };
 
 function Campo({ label, valor }: { label: string; valor: React.ReactNode }) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="p" style={{ fontSize: '9px', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0, lineHeight: 1.2 }}>{label}</Typography>
-            <Typography variant="p" style={{ fontSize: '13px', fontWeight: 600, color: '#111827', margin: 0, lineHeight: 1.3 }}>
-                {valor || <span style={{ color: '#9CA3AF', fontStyle: 'italic', fontWeight: 400 }}>—</span>}
+            <Typography variant="p" style={{ fontSize: '9px', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0, lineHeight: 1.2 }}>{label}</Typography>
+            <Typography variant="p" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)', margin: 0, lineHeight: 1.3 }}>
+                {valor || <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic', fontWeight: 400 }}>—</span>}
             </Typography>
         </div>
     );
 }
 
 function CardVisaoInstitucional({ visao }: { visao: VisaoInstitucional }) {
-    const cor = CORES_INST[visao.instituicao_origem] ?? { bg: '#F3F4F6', fg: '#374151', border: '#D1D5DB' };
+    const cor = CORES_INST[visao.instituicao_origem] ?? { bg: 'var(--color-surface-sunken)', fg: 'var(--color-text-primary)', border: 'var(--color-border-default)' };
     return (
         <div style={{ background: cor.bg, border: `1px solid ${cor.border}`, borderRadius: '8px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ background: '#fff', color: cor.fg, fontSize: '10px', fontWeight: 800, padding: '3px 8px', borderRadius: '4px', letterSpacing: '0.05em' }}>{visao.instituicao_origem}</span>
+                <span style={{ background: '#fff', color: cor.fg, fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', letterSpacing: '0.05em' }}>{visao.instituicao_origem}</span>
                 <Typography variant="p" style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, color: cor.fg }}>{visao.codigo_identificador}</Typography>
                 <span style={{ fontSize: '9px', color: cor.fg, fontWeight: 600, opacity: 0.7 }}>{visao.tipo_identificador}</span>
             </div>
@@ -64,12 +64,12 @@ export interface DrawerRegraProps {
 }
 
 const labelStyle: React.CSSProperties = {
-    display: 'block', fontSize: '10px', fontWeight: 700, color: '#6B7280',
+    display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--color-text-secondary)',
     textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px',
 };
 const ctrlStyle: React.CSSProperties = {
     width: '100%', height: '38px', boxSizing: 'border-box', padding: '0 10px', borderRadius: '8px',
-    border: '1px solid rgba(0,0,0,0.12)', fontSize: '13px', fontFamily: 'var(--font-family)', outline: 'none', background: '#fff',
+    border: '1px solid var(--color-border-default)', fontSize: '13px', fontFamily: 'var(--font-family)', outline: 'none', background: '#fff',
 };
 
 // Referência ao valor do Master (original) abaixo de cada campo
@@ -143,41 +143,41 @@ export function DrawerRegra({
 
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(8,31,40,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '24px', fontFamily: 'var(--font-family)' }}>
-            <div style={{ background: '#fff', borderRadius: '14px', width: '100%', maxWidth: '640px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 48px rgba(0,0,0,0.15)' }}>
+            <div style={{ background: '#fff', borderRadius: '14px', width: '100%', maxWidth: '640px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 48px var(--color-border-default)' }}>
 
                 {/* ── Cabeçalho ── */}
-                <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexShrink: 0 }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexShrink: 0 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <Typography variant="h2" style={{ fontSize: '18px', margin: 0, color: 'var(--color-secundaria)', fontWeight: 700 }}>
                             {regraEdicao ? (canonicoSelecionado?.nome_canonico ?? 'Editar Personalização') : 'Nova Personalização'}
                         </Typography>
                         <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                             {canonicoSelecionado?.instituicoes_visoes.map(inst => (
-                                <span key={inst} style={{ background: '#E5E7EB', color: '#374151', fontSize: '9px', fontWeight: 800, padding: '3px 7px', borderRadius: '4px' }}>{inst}</span>
+                                <span key={inst} style={{ background: 'var(--color-border-subtle)', color: 'var(--color-text-primary)', fontSize: '9px', fontWeight: 700, padding: '3px 7px', borderRadius: '4px' }}>{inst}</span>
                             ))}
-                            <Badge variant="ghost" style={{ fontSize: '9px', background: formEscopo === 'CLIENTE' ? '#FFF7ED' : '#ECFDF5', color: formEscopo === 'CLIENTE' ? '#C2410C' : '#047857' }}>
+                            <Badge variant="ghost" style={{ fontSize: '9px', background: formEscopo === 'CLIENTE' ? '#FFF7ED' : '#ECFDF5', color: formEscopo === 'CLIENTE' ? 'var(--color-warning-text)' : 'var(--color-success-text)' }}>
                                 {formEscopo === 'CLIENTE' ? 'Cliente específico' : 'Carteira global'}
                             </Badge>
                         </div>
                     </div>
-                    <X size={20} color="#9CA3AF" style={{ cursor: 'pointer', flexShrink: 0 }} onClick={onClose} />
+                    <X size={20} color="var(--color-text-muted)" style={{ cursor: 'pointer', flexShrink: 0 }} onClick={onClose} />
                 </div>
 
                 {/* ── Corpo ── (overflow visible: dropdowns dos Combobox não são cortados) */}
                 <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '22px', overflowY: 'auto' }}>
 
                     {aviso && (
-                        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: '#92400E', lineHeight: 1.5 }}>
+                        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '8px', padding: '12px 14px', fontSize: '12px', color: 'var(--color-warning-text)', lineHeight: 1.5 }}>
                             {aviso}
                         </div>
                     )}
 
                     {/* ── Alcance (topo) ── */}
                     <section style={{ position: 'relative', zIndex: 60 }}>
-                        <Typography variant="p" style={{ fontSize: '11px', fontWeight: 800, color: '#D97706', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                        <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-warning-solid)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
                             Alcance da regra
                         </Typography>
-                        <div style={{ background: 'rgba(245,158,11,0.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(245,158,11,0.15)' }}>
+                        <div style={{ background: 'var(--color-warning-bg)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(245,158,11,0.15)' }}>
                             <div style={{ display: 'flex', gap: '24px', marginBottom: formEscopo === 'CLIENTE' ? '14px' : '0' }}>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: 500, color: 'var(--color-secundaria)' }}>
                                     <input type="radio" checked={formEscopo === 'GLOBAL'} onChange={() => setFormEscopo('GLOBAL')} style={{ accentColor: 'var(--color-alerta)' }} />
@@ -201,7 +201,7 @@ export function DrawerRegra({
                             <input
                                 disabled
                                 value={canonicoSelecionado ? canonicoSelecionado.nome_canonico : '—'}
-                                style={{ ...ctrlStyle, background: '#F3F4F6', color: '#6B7280' }}
+                                style={{ ...ctrlStyle, background: 'var(--color-surface-sunken)', color: 'var(--color-text-secondary)' }}
                             />
                         ) : (
                             <Combobox options={opcoesAtivos} value={formCanonicoId} onChange={setFormCanonicoId} placeholder="Pesquise o ativo canônico..." />
@@ -210,10 +210,10 @@ export function DrawerRegra({
 
                     {/* ── Personalização ── */}
                     <section>
-                        <Typography variant="p" style={{ fontSize: '11px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                        <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
                             Personalização
                         </Typography>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: '#F9FAFB', padding: '16px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', background: 'var(--gray-50)', padding: '16px', borderRadius: '8px', border: '1px solid var(--color-surface-sunken)' }}>
 
                             {/* Apelido */}
                             <div>
@@ -248,12 +248,12 @@ export function DrawerRegra({
                     {/* ── Visão Avere (Master) — referência da classificação canônica ── */}
                     {canonicoSelecionado && (
                         <section>
-                            <Typography variant="p" style={{ fontSize: '11px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                            <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
                                 Visão Avere (Master)
                             </Typography>
-                            <div style={{ background: 'rgba(0,131,203,0.05)', border: '1px solid rgba(0,131,203,0.2)', borderRadius: '8px', padding: '14px 16px' }}>
+                            <div style={{ background: 'var(--color-accent-subtle)', border: '1px solid rgba(0,131,203,0.2)', borderRadius: '8px', padding: '14px 16px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                                    <span style={{ background: '#fff', color: 'var(--color-primaria)', fontSize: '10px', fontWeight: 800, padding: '3px 8px', borderRadius: '4px', letterSpacing: '0.05em' }}>AVERE</span>
+                                    <span style={{ background: '#fff', color: 'var(--color-primaria)', fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', letterSpacing: '0.05em' }}>AVERE</span>
                                     <Typography variant="p" style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-primaria)', margin: 0 }}>Classificação canônica atual</Typography>
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 16px' }}>
@@ -271,7 +271,7 @@ export function DrawerRegra({
                     {/* ── Como cada instituição vê este ativo (referência) ── */}
                     {canonicoSelecionado && canonicoSelecionado.visoes.length > 0 && (
                         <section>
-                            <Typography variant="p" style={{ fontSize: '11px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                            <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
                                 Como cada instituição vê este ativo ({canonicoSelecionado.visoes.length})
                             </Typography>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -285,9 +285,9 @@ export function DrawerRegra({
                 </div>
 
                 {/* ── Rodapé ── */}
-                <div style={{ padding: '16px 24px', background: '#F9FAFB', borderTop: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', gap: '12px', borderBottomLeftRadius: '14px', borderBottomRightRadius: '14px', flexShrink: 0 }}>
+                <div style={{ padding: '16px 24px', background: 'var(--gray-50)', borderTop: '1px solid var(--color-surface-sunken)', display: 'flex', justifyContent: 'space-between', gap: '12px', borderBottomLeftRadius: '14px', borderBottomRightRadius: '14px', flexShrink: 0 }}>
                     {regraEdicao ? (
-                        <Button variant="outline" onClick={() => onDelete(regraEdicao.id)} style={{ color: '#EF4444', borderColor: 'rgba(239,68,68,0.3)' }}>
+                        <Button variant="outline" onClick={() => onDelete(regraEdicao.id)} style={{ color: 'var(--color-danger-solid)', borderColor: 'rgba(239,68,68,0.3)' }}>
                             <Trash2 size={16} style={{ marginRight: '8px' }} /> Excluir
                         </Button>
                     ) : <span />}

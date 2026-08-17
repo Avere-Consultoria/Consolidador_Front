@@ -37,16 +37,16 @@ function SortableItem({ setor, onEdit, onDelete }: {
             <div {...attributes} {...listeners} style={{ cursor: 'grab', opacity: 0.3, marginRight: '12px' }}>
                 <GripVertical size={20} />
             </div>
-            <div style={{ width: '50px', fontSize: '11px', fontWeight: 700, color: '#9CA3AF' }}>
+            <div style={{ width: '50px', fontSize: '11px', fontWeight: 700, color: 'var(--color-text-muted)' }}>
                 {String(setor.ordem_exibicao).padStart(2, '0')}
             </div>
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: setor.cor_hex, border: '1px solid rgba(0,0,0,0.1)', flexShrink: 0 }} />
+                <div style={{ width: '16px', height: '16px', borderRadius: '4px', background: setor.cor_hex, border: '1px solid var(--color-border-subtle)', flexShrink: 0 }} />
                 <Typography variant="p" style={{ fontWeight: 600, fontSize: '14px', margin: 0, lineHeight: 1 }}>{setor.nome}</Typography>
             </div>
             <div style={{ display: 'flex', gap: '16px' }}>
-                <Edit2 size={16} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={() => onEdit(setor)} />
-                <Trash2 size={16} color="#EF4444" style={{ cursor: 'pointer', opacity: 0.8 }} onClick={() => onDelete(setor.id)} />
+                <Edit2 size={16} color="var(--color-text-muted)" style={{ cursor: 'pointer' }} onClick={() => onEdit(setor)} />
+                <Trash2 size={16} color="var(--color-danger-solid)" style={{ cursor: 'pointer', opacity: 0.8 }} onClick={() => onDelete(setor.id)} />
             </div>
         </div>
     );
@@ -186,7 +186,7 @@ export default function SetoresTab() {
                             onChange={e => setFormData({ ...formData, nome: e.target.value })}
                         />
                         <div>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6B7280', marginBottom: '8px' }}>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: '8px' }}>
                                 Cor de identificação (HEX)
                             </label>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

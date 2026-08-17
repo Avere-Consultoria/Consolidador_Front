@@ -46,7 +46,7 @@ const isAgoraNome = (nome: string | undefined) => /agora|ágora/i.test(nome || '
 
 const thStyle: React.CSSProperties = {
     padding: '12px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase',
-    letterSpacing: '0.05em', color: '#9CA3AF', textAlign: 'left', whiteSpace: 'nowrap',
+    letterSpacing: '0.05em', color: 'var(--color-text-muted)', textAlign: 'left', whiteSpace: 'nowrap',
 };
 const tdStyle: React.CSSProperties = { padding: '12px 16px', verticalAlign: 'middle' };
 
@@ -54,7 +54,7 @@ const tdStyle: React.CSSProperties = { padding: '12px 16px', verticalAlign: 'mid
 // conflito Radix Select × Dialog) e com dropdown do SO (nunca recortado).
 const selectNativo: React.CSSProperties = {
     width: '100%', height: '40px', padding: '0 32px 0 12px', borderRadius: '8px',
-    border: '1px solid rgba(0,0,0,0.15)', fontSize: '14px', fontFamily: 'var(--font-family)',
+    border: '1px solid var(--color-border-default)', fontSize: '14px', fontFamily: 'var(--font-family)',
     background: '#fff', outline: 'none', cursor: 'pointer', appearance: 'none',
 };
 
@@ -73,9 +73,9 @@ function ContaSortable({ conta, instituicoes, tipoDoc, onChange, onRemove }: {
         transition,
         zIndex: isDragging ? 10 : 1,
         opacity: isDragging ? 0.7 : 1,
-        border: '1px solid rgba(0,0,0,0.08)', borderRadius: '10px', padding: '12px',
-        background: isDragging ? '#fff' : (agora ? 'rgba(0,131,203,0.04)' : 'rgba(0,0,0,0.015)'),
-        boxShadow: isDragging ? '0 6px 16px rgba(0,0,0,0.12)' : 'none',
+        border: '1px solid var(--color-border-subtle)', borderRadius: '10px', padding: '12px',
+        background: isDragging ? '#fff' : (agora ? 'var(--color-accent-subtle)' : 'rgba(0,0,0,0.015)'),
+        boxShadow: isDragging ? '0 6px 16px var(--color-border-default)' : 'none',
     };
     return (
         <div ref={setNodeRef} style={style}>
@@ -84,12 +84,12 @@ function ContaSortable({ conta, instituicoes, tipoDoc, onChange, onRemove }: {
                     <GripVertical size={18} />
                 </div>
                 <div>
-                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: '#9CA3AF', marginBottom: '4px' }}>Instituição</label>
+                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '4px' }}>Instituição</label>
                     <div style={{ position: 'relative' }}>
                         <select
                             value={conta.instituicao_id}
                             onChange={e => onChange({ instituicao_id: e.target.value })}
-                            style={{ ...selectNativo, color: conta.instituicao_id ? 'var(--color-secundaria)' : '#9CA3AF' }}
+                            style={{ ...selectNativo, color: conta.instituicao_id ? 'var(--color-secundaria)' : 'var(--color-text-muted)' }}
                         >
                             <option value="">Selecione...</option>
                             {instituicoes.map(i => (
@@ -101,7 +101,7 @@ function ContaSortable({ conta, instituicoes, tipoDoc, onChange, onRemove }: {
                 </div>
                 <TextField label="Apelido (opcional)" placeholder="ex.: XP Trader" value={conta.apelido || ''} onChange={e => onChange({ apelido: e.target.value })} />
                 <TextField label={agora ? 'Conta (CLBC)' : 'Código da conta'} value={conta.codigo || ''} onChange={e => onChange({ codigo: e.target.value })} />
-                <Trash2 size={18} color="#EF4444" style={{ cursor: 'pointer', marginBottom: '10px' }} onClick={onRemove} />
+                <Trash2 size={18} color="var(--color-danger-solid)" style={{ cursor: 'pointer', marginBottom: '10px' }} onClick={onRemove} />
             </div>
             {agora && (
                 <div style={{ marginTop: '10px', paddingLeft: '28px' }}>
@@ -111,7 +111,7 @@ function ContaSortable({ conta, instituicoes, tipoDoc, onChange, onRemove }: {
                         value={conta.documento || ''}
                         onChange={e => onChange({ documento: maskDoc(e.target.value, tipoDoc) })}
                     />
-                    <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#9CA3AF' }}>A Ágora identifica a conta pelo documento + conta. As demais usam só o código.</p>
+                    <p style={{ margin: '4px 0 0', fontSize: '10px', color: 'var(--color-text-muted)' }}>A Ágora identifica a conta pelo documento + conta. As demais usam só o código.</p>
                 </div>
             )}
         </div>
@@ -322,14 +322,14 @@ export default function CadastroClientes() {
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
                 <div>
                     <Typography variant="h1" style={{ fontWeight: 700 }}>Base de Clientes</Typography>
-                    <Typography variant="p" style={{ opacity: 0.6 }}>Gestão de vínculos e contas por instituição.</Typography>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>Gestão de vínculos e contas por instituição.</Typography>
                 </div>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                     <TextField leftIcon={Search} placeholder="Pesquisar por nome ou cód. Avere..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '280px' }} />
                     <select
                         value={filtroConsultor}
                         onChange={e => setFiltroConsultor(e.target.value)}
-                        style={{ height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.12)', fontSize: '13px', fontFamily: 'var(--font-family)', color: filtroConsultor ? 'var(--color-secundaria)' : '#9CA3AF', background: '#fff', outline: 'none', cursor: 'pointer', minWidth: '200px', appearance: 'auto' }}
+                        style={{ height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--color-border-default)', fontSize: '13px', fontFamily: 'var(--font-family)', color: filtroConsultor ? 'var(--color-secundaria)' : 'var(--color-text-muted)', background: '#fff', outline: 'none', cursor: 'pointer', minWidth: '200px', appearance: 'auto' }}
                     >
                         <option value="">Todos os consultores</option>
                         {consultores.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
@@ -337,7 +337,7 @@ export default function CadastroClientes() {
                     <select
                         value={filtroInstituicao}
                         onChange={e => setFiltroInstituicao(e.target.value)}
-                        style={{ height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.12)', fontSize: '13px', fontFamily: 'var(--font-family)', color: filtroInstituicao ? 'var(--color-secundaria)' : '#9CA3AF', background: '#fff', outline: 'none', cursor: 'pointer', minWidth: '180px', appearance: 'auto' }}
+                        style={{ height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--color-border-default)', fontSize: '13px', fontFamily: 'var(--font-family)', color: filtroInstituicao ? 'var(--color-secundaria)' : 'var(--color-text-muted)', background: '#fff', outline: 'none', cursor: 'pointer', minWidth: '180px', appearance: 'auto' }}
                     >
                         <option value="">Todas as instituições</option>
                         {instituicoes.map(i => <option key={i.id} value={i.id}>{i.tipo === 'API' ? i.nome : `${i.nome} (manual)`}</option>)}
@@ -351,7 +351,7 @@ export default function CadastroClientes() {
             <Card style={{ padding: 0, overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                        <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #EEEEEE' }}>
+                        <tr style={{ background: 'var(--gray-50)', borderBottom: '1px solid var(--color-border-subtle)' }}>
                             <th style={thStyle}>Nome</th>
                             <th style={thStyle}>Cód. Avere</th>
                             <th style={thStyle}>Consultor</th>
@@ -363,7 +363,7 @@ export default function CadastroClientes() {
                         {linhasFiltradas.map(l => {
                             const contas = contasPorCliente[l.id] || [];
                             return (
-                                <tr key={l.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                                <tr key={l.id} style={{ borderBottom: '1px solid var(--color-surface-sunken)' }}>
                                     <td style={{ ...tdStyle, minWidth: '160px' }}>
                                         <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-secundaria)' }}>{l.nome}</span>
                                     </td>
@@ -385,8 +385,8 @@ export default function CadastroClientes() {
                                                     return (
                                                         <span key={c.id || i} title={detalhe || ''} style={{
                                                             display: 'inline-flex', alignItems: 'baseline', gap: '6px',
-                                                            background: 'rgba(0,0,0,0.04)', borderRadius: '6px', padding: '3px 8px',
-                                                            fontSize: '11px', fontFamily: 'Montserrat, sans-serif',
+                                                            background: 'var(--color-surface-sunken)', borderRadius: '6px', padding: '3px 8px',
+                                                            fontSize: '11px',
                                                         }}>
                                                             <strong style={{ color: 'var(--color-secundaria)' }}>{labelConta(c, contas)}</strong>
                                                             <span style={{ fontFamily: 'monospace', opacity: 0.6 }}>{detalhe || '—'}</span>
@@ -398,8 +398,8 @@ export default function CadastroClientes() {
                                     </td>
                                     <td style={tdStyle}>
                                         <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-                                            <Pencil size={16} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={() => handleEditarNoModal(l)} />
-                                            <Trash2 size={16} color="#EF4444" style={{ cursor: 'pointer', opacity: 0.8 }} onClick={() => handleExcluirCliente(l.id, l.nome)} />
+                                            <Pencil size={16} color="var(--color-text-muted)" style={{ cursor: 'pointer' }} onClick={() => handleEditarNoModal(l)} />
+                                            <Trash2 size={16} color="var(--color-danger-solid)" style={{ cursor: 'pointer', opacity: 0.8 }} onClick={() => handleExcluirCliente(l.id, l.nome)} />
                                         </div>
                                     </td>
                                 </tr>
@@ -422,8 +422,8 @@ export default function CadastroClientes() {
                     <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
                         {/* Perfil PF/PJ — governa labels e a máscara do documento (Ágora) */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tipo de cliente</label>
-                            <div style={{ display: 'flex', gap: '4px', background: 'rgba(0,0,0,0.05)', padding: '3px', borderRadius: '8px' }}>
+                            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tipo de cliente</label>
+                            <div style={{ display: 'flex', gap: '4px', background: 'var(--color-surface-sunken)', padding: '3px', borderRadius: '8px' }}>
                                 {([['PF', 'Pessoa Física'], ['PJ', 'Pessoa Jurídica']] as const).map(([t, rotulo]) => (
                                     <button key={t} type="button"
                                         onClick={() => {
@@ -433,10 +433,10 @@ export default function CadastroClientes() {
                                         }}
                                         style={{
                                             border: 'none', cursor: 'pointer', height: '26px', padding: '0 14px', borderRadius: '6px',
-                                            fontSize: '11px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif',
+                                            fontSize: '11px', fontWeight: 700,
                                             background: tipoDoc === t ? '#fff' : 'transparent',
-                                            color: tipoDoc === t ? 'var(--color-secundaria)' : '#9CA3AF',
-                                            boxShadow: tipoDoc === t ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
+                                            color: tipoDoc === t ? 'var(--color-secundaria)' : 'var(--color-text-muted)',
+                                            boxShadow: tipoDoc === t ? '0 1px 3px var(--color-border-default)' : 'none',
                                         }}>
                                         {rotulo}
                                     </button>
@@ -450,12 +450,12 @@ export default function CadastroClientes() {
                                 value={formCliente.nome || ''}
                                 onChange={e => { setFormCliente(p => ({ ...p, nome: e.target.value })); if (erros.nome) setErros(er => ({ ...er, nome: undefined })); }}
                             />
-                            {erros.nome && <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#EF4444' }}>{erros.nome}</p>}
+                            {erros.nome && <p style={{ margin: '4px 0 0', fontSize: '11px', color: 'var(--color-danger-solid)' }}>{erros.nome}</p>}
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'start' }}>
                             <div>
-                                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Consultor Responsável</label>
+                                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Consultor Responsável</label>
                                 <Combobox options={opcoesConsultores} value={formCliente.consultor_id || ''} onChange={(val) => setFormCliente(p => ({ ...p, consultor_id: val || null }))} placeholder="Selecione um consultor..." />
                             </div>
                             <div>
@@ -464,7 +464,7 @@ export default function CadastroClientes() {
                                     value={formCliente.codigo_avere || ''}
                                     onChange={e => { setFormCliente(p => ({ ...p, codigo_avere: e.target.value })); if (erros.codigo_avere) setErros(er => ({ ...er, codigo_avere: undefined })); }}
                                 />
-                                {erros.codigo_avere && <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#EF4444' }}>{erros.codigo_avere}</p>}
+                                {erros.codigo_avere && <p style={{ margin: '4px 0 0', fontSize: '11px', color: 'var(--color-danger-solid)' }}>{erros.codigo_avere}</p>}
                             </div>
                         </div>
 
@@ -474,20 +474,20 @@ export default function CadastroClientes() {
                                 value={formCliente.documento || ''}
                                 onChange={e => setFormCliente(p => ({ ...p, documento: maskDoc(e.target.value, tipoDoc) }))}
                             />
-                            <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#9CA3AF' }}>
+                            <p style={{ margin: '4px 0 0', fontSize: '10px', color: 'var(--color-text-muted)' }}>
                                 Opcional. Identifica o cliente em fontes que indexam por documento (ex.: Avenue por CPF).
                             </p>
                         </div>
 
                         {/* ── Contas por instituição ── */}
-                        <div style={{ borderTop: '1px solid rgba(0,0,0,0.08)', paddingTop: '16px' }}>
+                        <div style={{ borderTop: '1px solid var(--color-border-subtle)', paddingTop: '16px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                <label style={{ fontSize: '11px', fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contas</label>
-                                <span style={{ fontSize: '10px', color: '#9CA3AF' }}>Um cliente pode ter várias contas na mesma instituição.</span>
+                                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contas</label>
+                                <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>Um cliente pode ter várias contas na mesma instituição.</span>
                             </div>
 
                             {formContas.length === 0 && (
-                                <p style={{ fontSize: '12px', color: '#9CA3AF', margin: '0 0 10px' }}>Nenhuma conta. Adicione abaixo.</p>
+                                <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', margin: '0 0 10px' }}>Nenhuma conta. Adicione abaixo.</p>
                             )}
 
                             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleContasDragEnd}>

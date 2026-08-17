@@ -33,11 +33,11 @@ interface SyncLog {
 
 // ── Segmentação BCB (Res. CMN 4.553/2017) ───────────────────────────────────
 const PORTE_INFO: Record<string, { cor: string; desc: string }> = {
-    S1: { cor: '#15803D', desc: 'Sistêmico (≥10% PIB)' },
+    S1: { cor: 'var(--color-success-text)', desc: 'Sistêmico (≥10% PIB)' },
     S2: { cor: '#22C55E', desc: 'Grande (1–10% PIB)' },
     S3: { cor: '#0083CB', desc: 'Médio (0,1–1% PIB)' },
-    S4: { cor: '#F59E0B', desc: 'Pequeno (<0,1% PIB)' },
-    S5: { cor: '#EF4444', desc: 'Micro / Financeira' },
+    S4: { cor: 'var(--color-warning-solid)', desc: 'Pequeno (<0,1% PIB)' },
+    S5: { cor: 'var(--color-danger-solid)', desc: 'Micro / Financeira' },
 };
 const PORTES = ['S1', 'S2', 'S3', 'S4', 'S5'];
 
@@ -45,15 +45,15 @@ function PorteBadge({ porte, origem }: { porte: string | null; origem: string | 
     if (!porte) {
         return <Badge variant="ghost" style={{ fontSize: 10, opacity: 0.4 }}>sem porte</Badge>;
     }
-    const info = PORTE_INFO[porte] ?? { cor: '#6B7280', desc: porte };
+    const info = PORTE_INFO[porte] ?? { cor: 'var(--color-text-secondary)', desc: porte };
     return (
         <span
             title={`${info.desc}${origem === 'MANUAL' ? ' · definido manualmente' : ' · fonte BCB'}`}
             style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4,
                 background: `${info.cor}1A`, color: info.cor,
-                fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 6,
-                fontFamily: 'Montserrat, sans-serif',
+                fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
+                fontFamily: 'var(--font-sans)',
                 border: origem === 'MANUAL' ? `1px dashed ${info.cor}` : `1px solid ${info.cor}33`,
             }}
         >
@@ -174,7 +174,7 @@ export default function FGCTab() {
             <Card>
                 <CardContent style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '10px', borderRadius: '10px', color: '#10B981' }}>
+                        <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '10px', borderRadius: '10px', color: 'var(--color-success-text)' }}>
                             <ShieldCheck size={22} />
                         </div>
                         <div>
@@ -216,7 +216,7 @@ export default function FGCTab() {
             {ultimoLog?.status === 'error' && (
                 <Card style={{ border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.05)' }}>
                     <CardContent style={{ padding: '12px 16px' }}>
-                        <Typography variant="p" style={{ fontSize: '12px', color: '#B91C1C' }}>
+                        <Typography variant="p" style={{ fontSize: '12px', color: 'var(--color-danger-text)' }}>
                             <strong>Erro na última sync:</strong> {ultimoLog.erro}
                         </Typography>
                     </CardContent>
@@ -283,7 +283,7 @@ export default function FGCTab() {
                                 {aberto && (
                                     <div style={{ padding: '0 16px 14px 42px', display: 'flex', flexDirection: 'column', gap: 4 }}>
                                         {/* Override de porte */}
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', marginBottom: 4, borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', marginBottom: 4, borderBottom: '1px solid var(--color-border-subtle)' }}>
                                             <Typography variant="p" style={{ fontSize: 11, fontWeight: 600, opacity: 0.6 }}>Porte:</Typography>
                                             <select
                                                 value={c.porte ?? ''}
@@ -291,7 +291,7 @@ export default function FGCTab() {
                                                 onClick={(e) => e.stopPropagation()}
                                                 style={{
                                                     fontSize: 12, padding: '4px 8px', borderRadius: 6,
-                                                    border: '1px solid rgba(0,0,0,0.15)', fontFamily: 'Montserrat, sans-serif',
+                                                    border: '1px solid var(--color-border-default)',
                                                     background: '#fff', cursor: 'pointer',
                                                 }}
                                             >
@@ -310,7 +310,7 @@ export default function FGCTab() {
                                                 <span style={{ flex: 1 }}>{i.nome_instituicao}</span>
                                                 {i.cnpj && <span style={{ fontSize: 10, opacity: 0.4 }}>{i.cnpj}</span>}
                                                 {i.link_fgc && (
-                                                    <a href={i.link_fgc} target="_blank" rel="noreferrer" style={{ fontSize: 11, color: '#0083CB' }}>
+                                                    <a href={i.link_fgc} target="_blank" rel="noreferrer" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-link)' }}>
                                                         FGC ↗
                                                     </a>
                                                 )}

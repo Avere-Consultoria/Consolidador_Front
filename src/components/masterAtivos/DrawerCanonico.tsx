@@ -51,19 +51,19 @@ const SUBTIPOS_BANCARIO = new Set(['CDB', 'LCI', 'LCA', 'LF', 'LIG', 'RDB', 'LH'
 const isBancario = (subTipo: string) => SUBTIPOS_BANCARIO.has((subTipo || '').toUpperCase().trim());
 
 const CORES_INST: Record<string, { bg: string; fg: string; border: string }> = {
-    BTG:    { bg: '#E0F2FE', fg: '#0369A1', border: '#7DD3FC' },
-    XP:     { bg: '#FFEDD5', fg: '#C2410C', border: '#FDBA74' },
-    AVENUE: { bg: '#FEF3C7', fg: '#92400E', border: '#FCD34D' },
-    AGORA:  { bg: '#DCFCE7', fg: '#15803D', border: '#86EFAC' },
+    BTG:    { bg: 'var(--color-info-bg)', fg: 'var(--color-info-text)', border: '#7DD3FC' },
+    XP:     { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)', border: 'var(--color-warning-border)' },
+    AVENUE: { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)', border: 'var(--color-warning-border)' },
+    AGORA:  { bg: 'var(--color-success-bg)', fg: 'var(--color-success-text)', border: 'var(--color-success-border)' },
 };
 
 const ctrlStyle: React.CSSProperties = {
     width: '100%', height: '38px', boxSizing: 'border-box',
-    padding: '0 10px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.12)',
+    padding: '0 10px', borderRadius: '8px', border: '1px solid var(--color-border-default)',
     fontSize: '13px', fontFamily: 'var(--font-family)', outline: 'none', background: '#fff',
 };
 const labelStyle: React.CSSProperties = {
-    display: 'block', fontSize: '10px', fontWeight: 700, color: '#6B7280',
+    display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--color-text-secondary)',
     textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '4px',
 };
 
@@ -122,22 +122,22 @@ function parseTaxa(taxa?: string | null): { indexador: string; percentual: numbe
 function Campo({ label, valor }: { label: string; valor: React.ReactNode }) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <Typography variant="p" style={{ fontSize: '9px', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0, lineHeight: 1.2 }}>
+            <Typography variant="p" style={{ fontSize: '9px', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0, lineHeight: 1.2 }}>
                 {label}
             </Typography>
-            <Typography variant="p" style={{ fontSize: '13px', fontWeight: 600, color: '#111827', margin: 0, lineHeight: 1.3 }}>
-                {valor || <span style={{ color: '#9CA3AF', fontStyle: 'italic', fontWeight: 400 }}>—</span>}
+            <Typography variant="p" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)', margin: 0, lineHeight: 1.3 }}>
+                {valor || <span style={{ color: 'var(--color-text-muted)', fontStyle: 'italic', fontWeight: 400 }}>—</span>}
             </Typography>
         </div>
     );
 }
 
 function CardVisaoInstitucional({ visao }: { visao: VisaoInstitucionalDetalhe }) {
-    const cor = CORES_INST[visao.instituicao_origem] ?? { bg: '#F3F4F6', fg: '#374151', border: '#D1D5DB' };
+    const cor = CORES_INST[visao.instituicao_origem] ?? { bg: 'var(--color-surface-sunken)', fg: 'var(--color-text-primary)', border: 'var(--color-border-default)' };
     return (
         <div style={{ background: cor.bg, border: `1px solid ${cor.border}`, borderRadius: '8px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ background: '#fff', color: cor.fg, fontSize: '10px', fontWeight: 800, padding: '3px 8px', borderRadius: '4px', letterSpacing: '0.05em' }}>
+                <span style={{ background: '#fff', color: cor.fg, fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', letterSpacing: '0.05em' }}>
                     {visao.instituicao_origem}
                 </span>
                 <Typography variant="p" style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, color: cor.fg }}>
@@ -246,38 +246,38 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
             onClick={onClose}
         >
             <div
-                style={{ background: '#fff', borderRadius: '14px', width: '100%', maxWidth: '720px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 48px rgba(0,0,0,0.15)' }}
+                style={{ background: '#fff', borderRadius: '14px', width: '100%', maxWidth: '720px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 48px var(--color-border-default)' }}
                 onClick={e => e.stopPropagation()}
             >
                 {/* ── Cabeçalho ── */}
-                <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexShrink: 0 }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', flexShrink: 0 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <Typography variant="h2" style={{ fontSize: '18px', margin: 0, color: 'var(--color-secundaria)', fontWeight: 700 }}>
                             {canonico.nome_canonico}
                         </Typography>
                         {canonico.visoes[0] && (
                             <div style={{ display: 'flex', gap: '6px', alignItems: 'baseline', marginTop: '4px' }}>
-                                <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 700, color: '#6B7280' }}>
+                                <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 700, color: 'var(--color-text-secondary)' }}>
                                     {canonico.visoes[0].codigo_identificador}
                                 </span>
-                                <span style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 600 }}>
+                                <span style={{ fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 600 }}>
                                     {canonico.visoes[0].tipo_identificador}
                                 </span>
                             </div>
                         )}
                         <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                             {instituicoesDistintas.map(inst => {
-                                const cor = CORES_INST[inst] ?? { bg: '#E5E7EB', fg: '#374151' };
-                                return <span key={inst} style={{ background: cor.bg, color: cor.fg, fontSize: '9px', fontWeight: 800, padding: '3px 7px', borderRadius: '4px' }}>{inst}</span>;
+                                const cor = CORES_INST[inst] ?? { bg: 'var(--color-border-subtle)', fg: 'var(--color-text-primary)' };
+                                return <span key={inst} style={{ background: cor.bg, color: cor.fg, fontSize: '9px', fontWeight: 700, padding: '3px 7px', borderRadius: '4px' }}>{inst}</span>;
                             })}
-                            <Badge variant="ghost" style={{ fontSize: '9px', background: bancario ? 'rgba(16,185,129,0.1)' : 'rgba(124,58,237,0.1)', color: bancario ? '#10B981' : '#7C3AED' }}>
+                            <Badge variant="ghost" style={{ fontSize: '9px', background: bancario ? 'rgba(16,185,129,0.1)' : 'rgba(124,58,237,0.1)', color: bancario ? 'var(--color-success-text)' : '#7C3AED' }}>
                                 {bancario ? '🏦 Bancário/FGC' : '🏭 Privado'}
                             </Badge>
                             {canonico.is_fii && <Badge intent="primaria" variant="ghost" style={{ fontSize: '9px' }}>FII</Badge>}
                             {canonico.is_coe && <Badge intent="alerta"   variant="ghost" style={{ fontSize: '9px' }}>COE</Badge>}
                         </div>
                     </div>
-                    <X size={20} color="#9CA3AF" style={{ cursor: 'pointer', flexShrink: 0 }} onClick={onClose} />
+                    <X size={20} color="var(--color-text-muted)" style={{ cursor: 'pointer', flexShrink: 0 }} onClick={onClose} />
                 </div>
 
                 {/* ── Corpo ── */}
@@ -285,10 +285,10 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
 
                     {/* Classificação Avere (EDITÁVEL) */}
                     <section>
-                        <Typography variant="p" style={{ fontSize: '11px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                        <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
                             Classificação Avere
                         </Typography>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', background: '#F9FAFB', padding: '16px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', background: 'var(--gray-50)', padding: '16px', borderRadius: '8px', border: '1px solid var(--color-surface-sunken)' }}>
                             {/* Risco (world-aware) — full */}
                             <div>
                                 <label style={labelStyle}>{bancario ? 'Conglomerado (FGC)' : 'Emissor (risco)'}</label>
@@ -308,7 +308,7 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
                             <div>
                                 <label style={labelStyle}>Classe Avere</label>
                                 <select
-                                    style={{ ...ctrlStyle, background: form.classe_avere ? '#fff' : 'rgba(245,158,11,0.05)' }}
+                                    style={{ ...ctrlStyle, background: form.classe_avere ? '#fff' : 'var(--color-warning-bg)' }}
                                     value={form.classe_avere}
                                     onChange={e => setForm(p => ({ ...p, classe_avere: e.target.value }))}
                                 >
@@ -327,7 +327,7 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
                                 </div>
                                 <div>
                                     <label style={labelStyle}>Vencimento (API)</label>
-                                    <input type="date" disabled style={{ ...ctrlStyle, background: '#F3F4F6', color: '#6B7280' }}
+                                    <input type="date" disabled style={{ ...ctrlStyle, background: 'var(--color-surface-sunken)', color: 'var(--color-text-secondary)' }}
                                         value={form.data_vencimento} />
                                 </div>
                             </div>
@@ -361,14 +361,14 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
                                         <label style={labelStyle}>Taxa (saída)</label>
                                         <input disabled
                                             value={derivarTaxa(form.benchmark, detalhes.percentual_indexador, detalhes.spread) || '—'}
-                                            style={{ ...ctrlStyle, background: '#F3F4F6', color: '#374151', fontWeight: 700 }} />
+                                            style={{ ...ctrlStyle, background: 'var(--color-surface-sunken)', color: 'var(--color-text-primary)', fontWeight: 700 }} />
                                     </div>
                                 </>
                             )}
 
                             {/* Info read-only (origem da API) — separada da edição */}
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '12px', fontSize: '12px', color: '#6B7280' }}>
-                                <span><strong style={{ color: '#374151' }}>Sub-tipo:</strong> {canonico.sub_tipo_canonico || '—'}</span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', borderTop: '1px solid var(--color-border-subtle)', paddingTop: '12px', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                                <span><strong style={{ color: 'var(--color-text-primary)' }}>Sub-tipo:</strong> {canonico.sub_tipo_canonico || '—'}</span>
                             </div>
                         </div>
                     </section>
@@ -376,11 +376,11 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
                     {/* Detalhes do ativo (biblioteca) — curável por subtipo (schema-driven) */}
                     {camposBibliotecaPorSubtipo(canonico.sub_tipo_canonico).length > 0 && (
                         <section>
-                            <Typography variant="p" style={{ fontSize: '11px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                            <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
                                 Detalhes do ativo · {canonico.sub_tipo_canonico}
-                                <span style={{ fontWeight: 500, textTransform: 'none', color: '#9CA3AF' }}> (biblioteca)</span>
+                                <span style={{ fontWeight: 500, textTransform: 'none', color: 'var(--color-text-muted)' }}> (biblioteca)</span>
                             </Typography>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', background: '#F9FAFB', padding: '16px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', background: 'var(--gray-50)', padding: '16px', borderRadius: '8px', border: '1px solid var(--color-surface-sunken)' }}>
                                 {camposBibliotecaPorSubtipo(canonico.sub_tipo_canonico).map(campo => (
                                     <div key={campo.key}>
                                         <label style={labelStyle}>{campo.label}</label>
@@ -415,11 +415,11 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
 
                     {/* Visões Institucionais */}
                     <section>
-                        <Typography variant="p" style={{ fontSize: '11px', fontWeight: 800, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
+                        <Typography variant="p" style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '12px' }}>
                             Como cada instituição vê este ativo ({canonico.visoes.length})
                         </Typography>
                         {canonico.visoes.length === 0 ? (
-                            <Typography variant="p" style={{ fontSize: '13px', color: '#9CA3AF', fontStyle: 'italic' }}>
+                            <Typography variant="p" style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
                                 Nenhuma visão institucional registrada ainda.
                             </Typography>
                         ) : (
@@ -434,7 +434,7 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
                 </div>
 
                 {/* ── Rodapé ── */}
-                <div style={{ padding: '16px 24px', background: '#F9FAFB', borderTop: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'space-between', gap: '12px', borderBottomLeftRadius: '14px', borderBottomRightRadius: '14px', flexShrink: 0 }}>
+                <div style={{ padding: '16px 24px', background: 'var(--gray-50)', borderTop: '1px solid var(--color-surface-sunken)', display: 'flex', justifyContent: 'space-between', gap: '12px', borderBottomLeftRadius: '14px', borderBottomRightRadius: '14px', flexShrink: 0 }}>
                     <Button variant="outline" onClick={() => onFundir(canonico)}>
                         <GitMerge size={16} style={{ marginRight: '8px' }} />
                         Fundir

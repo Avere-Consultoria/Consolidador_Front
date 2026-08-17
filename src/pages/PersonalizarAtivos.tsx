@@ -10,15 +10,15 @@ import { LiquidezSubtipoConsultor } from '../components/personalizarAtivos/Liqui
 
 const thPA: React.CSSProperties = {
     padding: '12px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase',
-    letterSpacing: '0.05em', color: '#9CA3AF', textAlign: 'left', whiteSpace: 'nowrap',
+    letterSpacing: '0.05em', color: 'var(--color-text-muted)', textAlign: 'left', whiteSpace: 'nowrap',
 };
 const tdPA: React.CSSProperties = { padding: '12px 16px', verticalAlign: 'middle' };
 
 const CORES_INST: Record<string, { bg: string; fg: string }> = {
-    BTG:    { bg: '#E0F2FE', fg: '#0369A1' },
-    XP:     { bg: '#FFEDD5', fg: '#C2410C' },
-    AVENUE: { bg: '#FEF3C7', fg: '#92400E' },
-    AGORA:  { bg: '#DCFCE7', fg: '#15803D' },
+    BTG:    { bg: 'var(--color-info-bg)', fg: 'var(--color-info-text)' },
+    XP:     { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)' },
+    AVENUE: { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)' },
+    AGORA:  { bg: 'var(--color-success-bg)', fg: 'var(--color-success-text)' },
 };
 
 function fmtDataPA(iso: string | null | undefined): string {
@@ -274,12 +274,12 @@ export default function PersonalizarAtivos() {
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <div style={{ background: 'rgba(0, 131, 203, 0.1)', padding: '8px', borderRadius: '8px' }}>
+                        <div style={{ background: 'var(--color-accent-subtle)', padding: '8px', borderRadius: '8px' }}>
                             <SlidersHorizontal size={24} color="var(--color-primaria)" />
                         </div>
                         <Typography variant="h1" style={{ fontWeight: 700, fontSize: '24px' }}>Personalizar Ativos</Typography>
                     </div>
-                    <Typography variant="p" style={{ opacity: 0.6, fontSize: '14px' }}>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
                         Crie exceções de nomenclatura e classificação para carteiras específicas ou globais.
                     </Typography>
                 </div>
@@ -300,14 +300,14 @@ export default function PersonalizarAtivos() {
             </header>
 
             {!consultorContextoId && (
-                <Card style={{ padding: '16px', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                    <Typography variant="p" style={{ fontSize: '13px', color: '#92400E', margin: 0 }}>
+                <Card style={{ padding: '16px', background: 'rgba(245,158,11,0.06)', border: '1px solid var(--color-warning-border)' }}>
+                    <Typography variant="p" style={{ fontSize: '13px', color: 'var(--color-warning-text)', margin: 0 }}>
                         Selecione um <strong>consultor específico</strong> no seletor do topo para ver e criar personalizações. As exceções ficam atreladas ao consultor e refletem apenas nos clientes dele.
                     </Typography>
                 </Card>
             )}
 
-            <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid rgba(0,0,0,0.08)', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--color-border-subtle)', paddingBottom: '12px' }}>
                 <Button variant={aba === 'REGRAS' ? 'solid' : 'ghost'} onClick={() => setAba('REGRAS')}>Personalizações</Button>
                 <Button variant={aba === 'LIQUIDEZ' ? 'solid' : 'ghost'} onClick={() => setAba('LIQUIDEZ')}>Liquidez por Subtipo</Button>
             </div>
@@ -318,11 +318,11 @@ export default function PersonalizarAtivos() {
 
             {aba === 'REGRAS' && (
             <>
-            <style>{`.regra-row:hover { background: rgba(0,131,203,0.04); }`}</style>
+            <style>{`.regra-row:hover { background: var(--color-accent-subtle); }`}</style>
             <Card style={{ padding: 0, overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                        <tr style={{ background: '#F9FAFB', borderBottom: '1px solid #EEEEEE' }}>
+                        <tr style={{ background: 'var(--gray-50)', borderBottom: '1px solid var(--color-border-subtle)' }}>
                             <th style={thPA}>Ativo (Master → Personalizado)</th>
                             <th style={thPA}>Classe</th>
                             <th style={thPA}>Vencimento / Liquidez</th>
@@ -340,21 +340,21 @@ export default function PersonalizarAtivos() {
                             const vlCustom = vencLiq(item.vencimento_customizado, item.liquidez_customizada);
                             const taxa = padronizarTaxaExibicao(c?.taxa_formatada || c?.taxa_canonica) || '';
                             return (
-                                <tr key={item.id} className="regra-row" onClick={() => openEditModal(item)} style={{ borderBottom: '1px solid #F3F4F6', cursor: 'pointer' }}>
+                                <tr key={item.id} className="regra-row" onClick={() => openEditModal(item)} style={{ borderBottom: '1px solid var(--color-surface-sunken)', cursor: 'pointer' }}>
                                     {/* Ativo (cartão estilo Master) */}
                                     <td style={{ ...tdPA, minWidth: '280px' }}>
-                                        <Typography variant="p" title={item.canonico_nome} style={{ fontWeight: 700, fontSize: '13px', color: '#111827', margin: 0 }}>{item.canonico_nome}</Typography>
+                                        <Typography variant="p" title={item.canonico_nome} style={{ fontWeight: 700, fontSize: '13px', color: 'var(--color-text-primary)', margin: 0 }}>{item.canonico_nome}</Typography>
                                         <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-primaria)' }}>
                                             {item.apelido_ativo
                                                 ? <>→ {item.apelido_ativo}</>
                                                 : <span style={{ opacity: 0.4, fontWeight: 500, fontStyle: 'italic' }}>nome original mantido</span>}
                                         </div>
                                         {c?.identificador_exibicao && (
-                                            <div style={{ fontSize: '11px', fontFamily: 'monospace', color: '#6B7280', marginTop: '2px' }}>{c.identificador_exibicao}</div>
+                                            <div style={{ fontSize: '11px', fontFamily: 'monospace', color: 'var(--color-text-secondary)', marginTop: '2px' }}>{c.identificador_exibicao}</div>
                                         )}
                                         <div style={{ display: 'flex', gap: '4px', marginTop: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
                                             {(c?.instituicoes_visoes ?? []).map(inst => {
-                                                const cor = CORES_INST[inst] ?? { bg: '#E5E7EB', fg: '#374151' };
+                                                const cor = CORES_INST[inst] ?? { bg: 'var(--color-border-subtle)', fg: 'var(--color-text-primary)' };
                                                 return <span key={inst} style={{ background: cor.bg, color: cor.fg, fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>{inst}</span>;
                                             })}
                                             {taxa && <Badge variant="ghost" style={{ fontSize: '9px' }}>{taxa}</Badge>}
@@ -363,24 +363,24 @@ export default function PersonalizarAtivos() {
 
                                     {/* Classe (orig → custom) */}
                                     <td style={tdPA}>
-                                        <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 700, textTransform: 'uppercase' }}>{item.canonico_classe || '—'}</div>
-                                        <div style={{ fontSize: '13px', color: item.classe_customizada ? 'var(--color-secundaria)' : '#9CA3AF', fontWeight: 600 }}>
+                                        <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>{item.canonico_classe || '—'}</div>
+                                        <div style={{ fontSize: '13px', color: item.classe_customizada ? 'var(--color-secundaria)' : 'var(--color-text-muted)', fontWeight: 600 }}>
                                             {item.classe_customizada || 'Sem alteração'}
                                         </div>
                                     </td>
 
                                     {/* Vencimento / Liquidez (orig → custom, modelo Home) */}
                                     <td style={tdPA}>
-                                        <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 600 }}>{vlOrig || '—'}</div>
-                                        <div style={{ fontSize: '13px', color: vlCustom ? 'var(--color-secundaria)' : '#9CA3AF', fontWeight: 700 }}>
+                                        <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 600 }}>{vlOrig || '—'}</div>
+                                        <div style={{ fontSize: '13px', color: vlCustom ? 'var(--color-secundaria)' : 'var(--color-text-muted)', fontWeight: 700 }}>
                                             {vlCustom || 'Sem alteração'}
                                         </div>
                                     </td>
 
                                     {/* Emissor (orig → custom) */}
                                     <td style={tdPA}>
-                                        <div style={{ fontSize: '10px', color: '#9CA3AF', fontWeight: 600 }}>{emissorOriginal || '—'}</div>
-                                        <div style={{ fontSize: '13px', color: emissorCustom ? 'var(--color-secundaria)' : '#9CA3AF', fontWeight: 700 }}>
+                                        <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 600 }}>{emissorOriginal || '—'}</div>
+                                        <div style={{ fontSize: '13px', color: emissorCustom ? 'var(--color-secundaria)' : 'var(--color-text-muted)', fontWeight: 700 }}>
                                             {emissorCustom || '—'}
                                         </div>
                                     </td>
@@ -389,11 +389,11 @@ export default function PersonalizarAtivos() {
                                     <td style={tdPA}>
                                         {item.cliente_id ? (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                <Badge variant="ghost" style={{ background: '#FFF7ED', color: '#C2410C', fontSize: '10px', border: 'none' }}>Cliente Específico</Badge>
-                                                <span style={{ fontSize: '12px', fontWeight: 600, color: '#4B5563', paddingLeft: '4px' }}>{clienteNome}</span>
+                                                <Badge variant="ghost" style={{ background: '#FFF7ED', color: 'var(--color-warning-text)', fontSize: '10px', border: 'none' }}>Cliente Específico</Badge>
+                                                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)', paddingLeft: '4px' }}>{clienteNome}</span>
                                             </div>
                                         ) : (
-                                            <Badge variant="ghost" style={{ background: '#ECFDF5', color: '#047857', fontSize: '10px', border: 'none' }}>Carteira Global</Badge>
+                                            <Badge variant="ghost" style={{ background: '#ECFDF5', color: 'var(--color-success-text)', fontSize: '10px', border: 'none' }}>Carteira Global</Badge>
                                         )}
                                     </td>
                                 </tr>

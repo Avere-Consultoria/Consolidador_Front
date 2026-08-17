@@ -188,7 +188,7 @@ export default function EmissoresTab() {
                         {
                             header: 'Setor',
                             cell: (item: Emissor) => (
-                                <span style={{ color: item.setor_nome ? 'inherit' : '#9CA3AF' }}>
+                                <span style={{ color: item.setor_nome ? 'inherit' : 'var(--color-text-muted)' }}>
                                     {item.setor_nome ?? '— sem setor —'}
                                 </span>
                             ),
@@ -198,7 +198,7 @@ export default function EmissoresTab() {
                             cell: (item: Emissor) => (
                                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingRight: '16px' }}>
                                     <Edit2
-                                        size={16} color="#9CA3AF" style={{ cursor: 'pointer' }}
+                                        size={16} color="var(--color-text-muted)" style={{ cursor: 'pointer' }}
                                         onClick={async () => {
                                             setEditId(item.id);
                                             setFormData(item);
@@ -209,7 +209,7 @@ export default function EmissoresTab() {
                                         }}
                                     />
                                     <Trash2
-                                        size={16} color="#EF4444" style={{ cursor: 'pointer' }}
+                                        size={16} color="var(--color-danger-solid)" style={{ cursor: 'pointer' }}
                                         onClick={() => {
                                             toast('Excluir este emissor?', {
                                                 action: { label: 'Excluir', onClick: async () => {
@@ -255,7 +255,7 @@ export default function EmissoresTab() {
                             onChange={e => setFormData({ ...formData, cnpj_raiz: e.target.value })}
                         />
                         <div>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6B7280', marginBottom: '6px' }}>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: '6px' }}>
                                 Setor
                             </label>
                             <Combobox
@@ -264,14 +264,14 @@ export default function EmissoresTab() {
                                 onChange={(v: string) => setFormData({ ...formData, setor_id: v || null })}
                                 placeholder="Selecione o setor..."
                             />
-                            <p style={{ fontSize: '10px', color: '#9CA3AF', marginTop: '6px' }}>
+                            <p style={{ fontSize: '10px', color: 'var(--color-text-muted)', marginTop: '6px' }}>
                                 Lista curada (Gestão Master → Setores). Para um setor inexistente, cadastre-o primeiro lá.
                             </p>
                         </div>
 
                         {/* Nomes alternativos (aliases) — como as APIs escrevem o emissor */}
                         <div>
-                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#6B7280', marginBottom: '6px' }}>
+                            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: '6px' }}>
                                 Nomes alternativos (como as APIs escrevem)
                             </label>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -284,7 +284,7 @@ export default function EmissoresTab() {
                                                 onChange={e => setAliasesForm(prev => prev.map((x, j) => j === i ? e.target.value : x))}
                                             />
                                         </div>
-                                        <Trash2 size={16} color="#EF4444" style={{ cursor: 'pointer', flexShrink: 0 }}
+                                        <Trash2 size={16} color="var(--color-danger-solid)" style={{ cursor: 'pointer', flexShrink: 0 }}
                                             onClick={() => setAliasesForm(prev => prev.filter((_, j) => j !== i))} />
                                     </div>
                                 ))}
@@ -292,7 +292,7 @@ export default function EmissoresTab() {
                                     <Plus size={14} style={{ marginRight: 6 }} /> Adicionar nome alternativo
                                 </Button>
                             </div>
-                            <p style={{ fontSize: '10px', color: '#9CA3AF', marginTop: '6px', lineHeight: 1.4 }}>
+                            <p style={{ fontSize: '10px', color: 'var(--color-text-muted)', marginTop: '6px', lineHeight: 1.4 }}>
                                 Quando uma corretora enviar o emissor com grafia diferente, registre aqui — o auto-classify passa a casar por qualquer um desses nomes.
                             </p>
                         </div>
@@ -314,12 +314,12 @@ export default function EmissoresTab() {
                     <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
                         <TextField leftIcon={Search} placeholder="Buscar banco..." value={importSearch} onChange={e => setImportSearch(e.target.value)} />
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            {conglFiltrados.length === 0 && <p style={{ fontSize: '13px', color: '#9CA3AF', padding: '12px' }}>Nenhum banco encontrado.</p>}
+                            {conglFiltrados.length === 0 && <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', padding: '12px' }}>Nenhum banco encontrado.</p>}
                             {conglFiltrados.map(c => {
                                 const jaImportado = importadosCongl.has(c.id);
                                 const sel = importSel.has(c.id);
                                 return (
-                                    <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '8px', cursor: jaImportado ? 'default' : 'pointer', background: sel ? 'rgba(0,131,203,0.06)' : 'transparent', opacity: jaImportado ? 0.5 : 1 }}>
+                                    <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '8px', cursor: jaImportado ? 'default' : 'pointer', background: sel ? 'var(--color-accent-subtle)' : 'transparent', opacity: jaImportado ? 0.5 : 1 }}>
                                         <input
                                             type="checkbox"
                                             disabled={jaImportado}
@@ -331,7 +331,7 @@ export default function EmissoresTab() {
                                             })}
                                         />
                                         <span style={{ fontSize: '13px', color: 'var(--color-secundaria)' }}>{c.nome}</span>
-                                        {jaImportado && <span style={{ fontSize: '10px', color: '#9CA3AF', marginLeft: 'auto' }}>já é emissor</span>}
+                                        {jaImportado && <span style={{ fontSize: '10px', color: 'var(--color-text-muted)', marginLeft: 'auto' }}>já é emissor</span>}
                                     </label>
                                 );
                             })}

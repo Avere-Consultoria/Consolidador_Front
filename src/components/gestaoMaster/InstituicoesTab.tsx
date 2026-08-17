@@ -96,7 +96,7 @@ export default function InstituicoesTab() {
                                         style={{
                                             fontSize: '10px', fontWeight: 700, letterSpacing: '0.03em',
                                             background: api ? 'rgba(0,131,203,0.1)' : 'rgba(100,116,139,0.1)',
-                                            color: api ? '#0083CB' : '#475569',
+                                            color: api ? '#0083CB' : 'var(--color-text-secondary)',
                                         }}
                                     >
                                         {api ? '🔒 API' : 'Manual'}
@@ -108,9 +108,9 @@ export default function InstituicoesTab() {
                             header: 'Cores',
                             cell: (item: Instituicao) => ( // Tipagem aqui resolve erros 47 e 48
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <div style={{ width: 20, height: 20, borderRadius: 4, background: item.cor_primaria, border: '1px solid rgba(0,0,0,0.1)' }} />
+                                    <div style={{ width: 20, height: 20, borderRadius: 4, background: item.cor_primaria, border: '1px solid var(--color-border-subtle)' }} />
                                     {item.cor_secundaria && (
-                                        <div style={{ width: 20, height: 20, borderRadius: 4, background: item.cor_secundaria, border: '1px solid rgba(0,0,0,0.1)' }} />
+                                        <div style={{ width: 20, height: 20, borderRadius: 4, background: item.cor_secundaria, border: '1px solid var(--color-border-subtle)' }} />
                                     )}
                                 </div>
                             )
@@ -121,13 +121,13 @@ export default function InstituicoesTab() {
                                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', paddingRight: '16px' }}>
                                     <Edit2
                                         size={16}
-                                        color="#9CA3AF"
+                                        color="var(--color-text-muted)"
                                         style={{ cursor: 'pointer' }}
                                         onClick={() => { setEditId(item.id); setFormData(item); setIsModalOpen(true); }}
                                     />
                                     <Trash2
                                         size={16}
-                                        color="#EF4444"
+                                        color="var(--color-danger-solid)"
                                         style={{ cursor: 'pointer' }}
                                         onClick={() => {
                                             toast('Excluir instituição?', {
@@ -162,14 +162,14 @@ export default function InstituicoesTab() {
                         />
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                             <div>
-                                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, marginBottom: '6px', color: '#6B7280' }}>COR PRIMÁRIA</label>
+                                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>COR PRIMÁRIA</label>
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     <input type="color" value={isValidHex(formData.cor_primaria) ? formData.cor_primaria : '#000000'} onChange={e => setFormData({ ...formData, cor_primaria: e.target.value })} style={{ border: 'none', width: '36px', height: '36px', cursor: 'pointer' }} />
                                     <TextField value={formData.cor_primaria} onChange={e => setFormData({ ...formData, cor_primaria: e.target.value })} />
                                 </div>
                             </div>
                             <div>
-                                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, marginBottom: '6px', color: '#6B7280' }}>COR SECUNDÁRIA</label>
+                                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, marginBottom: '6px', color: 'var(--color-text-secondary)' }}>COR SECUNDÁRIA</label>
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     <input type="color" value={isValidHex(formData.cor_secundaria) ? formData.cor_secundaria! : '#ffffff'} onChange={e => setFormData({ ...formData, cor_secundaria: e.target.value })} style={{ border: 'none', width: '36px', height: '36px', cursor: 'pointer' }} />
                                     <TextField value={formData.cor_secundaria || ''} onChange={e => setFormData({ ...formData, cor_secundaria: e.target.value })} />

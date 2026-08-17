@@ -15,18 +15,18 @@ interface FaixaRow {
 
 const DEFAULTS: Record<Tipo, FaixaRow[]> = {
     LIQUIDEZ: [
-        { label: 'D+0',       dias_min: '0',   dias_max: '0',   cor: '#10B981' },
+        { label: 'D+0',       dias_min: '0',   dias_max: '0',   cor: 'var(--color-success-text)' },
         { label: 'D+1–30',    dias_min: '1',   dias_max: '30',  cor: '#0083CB' },
         { label: 'D+31–180',  dias_min: '31',  dias_max: '180', cor: '#06B6D4' },
-        { label: 'D+181–720', dias_min: '181', dias_max: '720', cor: '#F59E0B' },
-        { label: 'D+720+',    dias_min: '721', dias_max: '',    cor: '#EF4444' },
+        { label: 'D+181–720', dias_min: '181', dias_max: '720', cor: 'var(--color-warning-solid)' },
+        { label: 'D+720+',    dias_min: '721', dias_max: '',    cor: 'var(--color-danger-solid)' },
     ],
     VENCIMENTO: [
-        { label: 'Até 30 dias',       dias_min: '0',   dias_max: '30',  cor: '#10B981' },
+        { label: 'Até 30 dias',       dias_min: '0',   dias_max: '30',  cor: 'var(--color-success-text)' },
         { label: '31 a 90 dias',      dias_min: '31',  dias_max: '90',  cor: '#0083CB' },
         { label: '91 a 180 dias',     dias_min: '91',  dias_max: '180', cor: '#06B6D4' },
-        { label: '181 a 365 dias',    dias_min: '181', dias_max: '365', cor: '#F59E0B' },
-        { label: 'Acima de 365 dias', dias_min: '366', dias_max: '',    cor: '#EF4444' },
+        { label: '181 a 365 dias',    dias_min: '181', dias_max: '365', cor: 'var(--color-warning-solid)' },
+        { label: 'Acima de 365 dias', dias_min: '366', dias_max: '',    cor: 'var(--color-danger-solid)' },
     ],
 };
 
@@ -66,7 +66,7 @@ export default function FaixasTab() {
                 label: f.label ?? '',
                 dias_min: String(f.dias_min ?? 0),
                 dias_max: f.dias_max == null ? '' : String(f.dias_max),
-                cor: f.cor || '#9CA3AF',
+                cor: f.cor || 'var(--color-text-muted)',
             })));
         } else {
             setRows(DEFAULTS[t]);
@@ -82,7 +82,7 @@ export default function FaixasTab() {
     const addRow = () => {
         const ult = rows[rows.length - 1];
         const proxMin = ult && ult.dias_max ? String(Number(ult.dias_max) + 1) : '0';
-        setRows([...rows, { label: '', dias_min: proxMin, dias_max: '', cor: '#9CA3AF' }]);
+        setRows([...rows, { label: '', dias_min: proxMin, dias_max: '', cor: 'var(--color-text-muted)' }]);
     };
 
     const removeRow = (i: number) => setRows(rows.filter((_, idx) => idx !== i));
@@ -146,7 +146,7 @@ export default function FaixasTab() {
             </div>
 
             {/* Ajuda contextual */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', background: 'rgba(0,131,203,0.06)', border: '1px solid rgba(0,131,203,0.15)', borderRadius: '8px', padding: '12px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', background: 'var(--color-accent-subtle)', border: '1px solid var(--primary-100)', borderRadius: '8px', padding: '12px 14px' }}>
                 <Info size={16} color="#0083CB" style={{ marginTop: 1, flexShrink: 0 }} />
                 <Typography variant="p" style={{ fontSize: '12px', color: 'var(--color-secundaria)', opacity: 0.85, margin: 0, lineHeight: 1.4 }}>
                     {META[tipo].ajuda} Deixe o campo <strong>"até"</strong> vazio para uma faixa aberta (∞).
@@ -164,7 +164,7 @@ export default function FaixasTab() {
                     </div>
 
                     {/* Cabeçalho */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 90px 120px 36px', gap: '12px', padding: '0 4px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#9CA3AF' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 90px 120px 36px', gap: '12px', padding: '0 4px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>
                         <span>Rótulo</span>
                         <span>De (dias)</span>
                         <span>Até (dias)</span>
@@ -189,7 +189,7 @@ export default function FaixasTab() {
                                         />
                                         <TextField value={r.cor} onChange={e => update(i, { cor: e.target.value.toUpperCase() })} />
                                     </div>
-                                    <Trash2 size={16} color="#EF4444" style={{ cursor: 'pointer', opacity: rows.length > 1 ? 0.8 : 0.25, justifySelf: 'center' }}
+                                    <Trash2 size={16} color="var(--color-danger-solid)" style={{ cursor: 'pointer', opacity: rows.length > 1 ? 0.8 : 0.25, justifySelf: 'center' }}
                                         onClick={() => rows.length > 1 && removeRow(i)} />
                                 </div>
                             );

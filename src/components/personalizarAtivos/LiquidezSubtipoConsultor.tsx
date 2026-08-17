@@ -90,7 +90,7 @@ export function LiquidezSubtipoConsultor({ consultorId }: { consultorId: string 
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', background: 'rgba(0,131,203,0.06)', border: '1px solid rgba(0,131,203,0.15)', borderRadius: '8px', padding: '12px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', background: 'var(--color-accent-subtle)', border: '1px solid var(--primary-100)', borderRadius: '8px', padding: '12px 14px' }}>
                 <Info size={16} color="#0083CB" style={{ marginTop: 1, flexShrink: 0 }} />
                 <Typography variant="p" style={{ fontSize: '12px', color: 'var(--color-secundaria)', opacity: 0.85, margin: 0, lineHeight: 1.4 }}>
                     Override da liquidez por subtipo <strong>só para os clientes deste consultor</strong>. <strong>Herdar global</strong> = usa o padrão da Gestão Master;
@@ -99,7 +99,7 @@ export function LiquidezSubtipoConsultor({ consultorId }: { consultorId: string 
             </div>
 
             <Card style={{ padding: '20px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 150px 110px', gap: '12px', padding: '0 4px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#9CA3AF' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 150px 110px', gap: '12px', padding: '0 4px 8px', fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>
                     <span>Subtipo</span>
                     <span>Referência global</span>
                     <span>Decisão</span>
@@ -107,28 +107,28 @@ export function LiquidezSubtipoConsultor({ consultorId }: { consultorId: string 
                 </div>
 
                 {rows.length === 0 ? (
-                    <p style={{ fontSize: '13px', color: '#9CA3AF', padding: '20px', textAlign: 'center' }}>Nenhum subtipo no sistema ainda.</p>
+                    <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', padding: '20px', textAlign: 'center' }}>Nenhum subtipo no sistema ainda.</p>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {rows.map((r, i) => (
                             <div key={r.sub_tipo} style={{ display: 'grid', gridTemplateColumns: '1fr 160px 150px 110px', gap: '12px', alignItems: 'center' }}>
                                 <Badge variant="ghost" style={{ fontSize: '12px', justifySelf: 'start', fontFamily: 'monospace' }}>{r.sub_tipo}</Badge>
-                                <span style={{ fontSize: '11px', color: '#9CA3AF' }}>{refGlobal(r.global)}</span>
+                                <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>{refGlobal(r.global)}</span>
                                 <button
                                     type="button"
                                     onClick={() => update(i, { choice: proximo[r.choice] })}
                                     style={{
                                         height: '34px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 700,
-                                        fontFamily: 'Montserrat, sans-serif',
-                                        background: r.choice === 'PADRONIZAR' ? 'rgba(16,185,129,0.12)' : r.choice === 'DESLIGAR' ? 'rgba(239,68,68,0.10)' : 'rgba(0,0,0,0.05)',
-                                        color: r.choice === 'PADRONIZAR' ? '#047857' : r.choice === 'DESLIGAR' ? '#B91C1C' : '#6B7280',
+                                        fontFamily: 'var(--font-sans)',
+                                        background: r.choice === 'PADRONIZAR' ? 'rgba(16,185,129,0.12)' : r.choice === 'DESLIGAR' ? 'rgba(239,68,68,0.10)' : 'var(--color-surface-sunken)',
+                                        color: r.choice === 'PADRONIZAR' ? 'var(--color-success-text)' : r.choice === 'DESLIGAR' ? 'var(--color-danger-text)' : 'var(--color-text-secondary)',
                                     }}
                                 >
                                     {rotulo[r.choice]}
                                 </button>
                                 {r.choice === 'PADRONIZAR'
                                     ? <TextField value={r.dias} inputMode="numeric" placeholder="D+" onChange={e => update(i, { dias: e.target.value.replace(/[^\d]/g, '') })} />
-                                    : <span style={{ fontSize: '12px', color: '#D1D5DB', justifySelf: 'center' }}>—</span>}
+                                    : <span style={{ fontSize: '12px', color: 'var(--color-text-disabled)', justifySelf: 'center' }}>—</span>}
                             </div>
                         ))}
                     </div>
