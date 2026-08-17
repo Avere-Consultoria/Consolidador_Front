@@ -266,7 +266,7 @@ export function GraficoAlocacao({ alocacaoData, comparativoData, comparativoInst
                                         fontSize: '11px', fontWeight: 600,
                                         fontFamily: 'Inter Variable, system-ui, sans-serif',
                                         background: modoVista === modo ? '#fff' : 'transparent',
-                                        color: modoVista === modo ? 'var(--color-secundaria)' : '#6B7280',
+                                        color: modoVista === modo ? 'var(--color-secundaria)' : 'var(--color-text-secondary)',
                                         boxShadow: modoVista === modo ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                                         transition: 'all 0.15s ease',
                                     }}
@@ -287,7 +287,7 @@ export function GraficoAlocacao({ alocacaoData, comparativoData, comparativoInst
                                             border: 'none', cursor: 'pointer', padding: '4px 10px', borderRadius: '6px',
                                             fontSize: '11px', fontWeight: 700, fontFamily: 'Inter Variable, system-ui, sans-serif',
                                             background: unidade === u ? '#fff' : 'transparent',
-                                            color: unidade === u ? 'var(--color-secundaria)' : '#6B7280',
+                                            color: unidade === u ? 'var(--color-secundaria)' : 'var(--color-text-secondary)',
                                             boxShadow: unidade === u ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                                             transition: 'all 0.15s ease',
                                         }}
@@ -306,7 +306,7 @@ export function GraficoAlocacao({ alocacaoData, comparativoData, comparativoInst
                                 style={{
                                     border: 'none', cursor: 'pointer',
                                     background: modoTabela ? 'var(--color-surface-sunken)' : 'transparent',
-                                    color: modoTabela ? 'var(--color-secundaria)' : '#9CA3AF',
+                                    color: modoTabela ? 'var(--color-secundaria)' : 'var(--color-text-muted)',
                                     padding: '6px', borderRadius: '6px',
                                     display: 'flex', alignItems: 'center',
                                     transition: 'all 0.15s ease',

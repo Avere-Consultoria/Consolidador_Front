@@ -54,7 +54,7 @@ const renderRotatedLabel = (props: any) => {
 const tableStyle: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginTop: '8px', fontFamily: 'Inter Variable, system-ui, sans-serif' };
 const thStyle: React.CSSProperties = { textAlign: 'left', padding: '8px 4px', borderBottom: '1px solid var(--color-border-subtle)', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 700, fontSize: '10px', letterSpacing: '0.05em' };
 const tdStyle: React.CSSProperties = { padding: '12px 4px', borderBottom: '1px solid rgba(0,0,0,0.04)', fontWeight: 500, color: 'var(--color-secundaria)' };
-const segBtn = (active: boolean): React.CSSProperties => ({ padding: '6px 12px', fontSize: 12, border: 'none', cursor: 'pointer', background: active ? 'var(--color-primaria)' : '#fff', color: active ? '#fff' : '#6B7280', fontWeight: active ? 700 : 500 });
+const segBtn = (active: boolean): React.CSSProperties => ({ padding: '6px 12px', fontSize: 12, border: 'none', cursor: 'pointer', background: active ? 'var(--color-primaria)' : '#fff', color: active ? '#fff' : 'var(--color-text-secondary)', fontWeight: active ? 700 : 500 });
 
 // Cor pela BASE da instituição (estável a renomeações no cadastro).
 const CORES_BASE: Record<string, string> = {

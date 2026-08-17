@@ -165,7 +165,7 @@ export function DrawerAtivosFechados({ isOpen, onClose, mesReferencia, posicoes 
                                     const cor = CORES_INST[item.instituicao];
                                     return (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                            <Typography variant="p" style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>
+                                            <Typography variant="p" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
                                                 {item.nome_exibicao}
                                             </Typography>
                                             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>

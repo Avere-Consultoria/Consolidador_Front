@@ -427,7 +427,7 @@ export function MatrizMovimentacoes({ clienteId, mes, apelidoMap }: Props) {
                                             {!recolhido && g.rows.map(l => (
                                                 <tr key={l.key} style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
                                                     <td style={{ ...tdSticky, left: 0 }}>
-                                                        <div style={{ fontWeight: 600, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 216, paddingLeft: 16 }}>{l.nome}</div>
+                                                        <div style={{ fontWeight: 600, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 216, paddingLeft: 16 }}>{l.nome}</div>
                                                     </td>
                                                     <td style={{ ...tdSticky, left: 240 }}>
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -473,7 +473,7 @@ function KpiCard({ titulo, valor, valorCor, sub, extra, destaque, destaqueCor, d
     return (
         <Card style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Typography variant="p" style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{titulo}</Typography>
-            <Typography variant="p" style={{ fontSize: 18, fontWeight: 700, color: valorCor ?? '#111827' }}>{valor}</Typography>
+            <Typography variant="p" style={{ fontSize: 18, fontWeight: 700, color: valorCor ?? 'var(--color-text-primary)' }}>{valor}</Typography>
             {destaque && <span style={{ fontSize: 12, fontWeight: 700, color: destaqueCor }}>{destaque} {destaque2 ? <span style={{ opacity: 0.7 }}>({destaque2})</span> : null}</span>}
             {sub && <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>{sub}</span>}
             {extra && <span style={{ fontSize: 10, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{extra}</span>}

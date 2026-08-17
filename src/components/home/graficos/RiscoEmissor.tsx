@@ -165,7 +165,7 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                                     height: '28px', padding: '0 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600,
                                     fontFamily: 'Inter Variable, system-ui, sans-serif',
                                     background: viewMode === opt.value ? '#fff' : 'transparent',
-                                    color: viewMode === opt.value ? 'var(--color-secundaria)' : '#6B7280',
+                                    color: viewMode === opt.value ? 'var(--color-secundaria)' : 'var(--color-text-secondary)',
                                     boxShadow: viewMode === opt.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                                 }}
                             >

@@ -194,7 +194,7 @@ export function CreditoBancarioFGC({ dados }: Props) {
                                     height: 28, padding: '0 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
                                     fontFamily: 'Inter Variable, system-ui, sans-serif',
                                     background: viewMode === opt.value ? '#fff' : 'transparent',
-                                    color: viewMode === opt.value ? 'var(--color-secundaria)' : '#6B7280',
+                                    color: viewMode === opt.value ? 'var(--color-secundaria)' : 'var(--color-text-secondary)',
                                     boxShadow: viewMode === opt.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                                 }}
                             >
