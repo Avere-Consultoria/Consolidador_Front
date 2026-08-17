@@ -8,10 +8,20 @@ import { fmt } from '../utils/formatters';
 import { NenhumClienteSelecionado } from '../components/home/NenhumClienteSelecionado';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Rentabilidade — Fase 1 (espelhamento). O front NÃO calcula nada: renderiza o
-// contrato da RPC rentabilidade_cliente (linhas POR CONTA + consolidado + CDI).
+// Rentabilidade — matriz de janelas (Mês · Ano · 12m · 24m · 36m nas colunas).
+// O front NÃO calcula nada: renderiza o contrato da RPC
+// rentabilidade_cliente_janelas (linhas POR CONTA + consolidado + réguas).
 // Spec: financial-consolidator/lab/rentabilidade/SPEC-fase1-rentabilidade.md
 // ─────────────────────────────────────────────────────────────────────────────
+
+const JANELAS = [
+    { key: 'mes', label: 'Mês' },
+    { key: 'ytd', label: 'Ano' },
+    { key: '12m', label: '12 meses' },
+    { key: '24m', label: '24 meses' },
+    { key: '36m', label: '36 meses' },
+] as const;
+type JanelaKey = typeof JANELAS[number]['key'];
 
 interface Linha {
     instituicao: string;
@@ -19,21 +29,19 @@ interface Linha {
     apelido: string | null;
     chave: string;
     net: number | null;
-    rentabilidade: number | null;
     origem: 'auto' | 'manual' | null;
     tem_dados: boolean;
+    rent: Partial<Record<JanelaKey, number | null>>;
 }
 interface Contrato {
-    janela: string;
     mes_referencia: string;
     linhas: Linha[];
     consolidado: {
-        rentabilidade: number | null;
         net_bloco: number;
-        cobertura: number | null;
-        benchmark_cdi: number | null;
-        benchmarks?: { indexador: string; valor: number | null }[];
+        rent: Partial<Record<JanelaKey, number | null>>;
+        cobertura: Partial<Record<JanelaKey, number | null>>;
     };
+    benchmarks: { indexador: string; valores: Partial<Record<JanelaKey, number | null>> }[];
     avisos: string[];
 }
 
@@ -53,7 +61,10 @@ function mesesFechados(): { value: string; label: string }[] {
 }
 
 const pct = (v: number | null | undefined, casas = 2) =>
-    v === null || v === undefined ? '—' : `${(v * 100).toFixed(casas).replace('.', ',')}%`;
+    v === null || v === undefined ? null : `${(v * 100).toFixed(casas).replace('.', ',')}%`;
+
+const corRent = (v: number | null | undefined) =>
+    v === null || v === undefined ? '#9CA3AF' : v < 0 ? '#DC2626' : 'var(--color-secundaria)';
 
 // Aceita "150.000,50", "150000,50" e "150000.50"; vazio → null.
 function parseNumBR(s: string): number | null {
@@ -64,29 +75,19 @@ function parseNumBR(s: string): number | null {
     return Number.isFinite(n) ? n : null;
 }
 
-const corRent = (v: number | null | undefined) =>
-    v === null || v === undefined ? '#9CA3AF' : v < 0 ? '#DC2626' : 'var(--color-secundaria)';
-
-const JANELAS = [
-    { id: 'mes', label: 'Mês' },
-    { id: 'ytd', label: 'YTD' },
-    { id: '12m', label: '12 meses' },
-] as const;
-
 export default function Rentabilidade() {
     const { selectedClient } = useClient();
 
     const opcoesMes = useMemo(mesesFechados, []);
-    const [janela, setJanela] = useState<'mes' | 'ytd' | '12m'>('mes');
     const [mesRef, setMesRef] = useState(opcoesMes[0].value);
 
     const [universo, setUniverso] = useState<Contrato | null>(null);   // sempre sem bloco (todas as linhas)
-    const [consolidadoBloco, setConsolidadoBloco] = useState<Contrato['consolidado'] | null>(null);
+    const [consBloco, setConsBloco] = useState<Contrato['consolidado'] | null>(null);
     const [avisosBloco, setAvisosBloco] = useState<string[]>([]);
     const [desmarcadas, setDesmarcadas] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
 
-    // Edição manual (só janela 'mes', só linha não-automática)
+    // Edição manual (célula do MÊS — o tijolo; as janelas derivam)
     const [editando, setEditando] = useState<string | null>(null);
     const [formNet, setFormNet] = useState('');
     const [formRent, setFormRent] = useState('');
@@ -94,24 +95,23 @@ export default function Rentabilidade() {
 
     const carregar = useCallback(async (bloco: string[] | null) => {
         if (!selectedClient?.id) return null;
-        const { data, error } = await supabase.rpc('rentabilidade_cliente', {
+        const { data, error } = await supabase.rpc('rentabilidade_cliente_janelas', {
             p_cliente_id: selectedClient.id,
-            p_janela: janela,
             p_mes_ref: mesRef,
             p_bloco: bloco,
         });
         if (error) { toast.error('Erro ao carregar a rentabilidade.'); console.error(error); return null; }
         return data as Contrato;
-    }, [selectedClient?.id, janela, mesRef]);
+    }, [selectedClient?.id, mesRef]);
 
-    // Universo completo (linhas) — recarrega ao trocar cliente/janela/mês
     useEffect(() => {
         (async () => {
             setLoading(true);
             setDesmarcadas(new Set());
+            setEditando(null);
             const d = await carregar(null);
             setUniverso(d);
-            setConsolidadoBloco(d?.consolidado ?? null);
+            setConsBloco(d?.consolidado ?? null);
             setAvisosBloco(d?.avisos ?? []);
             setLoading(false);
         })();
@@ -123,20 +123,33 @@ export default function Rentabilidade() {
         setUniverso(d);
         if (!d) return;
         if (desm.size === 0) {
-            setConsolidadoBloco(d.consolidado);
+            setConsBloco(d.consolidado);
             setAvisosBloco(d.avisos);
         } else {
             const marcadas = d.linhas.map(l => l.chave).filter(c => !desm.has(c));
             const b = await carregar(marcadas.length ? marcadas : ['__nenhuma__']);
-            setConsolidadoBloco(b?.consolidado ?? null);
+            setConsBloco(b?.consolidado ?? null);
             setAvisosBloco(b?.avisos ?? []);
         }
     }, [carregar]);
 
+    // Consolidado do bloco — o engine recalcula; o front nunca pondera nada
+    const alternarConta = async (chave: string) => {
+        if (!universo) return;
+        const novo = new Set(desmarcadas);
+        if (novo.has(chave)) novo.delete(chave); else novo.add(chave);
+        setDesmarcadas(novo);
+        const marcadas = universo.linhas.map(l => l.chave).filter(c => !novo.has(c));
+        const d = await carregar(marcadas.length ? marcadas : ['__nenhuma__']);
+        setConsBloco(d?.consolidado ?? null);
+        setAvisosBloco(d?.avisos ?? []);
+    };
+
     const iniciarEdicao = (l: Linha) => {
         setEditando(l.chave);
         setFormNet(l.net !== null ? String(l.net).replace('.', ',') : '');
-        setFormRent(l.rentabilidade !== null ? (l.rentabilidade * 100).toFixed(4).replace('.', ',') : '');
+        const rm = l.rent?.mes;
+        setFormRent(rm !== null && rm !== undefined ? (rm * 100).toFixed(4).replace('.', ',') : '');
     };
 
     const salvarManual = async (l: Linha) => {
@@ -177,26 +190,14 @@ export default function Rentabilidade() {
         recarregarTudo(desmarcadas);
     };
 
-    // Consolidado do bloco — o engine recalcula; o front nunca pondera nada
-    const alternarConta = async (chave: string) => {
-        if (!universo) return;
-        const novo = new Set(desmarcadas);
-        if (novo.has(chave)) novo.delete(chave); else novo.add(chave);
-        setDesmarcadas(novo);
-        const marcadas = universo.linhas.map(l => l.chave).filter(c => !novo.has(c));
-        const d = await carregar(marcadas.length ? marcadas : ['__nenhuma__']);
-        setConsolidadoBloco(d?.consolidado ?? null);
-        setAvisosBloco(d?.avisos ?? []);
-    };
-
     if (!selectedClient) return <NenhumClienteSelecionado />;
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
 
     const linhas = universo?.linhas ?? [];
-    const cons = consolidadoBloco;
-    // Réguas de comparação (fallback: só CDI, p/ RPC antiga)
-    const reguas = (cons?.benchmarks ?? [{ indexador: 'CDI', valor: cons?.benchmark_cdi ?? null }])
-        .filter(b => b.valor !== null);
+    const cons = consBloco;
+    const coberturaMes = cons?.cobertura?.mes;
+    const reguas = (universo && cons ? universo.benchmarks : [])
+        .filter(b => JANELAS.some(j => b.valores?.[j.key] !== null && b.valores?.[j.key] !== undefined));
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -207,23 +208,7 @@ export default function Rentabilidade() {
                         O número de cada conta é o que a própria instituição acusa — igual ao app dela.
                     </Typography>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
-                    <Select label="Mês de referência" value={mesRef} onChange={(v: string) => setMesRef(v)} options={opcoesMes} />
-                    <div style={{ display: 'flex', background: 'rgba(0,0,0,0.04)', padding: 4, borderRadius: 8 }}>
-                        {JANELAS.map(j => (
-                            <button key={j.id} onClick={() => setJanela(j.id)}
-                                style={{
-                                    padding: '7px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                                    fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-family)',
-                                    background: janela === j.id ? '#fff' : 'transparent',
-                                    color: janela === j.id ? 'var(--color-primaria)' : '#6B7280',
-                                    boxShadow: janela === j.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                                }}>
-                                {j.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                <Select label="Mês de referência" value={mesRef} onChange={(v: string) => setMesRef(v)} options={opcoesMes} />
             </header>
 
             {/* Avisos de cobertura — nunca fingir 100% quando há conta sem dados */}
@@ -237,20 +222,21 @@ export default function Rentabilidade() {
                 </div>
             )}
 
-            <Card style={{ padding: 0, overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <Card style={{ padding: 0, overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
                     <thead>
                         <tr style={{ background: '#F9FAFB' }}>
                             <th style={{ ...th, width: 36 }} />
                             <th style={th}>Conta</th>
                             <th style={thNum}>NET de fechamento</th>
-                            <th style={thNum}>Rentabilidade ({JANELAS.find(j => j.id === janela)?.label})</th>
-                            <th style={{ ...th, width: 110, textAlign: 'center' }}>Origem</th>
+                            {JANELAS.map(j => <th key={j.key} style={thNum}>{j.label}</th>)}
+                            <th style={{ ...th, width: 120, textAlign: 'center' }}>Origem</th>
                         </tr>
                     </thead>
                     <tbody>
                         {linhas.map(l => {
                             const fora = desmarcadas.has(l.chave);
+                            const emEdicao = editando === l.chave;
                             return (
                                 <tr key={l.chave} style={{ opacity: fora ? 0.38 : 1, transition: 'opacity 0.15s' }}>
                                     <td style={td}>
@@ -262,29 +248,35 @@ export default function Rentabilidade() {
                                         {l.conta_codigo && <span style={{ color: '#9CA3AF', marginLeft: 8, fontSize: 12, fontFamily: 'monospace' }}>{l.conta_codigo}</span>}
                                         {l.apelido && <span style={{ color: '#6B7280', marginLeft: 8, fontSize: 12 }}>({l.apelido})</span>}
                                     </td>
-                                    {editando === l.chave ? (
-                                        <>
-                                            <td style={tdNum}>
-                                                <input value={formNet} onChange={e => setFormNet(e.target.value)} placeholder="NET (R$)" style={inputCel} autoFocus />
-                                            </td>
-                                            <td style={tdNum}>
-                                                <input value={formRent} onChange={e => setFormRent(e.target.value)} placeholder="% no mês (ex.: 0,85)" style={inputCel} />
-                                            </td>
-                                            <td style={{ ...td, textAlign: 'center', whiteSpace: 'nowrap' }}>
+
+                                    {/* NET */}
+                                    <td style={tdNum}>
+                                        {emEdicao
+                                            ? <input value={formNet} onChange={e => setFormNet(e.target.value)} placeholder="NET (R$)" style={inputCel} autoFocus />
+                                            : (l.net !== null ? fmt(l.net) : <SemDado />)}
+                                    </td>
+
+                                    {/* Janelas — só a célula do MÊS é editável (o tijolo) */}
+                                    {JANELAS.map(j => (
+                                        <td key={j.key} style={{ ...tdNum, fontWeight: j.key === 'mes' ? 700 : 500, color: corRent(l.rent?.[j.key]) }}>
+                                            {emEdicao && j.key === 'mes'
+                                                ? <input value={formRent} onChange={e => setFormRent(e.target.value)} placeholder="% (ex.: 0,85)" style={inputCel} />
+                                                : (pct(l.rent?.[j.key]) ?? <SemDado />)}
+                                        </td>
+                                    ))}
+
+                                    {/* Origem / ações */}
+                                    <td style={{ ...td, textAlign: 'center', whiteSpace: 'nowrap' }}>
+                                        {emEdicao ? (
+                                            <>
                                                 <button title="Salvar" disabled={salvando} onClick={() => salvarManual(l)} style={{ ...btnCel, color: '#047857' }}><Check size={16} /></button>
                                                 <button title="Cancelar" onClick={() => setEditando(null)} style={btnCel}><X size={16} /></button>
                                                 {l.origem === 'manual' && (
                                                     <button title="Apagar lançamento" onClick={() => apagarManual(l)} style={{ ...btnCel, color: '#DC2626' }}><Trash2 size={15} /></button>
                                                 )}
-                                            </td>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <td style={tdNum}>{l.net !== null ? fmt(l.net) : <SemDado />}</td>
-                                            <td style={{ ...tdNum, fontWeight: 700, color: corRent(l.rentabilidade) }}>
-                                                {l.rentabilidade !== null ? pct(l.rentabilidade) : <SemDado />}
-                                            </td>
-                                            <td style={{ ...td, textAlign: 'center', whiteSpace: 'nowrap' }}>
+                                            </>
+                                        ) : (
+                                            <>
                                                 {l.origem === 'auto' && (
                                                     <Badge variant="ghost" style={{ fontSize: 9, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'color-mix(in srgb, var(--color-primaria), transparent 90%)', color: 'var(--color-primaria)', fontWeight: 700 }}>
                                                         <Sparkles size={10} /> AUTO
@@ -296,15 +288,15 @@ export default function Rentabilidade() {
                                                     </Badge>
                                                 )}
                                                 {!l.tem_dados && <span style={{ fontSize: 11, color: '#9CA3AF', fontStyle: 'italic' }}>sem dados</span>}
-                                                {janela === 'mes' && l.origem !== 'auto' && (
-                                                    <button title={l.origem === 'manual' ? 'Editar lançamento' : 'Lançar manualmente'}
+                                                {l.origem !== 'auto' && (
+                                                    <button title={l.origem === 'manual' ? 'Editar lançamento do mês' : 'Lançar manualmente (mês)'}
                                                         onClick={() => iniciarEdicao(l)} style={{ ...btnCel, marginLeft: 6 }}>
                                                         <PenLine size={14} />
                                                     </button>
                                                 )}
-                                            </td>
-                                        </>
-                                    )}
+                                            </>
+                                        )}
+                                    </td>
                                 </tr>
                             );
                         })}
@@ -314,36 +306,39 @@ export default function Rentabilidade() {
                             <td style={td} />
                             <td style={{ ...td, fontWeight: 800, color: 'var(--color-primaria)' }}>CONSOLIDADO</td>
                             <td style={{ ...tdNum, fontWeight: 800, color: 'var(--color-primaria)' }}>{cons ? fmt(cons.net_bloco) : '—'}</td>
-                            <td style={{ ...tdNum, fontWeight: 800, fontSize: 15, color: cons && cons.rentabilidade !== null && cons.rentabilidade < 0 ? '#DC2626' : 'var(--color-primaria)' }}>
-                                {pct(cons?.rentabilidade)}
-                            </td>
+                            {JANELAS.map(j => {
+                                const v = cons?.rent?.[j.key];
+                                return (
+                                    <td key={j.key} style={{ ...tdNum, fontWeight: 800, color: v !== null && v !== undefined && v < 0 ? '#DC2626' : 'var(--color-primaria)' }}>
+                                        {pct(v) ?? '—'}
+                                    </td>
+                                );
+                            })}
                             <td style={{ ...td, textAlign: 'center', fontSize: 11, color: 'var(--color-primaria)', fontWeight: 600 }}>
-                                {cons?.cobertura !== null && cons?.cobertura !== undefined ? `${(cons.cobertura * 100).toFixed(0)}% coberto` : '—'}
+                                {coberturaMes !== null && coberturaMes !== undefined ? `${(coberturaMes * 100).toFixed(0)}% coberto` : '—'}
                             </td>
                         </tr>
-                        {reguas.map(b => {
-                            const alpha = cons?.rentabilidade !== null && cons?.rentabilidade !== undefined && b.valor !== null
-                                ? cons.rentabilidade - b.valor
-                                : null;
-                            return (
-                                <tr key={b.indexador}>
-                                    <td style={td} />
-                                    <td style={{ ...td, fontWeight: 600, color: '#6B7280' }}>{b.indexador} ({JANELAS.find(j => j.id === janela)?.label})</td>
-                                    <td style={td} />
-                                    <td style={{ ...tdNum, fontWeight: 600, color: '#6B7280' }}>{pct(b.valor)}</td>
-                                    <td style={{ ...td, textAlign: 'center', fontSize: 11, color: alpha === null ? '#9CA3AF' : alpha >= 0 ? '#047857' : '#DC2626', fontWeight: 700 }}>
-                                        {alpha !== null ? `${alpha >= 0 ? '+' : ''}${(alpha * 100).toFixed(2).replace('.', ',')}pp` : ''}
+                        {reguas.map(b => (
+                            <tr key={b.indexador}>
+                                <td style={td} />
+                                <td style={{ ...td, fontWeight: 600, color: '#6B7280' }}>{b.indexador}</td>
+                                <td style={td} />
+                                {JANELAS.map(j => (
+                                    <td key={j.key} style={{ ...tdNum, fontWeight: 600, color: '#6B7280' }}>
+                                        {pct(b.valores?.[j.key]) ?? <SemDado />}
                                     </td>
-                                </tr>
-                            );
-                        })}
+                                ))}
+                                <td style={td} />
+                            </tr>
+                        ))}
                     </tfoot>
                 </table>
             </Card>
 
             <Typography variant="p" style={{ fontSize: 12, color: '#9CA3AF' }}>
-                Consolidado = média das rentabilidades ponderada pela NET de fechamento do mês, sobre as contas marcadas que têm número.
-                Desmarcar uma conta recalcula o consolidado sem ela.
+                Consolidado = média das rentabilidades ponderada pela NET de fechamento do mês, por janela, sobre as contas marcadas que têm número.
+                Ano = do 1º de janeiro ao mês de referência. Janelas longas usam o valor publicado pela instituição quando existe (BTG) ou o encadeamento
+                dos meses disponíveis. Réguas de benchmark só aparecem com a janela completa. O lápis edita o MÊS — as janelas derivam dele.
             </Typography>
         </div>
     );
@@ -354,7 +349,7 @@ function SemDado() {
 }
 
 const inputCel: React.CSSProperties = {
-    width: 140, padding: '6px 10px', borderRadius: 6, fontSize: 13, textAlign: 'right',
+    width: 110, padding: '6px 10px', borderRadius: 6, fontSize: 13, textAlign: 'right',
     border: '1px solid color-mix(in srgb, var(--color-primaria), transparent 50%)',
     fontFamily: 'var(--font-family)', outline: 'none', color: 'var(--color-secundaria)',
 };
@@ -362,7 +357,7 @@ const btnCel: React.CSSProperties = {
     background: 'transparent', border: 'none', cursor: 'pointer', color: '#9CA3AF',
     padding: 4, borderRadius: 5, verticalAlign: 'middle',
 };
-const th: React.CSSProperties = { padding: '10px 16px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', textAlign: 'left', whiteSpace: 'nowrap' };
+const th: React.CSSProperties = { padding: '10px 14px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', textAlign: 'left', whiteSpace: 'nowrap' };
 const thNum: React.CSSProperties = { ...th, textAlign: 'right' };
-const td: React.CSSProperties = { padding: '12px 16px', fontSize: 13, color: '#374151', borderTop: '1px solid #F3F4F6' };
+const td: React.CSSProperties = { padding: '11px 14px', fontSize: 13, color: '#374151', borderTop: '1px solid #F3F4F6' };
 const tdNum: React.CSSProperties = { ...td, textAlign: 'right', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' };
