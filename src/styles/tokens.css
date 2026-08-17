@@ -84,7 +84,7 @@
      ========================================================================== */
   --color-bg:             var(--gray-100);
   --color-surface:        var(--white);
-  --color-surface-sunken: var(--gray-50);
+  --color-surface-sunken: var(--gray-100);  /* área rebaixada sobre surface branca */
 
   --color-text-primary:   var(--gray-900);
   --color-text-secondary: var(--gray-600);

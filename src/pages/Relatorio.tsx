@@ -16,28 +16,33 @@ import { fmt, fmtDate, fmtK } from '../utils/formatters';
 import logoAvere from '../assets/A_Azul.svg';
 
 // ── FGC / porte (espelha o CreditoBancarioFGC da Home) ────────────────────────
+// Paleta de DATAVIZ: recharts pinta via atributo SVG `fill`, que não resolve
+// var() — por isso hex literal aqui (regra própria de dataviz, não é UI).
 const TETO_FGC = 250_000;
 const PORTE_COR: Record<string, string> = { S1: '#15803D', S2: '#22C55E', S3: '#0083CB', S4: '#F59E0B', S5: '#EF4444' };
-const corPorte = (p: string | null) => (p && PORTE_COR[p] ? PORTE_COR[p] : '#9CA3AF');
-const corPorPct = (pct: number) => (pct > 25 ? '#EF4444' : pct > 15 ? '#F59E0B' : '#10B981');
+const corPorte = (p: string | null) => (p && PORTE_COR[p] ? PORTE_COR[p] : '#99A2A9');
+const corPorPct = (pct: number) => (pct > 25 ? '#DB2038' : pct > 15 ? '#DC8B10' : '#1FA657');
 const PALETA_SETOR = ['#0083CB', '#00B4D8', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#EF4444', '#F97316', '#6366F1', '#84CC16'];
+const FONTE_GRAFICO = 'Inter Variable, system-ui, sans-serif';
 
 // ── Estilos de tabela ─────────────────────────────────────────────────────────
-const thP: React.CSSProperties = { padding: '8px 10px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', textAlign: 'left', borderBottom: '2px solid #E5E7EB', whiteSpace: 'nowrap', fontFamily: 'Montserrat, sans-serif' };
-const tdP: React.CSSProperties = { padding: '9px 10px', fontSize: '11px', fontWeight: 500, color: '#374151', borderBottom: '1px solid #F3F4F6', fontFamily: 'Montserrat, sans-serif' };
-const tdR: React.CSSProperties = { ...tdP, textAlign: 'right' };
+// Dados em Inter com dígitos tabulares; só a voz da marca (headers/overlines)
+// fica em Montserrat. Valores numéricos sempre à direita.
+const thP: React.CSSProperties = { padding: '8px 10px', fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-semibold)' as any, textTransform: 'uppercase', letterSpacing: 'var(--tracking-caps)', color: 'var(--color-text-muted)', textAlign: 'left', borderBottom: '2px solid var(--color-border-subtle)', whiteSpace: 'nowrap' };
+const tdP: React.CSSProperties = { padding: '9px 10px', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-regular)' as any, color: 'var(--color-text-primary)', borderBottom: '1px solid var(--color-border-subtle)' };
+const tdR: React.CSSProperties = { ...tdP, textAlign: 'right', fontVariantNumeric: 'tabular-nums lining-nums' };
 const thR: React.CSSProperties = { ...thP, textAlign: 'right' };
 
 function PageHeader({ titulo }: { titulo: string }) {
     return (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, paddingBottom: 12, borderBottom: '2px solid #0083CB' }}>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#0083CB' }}>{titulo}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, paddingBottom: 12, borderBottom: '2px solid var(--primary-500)' }}>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-bold)' as any, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--primary-500)' }}>{titulo}</span>
             <img src={logoAvere} style={{ height: 16, opacity: 0.3 }} alt="" />
         </div>
     );
 }
 function SecaoTitulo({ children, mt = 0 }: { children: React.ReactNode; mt?: number }) {
-    return <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#9CA3AF', marginBottom: 14, marginTop: mt }}>{children}</p>;
+    return <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-bold)' as any, textTransform: 'uppercase', letterSpacing: 'var(--tracking-caps)', color: 'var(--color-text-muted)', marginBottom: 14, marginTop: mt }}>{children}</p>;
 }
 
 // ── Gráficos (replicam os tipos da Home; tamanho fixo p/ impressão) ───────────
@@ -53,9 +58,9 @@ function DonutInstituicoes({ data, total }: { data: { name: string; value: numbe
                     const v = fmt(total);
                     const fs = v.length <= 10 ? 16 : v.length <= 13 ? 14 : 12;
                     return (
-                        <g>
-                            <text x={cx} y={cy - 8} textAnchor="middle" style={{ fontSize: 9, fontWeight: 700, fill: '#9CA3AF', letterSpacing: '0.05em' }}>TOTAL</text>
-                            <text x={cx} y={cy + 11} textAnchor="middle" style={{ fontSize: fs, fontWeight: 800, fill: '#1F2937' }}>{v}</text>
+                        <g style={{ fontFamily: FONTE_GRAFICO }}>
+                            <text x={cx} y={cy - 8} textAnchor="middle" style={{ fontSize: 9, fontWeight: 600, fill: '#69747C', letterSpacing: '0.05em' }}>TOTAL</text>
+                            <text x={cx} y={cy + 11} textAnchor="middle" style={{ fontSize: fs, fontWeight: 700, fill: '#0F1A21', fontVariantNumeric: 'tabular-nums' }}>{v}</text>
                         </g>
                     );
                 }} />
@@ -80,11 +85,11 @@ function BarrasFaixa({ faixas, width = 300, height = 200 }: { faixas: FaixaAgreg
     return (
         <BarChart width={width} height={height} data={faixas} margin={{ top: 24, right: 12, left: -8, bottom: 8 }} barSize={36}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
-            <XAxis dataKey="label" tick={{ fontSize: 9, fontWeight: 600, fill: '#6B7280', fontFamily: 'Montserrat, sans-serif' }} axisLine={false} tickLine={false} interval={0} height={28} />
-            <YAxis tickFormatter={(v) => `${v}%`} tick={{ fontSize: 10, fill: '#9CA3AF', fontFamily: 'Montserrat, sans-serif' }} axisLine={false} tickLine={false} width={38} />
+            <XAxis dataKey="label" tick={{ fontSize: 9, fontWeight: 500, fill: '#4A565E', fontFamily: FONTE_GRAFICO }} axisLine={false} tickLine={false} interval={0} height={28} />
+            <YAxis tickFormatter={(v) => `${v}%`} tick={{ fontSize: 10, fill: '#69747C', fontFamily: FONTE_GRAFICO }} axisLine={false} tickLine={false} width={38} />
             <Bar dataKey="pct" radius={[6, 6, 0, 0]} isAnimationActive={false}>
                 {faixas.map((e, i) => <Cell key={i} fill={e.cor} />)}
-                <LabelList dataKey="pct" position="top" formatter={(v: any) => `${Number(v).toFixed(1)}%`} style={{ fontSize: '10px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif', fill: '#374151' }} />
+                <LabelList dataKey="pct" position="top" formatter={(v: any) => `${Number(v).toFixed(1)}%`} style={{ fontSize: '10px', fontWeight: 600, fontFamily: FONTE_GRAFICO, fill: '#36424B' }} />
             </Bar>
         </BarChart>
     );
@@ -96,12 +101,12 @@ function BarrasHorizontais({ dados, teto = false, width = 620 }: { dados: { name
     return (
         <BarChart width={width} height={height} data={dados} layout="vertical" margin={{ top: teto ? 26 : 8, right: 70, left: 8, bottom: 8 }}>
             <CartesianGrid horizontal={false} stroke="rgba(0,0,0,0.05)" />
-            <XAxis type="number" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 9, fontFamily: 'Montserrat, sans-serif', fill: '#9CA3AF' }} />
-            <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 9, fontFamily: 'Montserrat, sans-serif', fill: '#374151' }} tickFormatter={(v: string) => (v.length > 24 ? v.slice(0, 24) + '…' : v)} />
-            {teto && <ReferenceLine x={TETO_FGC} stroke="#EF4444" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: 'Teto FGC R$ 250k', position: 'top', fontSize: 8, fontWeight: 700, fill: '#EF4444' }} />}
+            <XAxis type="number" tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 9, fontFamily: FONTE_GRAFICO, fill: '#69747C' }} />
+            <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 9, fontFamily: FONTE_GRAFICO, fill: '#36424B' }} tickFormatter={(v: string) => (v.length > 24 ? v.slice(0, 24) + '…' : v)} />
+            {teto && <ReferenceLine x={TETO_FGC} stroke="#DB2038" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: 'Teto FGC R$ 250k', position: 'top', fontSize: 8, fontWeight: 700, fill: '#DB2038' }} />}
             <Bar dataKey="value" radius={[0, 4, 4, 0]} isAnimationActive={false}>
                 {dados.map((e, i) => <Cell key={i} fill={e.fill} />)}
-                <LabelList dataKey="value" position="right" formatter={(v: any) => fmtK(Number(v))} style={{ fontSize: 9, fontWeight: 700, fontFamily: 'Montserrat, sans-serif', fill: '#6B7280' }} />
+                <LabelList dataKey="value" position="right" formatter={(v: any) => fmtK(Number(v))} style={{ fontSize: 9, fontWeight: 600, fontFamily: FONTE_GRAFICO, fill: '#4A565E' }} />
             </Bar>
         </BarChart>
     );
@@ -115,9 +120,9 @@ function TabelaFaixas({ faixas }: { faixas: FaixaAgregada[] }) {
             <tbody>
                 {faixas.map((f, i) => (
                     <tr key={i}>
-                        <td style={tdP}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 8, height: 8, borderRadius: '50%', background: f.cor, flexShrink: 0 }} />{f.label}</div></td>
-                        <td style={{ ...tdR, fontWeight: 700 }}>{fmt(f.value)}</td>
-                        <td style={{ ...tdR, fontWeight: 800, color: f.cor }}>{f.pct.toFixed(1)}%</td>
+                        <td style={tdP}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 8, height: 8, borderRadius: 'var(--radius-full)', background: f.cor, flexShrink: 0 }} />{f.label}</div></td>
+                        <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any }}>{fmt(f.value)}</td>
+                        <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any, color: f.cor }}>{f.pct.toFixed(1)}%</td>
                     </tr>
                 ))}
             </tbody>
@@ -141,8 +146,8 @@ function BlocoLiquidez({ titulo, faixas, visual }: { titulo: string; faixas: Fai
 
 function Rodape() {
     return (
-        <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid #F3F4F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <p style={{ fontSize: 8, color: '#D1D5DB', maxWidth: '80%', fontFamily: 'Montserrat, sans-serif', lineHeight: 1.5 }}>
+        <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid var(--color-border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <p style={{ fontSize: 9, color: 'var(--color-text-muted)', maxWidth: '80%', lineHeight: 1.5 }}>
                 Relatório de uso exclusivo do cliente e do consultor. Informações baseadas nos dados sincronizados com as instituições financeiras. Valores sujeitos a alteração conforme cotações de mercado.
             </p>
             <img src={logoAvere} style={{ height: 16, opacity: 0.2 }} alt="" />
@@ -175,7 +180,7 @@ export default function Relatorio() {
     const comVencimento = [...((metrics.todosAtivos || []) as any[])].filter(a => a.vencimento).sort((a, b) => new Date(a.vencimento!).getTime() - new Date(b.vencimento!).getTime());
 
     // Dados prontos p/ as barras horizontais (top N + cor).
-    const fgcBarras = creditoBancario.slice(0, 10).map(d => ({ name: d.name, value: d.value, fill: d.semConglomerado ? '#D1D5DB' : corPorte(d.porte) }));
+    const fgcBarras = creditoBancario.slice(0, 10).map(d => ({ name: d.name, value: d.value, fill: d.semConglomerado ? '#CFD6DB' : corPorte(d.porte) }));
     const emissorBarras = creditoPrivado.slice(0, 8).map(d => ({ name: d.name, value: d.value, fill: corPorPct(d.pct) }));
 
     const hoje = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -183,24 +188,24 @@ export default function Relatorio() {
     const visual = modo === 'visual';
 
     if (!selectedClient) return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 16, fontFamily: 'Montserrat, sans-serif' }}>
-            <p style={{ opacity: 0.5 }}>Nenhum cliente selecionado.</p>
-            <button onClick={() => navigate('/')} style={{ padding: '8px 16px', cursor: 'pointer', borderRadius: 8, border: '1px solid #E5E7EB' }}>← Voltar</button>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 16 }}>
+            <p style={{ color: 'var(--color-text-secondary)' }}>Nenhum cliente selecionado.</p>
+            <button onClick={() => navigate('/')} style={{ padding: '8px 16px', cursor: 'pointer', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border-default)', background: 'var(--color-surface)', color: 'var(--color-text-primary)', font: 'inherit' }}>← Voltar</button>
         </div>
     );
     if (loading) return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontFamily: 'Montserrat, sans-serif' }}>
-            <p style={{ opacity: 0.4 }}>Preparando relatório...</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+            <p style={{ color: 'var(--color-text-muted)' }}>Preparando relatório...</p>
         </div>
     );
 
     return (
         <>
             <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
                 * { box-sizing: border-box; }
-                body { font-family: 'Montserrat', sans-serif; background: #EAECF0; color: #111827; margin: 0; }
-                .pagina { width: 210mm; min-height: 297mm; margin: 0 auto 16px auto; padding: 18mm 20mm 16mm 20mm; background: #fff; box-shadow: 0 2px 20px rgba(0,0,0,0.10); border-radius: 4px; display: flex; flex-direction: column; }
+                body { background: var(--gray-200); color: var(--color-text-primary); margin: 0; }
+                .pagina { width: 210mm; min-height: 297mm; margin: 0 auto 16px auto; padding: 18mm 20mm 16mm 20mm; background: var(--color-surface); box-shadow: var(--shadow-overlay); border-radius: var(--radius-sm); display: flex; flex-direction: column; }
+                .pagina table td, .pagina table th { font-variant-numeric: tabular-nums lining-nums; }
                 .no-print { display: flex !important; }
                 @media print {
                     @page { size: A4 portrait; margin: 12mm 14mm; }
@@ -223,18 +228,18 @@ export default function Relatorio() {
             `}</style>
 
             <div className="no-print" style={{ position: 'fixed', top: 24, right: 24, zIndex: 9999, gap: '8px', alignItems: 'center' }}>
-                <button onClick={() => navigate(`/cliente/${selectedClient.id}/posicao`)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'Montserrat, sans-serif', color: '#374151' }}>
+                <button onClick={() => navigate(`/cliente/${selectedClient.id}/posicao`)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border-default)', background: 'var(--color-surface)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)' as any, font: 'inherit', color: 'var(--color-text-secondary)' }}>
                     <ArrowLeft size={14} /> Voltar
                 </button>
-                <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 8, padding: 3, gap: 2 }}>
-                    <button onClick={() => setModo('visual')} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'Montserrat, sans-serif', background: visual ? '#fff' : 'transparent', color: visual ? '#0083CB' : '#6B7280', boxShadow: visual ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
+                <div style={{ display: 'flex', background: 'var(--color-surface-sunken)', borderRadius: 'var(--radius-md)', padding: 3, gap: 2 }}>
+                    <button onClick={() => setModo('visual')} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)' as any, font: 'inherit', background: visual ? 'var(--color-surface)' : 'transparent', color: visual ? 'var(--color-accent)' : 'var(--color-text-secondary)', boxShadow: visual ? 'var(--shadow-raised)' : 'none' }}>
                         <BarChart2 size={13} /> Visual
                     </button>
-                    <button onClick={() => setModo('conciso')} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'Montserrat, sans-serif', background: !visual ? '#fff' : 'transparent', color: !visual ? '#0083CB' : '#6B7280', boxShadow: !visual ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
+                    <button onClick={() => setModo('conciso')} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 'var(--radius-sm)', border: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)' as any, font: 'inherit', background: !visual ? 'var(--color-surface)' : 'transparent', color: !visual ? 'var(--color-accent)' : 'var(--color-text-secondary)', boxShadow: !visual ? 'var(--shadow-raised)' : 'none' }}>
                         <LayoutList size={13} /> Conciso
                     </button>
                 </div>
-                <button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 8, border: 'none', background: '#0083CB', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'Montserrat, sans-serif', color: '#fff' }}>
+                <button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 18px', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--color-accent)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' as any, font: 'inherit', color: 'var(--color-on-accent)' }}>
                     <Printer size={14} /> Imprimir / Salvar PDF
                 </button>
             </div>
@@ -244,33 +249,33 @@ export default function Relatorio() {
                 {/* ════ CAPA ════ */}
                 <div className="pagina" style={{ padding: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', flex: 1 }}>
-                        <div style={{ width: 8, background: '#0083CB', flexShrink: 0 }} />
+                        <div style={{ width: 8, background: 'var(--primary-500)', flexShrink: 0 }} />
                         <div style={{ flex: 1, padding: '18mm 20mm 16mm 18mm', display: 'flex', flexDirection: 'column' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 48 }}>
                                 <img src={logoAvere} style={{ height: 32 }} alt="Avere" />
-                                <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Confidencial</span>
+                                <span style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)', fontWeight: 'var(--weight-semibold)' as any, letterSpacing: 'var(--tracking-caps)', textTransform: 'uppercase' }}>Confidencial</span>
                             </div>
                             <div style={{ marginBottom: 40 }}>
-                                <p style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#0083CB', fontWeight: 700, marginBottom: 10 }}>Relatório de Carteira</p>
-                                <h1 style={{ fontSize: 42, fontWeight: 800, color: '#111827', lineHeight: 1.1, marginBottom: 8 }}>{selectedClient.nome}</h1>
-                                <p style={{ fontSize: 13, color: '#9CA3AF', fontWeight: 500 }}>Gerado em {hoje}</p>
+                                <p style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xs)', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--primary-500)', fontWeight: 'var(--weight-bold)' as any, marginBottom: 10 }}>Relatório de Carteira</p>
+                                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 42, fontWeight: 'var(--weight-bold)' as any, color: 'var(--color-text-primary)', lineHeight: 'var(--leading-none)', letterSpacing: 'var(--tracking-tight)', marginBottom: 8 }}>{selectedClient.nome}</h1>
+                                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Gerado em {hoje}</p>
                             </div>
-                            <div style={{ background: 'linear-gradient(135deg, #0083CB 0%, #0066A0 100%)', color: '#fff', padding: '20px 28px', borderRadius: 14, marginBottom: 28, display: 'inline-flex', flexDirection: 'column', gap: 6, alignSelf: 'flex-start' }}>
+                            <div style={{ background: 'linear-gradient(135deg, var(--primary-500) 0%, var(--primary-700) 100%)', color: 'var(--color-on-accent)', padding: '20px 28px', borderRadius: 'var(--radius-xl)', marginBottom: 28, display: 'inline-flex', flexDirection: 'column', gap: 6, alignSelf: 'flex-start' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: 0.85 }}>
                                     <Briefcase size={13} />
-                                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Patrimônio Total</span>
+                                    <span style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-bold)' as any, textTransform: 'uppercase', letterSpacing: 'var(--tracking-caps)' }}>Patrimônio Total</span>
                                 </div>
-                                <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.5px' }}>{fmt(pTotal)}</span>
-                                <span style={{ fontSize: 11, opacity: 0.7 }}>{metrics.todosAtivos?.length || 0} ativos consolidados</span>
+                                <span style={{ fontSize: 32, fontWeight: 'var(--weight-bold)' as any, letterSpacing: 'var(--tracking-tight)', fontVariantNumeric: 'tabular-nums' }}>{fmt(pTotal)}</span>
+                                <span style={{ fontSize: 'var(--text-2xs)', opacity: 0.75 }}>{metrics.todosAtivos?.length || 0} ativos consolidados</span>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.max(instituicoes.length, 1)}, 1fr)`, gap: 10, marginBottom: 32 }}>
                                 {instituicoes.map(inst => (
-                                    <div key={inst.nome} style={{ padding: '14px 16px', borderRadius: 10, border: `1px solid ${inst.cor}25`, background: `${inst.cor}08` }}>
-                                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: inst.cor, marginBottom: 8 }} />
-                                        <p style={{ fontSize: 10, fontWeight: 700, color: '#6B7280', marginBottom: 4, lineHeight: 1.3 }}>{inst.nome}</p>
-                                        <p style={{ fontSize: 13, fontWeight: 800, color: '#111827', marginBottom: 2 }}>{fmt(inst.total)}</p>
-                                        <p style={{ fontSize: 11, fontWeight: 700, color: inst.cor }}>{inst.pct.toFixed(1)}%</p>
-                                        {inst.ref && <p style={{ fontSize: 9, color: '#9CA3AF', marginTop: 4 }}>Ref. {fmtDate(inst.ref + 'T12:00:00Z')}</p>}
+                                    <div key={inst.nome} style={{ padding: '14px 16px', borderRadius: 'var(--radius-lg)', border: `1px solid ${inst.cor}25`, background: `${inst.cor}08` }}>
+                                        <div style={{ width: 6, height: 6, borderRadius: 'var(--radius-full)', background: inst.cor, marginBottom: 8 }} />
+                                        <p style={{ fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-medium)' as any, color: 'var(--color-text-secondary)', marginBottom: 4, lineHeight: 1.3 }}>{inst.nome}</p>
+                                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)' as any, color: 'var(--color-text-primary)', marginBottom: 2, fontVariantNumeric: 'tabular-nums' }}>{fmt(inst.total)}</p>
+                                        <p style={{ fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-semibold)' as any, color: inst.cor, fontVariantNumeric: 'tabular-nums' }}>{inst.pct.toFixed(1)}%</p>
+                                        {inst.ref && <p style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)', marginTop: 4 }}>Ref. {fmtDate(inst.ref + 'T12:00:00Z')}</p>}
                                     </div>
                                 ))}
                             </div>
@@ -291,15 +296,15 @@ export default function Relatorio() {
                             <tbody>
                                 {instituicoes.map(inst => (
                                     <tr key={inst.nome}>
-                                        <td style={tdP}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div style={{ width: 7, height: 7, borderRadius: '50%', background: inst.cor }} />{inst.nome}</div></td>
-                                        <td style={{ ...tdR, fontWeight: 700 }}>{fmt(inst.total)}</td>
-                                        <td style={{ ...tdR, fontWeight: 700, color: inst.cor }}>{inst.pct.toFixed(1)}%</td>
+                                        <td style={tdP}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div style={{ width: 7, height: 7, borderRadius: 'var(--radius-full)', background: inst.cor }} />{inst.nome}</div></td>
+                                        <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any }}>{fmt(inst.total)}</td>
+                                        <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any, color: inst.cor }}>{inst.pct.toFixed(1)}%</td>
                                     </tr>
                                 ))}
                                 <tr>
-                                    <td style={{ ...tdP, fontWeight: 700, borderTop: '2px solid #E5E7EB', borderBottom: 'none' }}>Total</td>
-                                    <td style={{ ...tdR, fontWeight: 800, borderTop: '2px solid #E5E7EB', borderBottom: 'none' }}>{fmt(pTotal)}</td>
-                                    <td style={{ ...tdR, fontWeight: 800, borderTop: '2px solid #E5E7EB', borderBottom: 'none' }}>100%</td>
+                                    <td style={{ ...tdP, fontWeight: 'var(--weight-semibold)' as any, borderTop: '2px solid var(--color-border-subtle)', borderBottom: 'none' }}>Total</td>
+                                    <td style={{ ...tdR, fontWeight: 'var(--weight-bold)' as any, borderTop: '2px solid var(--color-border-subtle)', borderBottom: 'none' }}>{fmt(pTotal)}</td>
+                                    <td style={{ ...tdR, fontWeight: 'var(--weight-bold)' as any, borderTop: '2px solid var(--color-border-subtle)', borderBottom: 'none' }}>100%</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -311,10 +316,10 @@ export default function Relatorio() {
                             <BarChart width={260} height={Math.max(150, alocacao.length * 28)} data={alocacao} layout="vertical" margin={{ top: 0, right: 52, left: 0, bottom: 0 }} barSize={11}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.05)" />
                                 <XAxis type="number" hide />
-                                <YAxis type="category" dataKey="name" width={92} tick={{ fontSize: 9, fontFamily: 'Montserrat, sans-serif', fill: '#6B7280' }} axisLine={false} tickLine={false} />
+                                <YAxis type="category" dataKey="name" width={92} tick={{ fontSize: 9, fontFamily: FONTE_GRAFICO, fill: '#4A565E' }} axisLine={false} tickLine={false} />
                                 <Bar dataKey="value" radius={[0, 4, 4, 0]} isAnimationActive={false}>
                                     {alocacao.map((e: any, i: number) => <Cell key={i} fill={e.fill} />)}
-                                    <LabelList dataKey="value" position="right" formatter={(v: any) => fmtK(Number(v))} style={{ fontSize: 9, fontWeight: 700, fontFamily: 'Montserrat, sans-serif', fill: '#6B7280' }} />
+                                    <LabelList dataKey="value" position="right" formatter={(v: any) => fmtK(Number(v))} style={{ fontSize: 9, fontWeight: 600, fontFamily: FONTE_GRAFICO, fill: '#4A565E' }} />
                                 </Bar>
                             </BarChart>
                         )}
@@ -324,8 +329,8 @@ export default function Relatorio() {
                                 {alocacao.map((d: any) => (
                                     <tr key={d.name}>
                                         <td style={tdP}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div style={{ width: 7, height: 7, borderRadius: 2, background: d.fill }} />{d.name}</div></td>
-                                        <td style={{ ...tdR, fontWeight: 700 }}>{fmt(d.value)}</td>
-                                        <td style={{ ...tdR, color: d.fill, fontWeight: 700 }}>{d.pct.toFixed(1)}%</td>
+                                        <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any }}>{fmt(d.value)}</td>
+                                        <td style={{ ...tdR, color: d.fill, fontWeight: 'var(--weight-semibold)' as any }}>{d.pct.toFixed(1)}%</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -341,7 +346,7 @@ export default function Relatorio() {
                     <BlocoLiquidez titulo="Liquidez · Previdência" faixas={liqPrev} visual={visual} />
                     <BlocoLiquidez titulo="Liquidez · Renda Variável" faixas={liqRV} visual={visual} />
                     {liqGeral.length === 0 && liqPrev.length === 0 && liqRV.length === 0 && (
-                        <p style={{ fontSize: 12, color: '#9CA3AF', fontFamily: 'Montserrat, sans-serif' }}>Sem dados de liquidez.</p>
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>Sem dados de liquidez.</p>
                     )}
                     <Rodape />
                 </div>
@@ -355,9 +360,9 @@ export default function Relatorio() {
                             <div className="sem-quebra" style={{ marginBottom: 28 }}>
                                 <SecaoTitulo>Crédito Bancário · Cobertura FGC</SecaoTitulo>
                                 {acimaTeto.length > 0 && (
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 12px', borderRadius: 8, marginBottom: 12, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#B91C1C' }}>
+                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 12px', borderRadius: 'var(--radius-md)', marginBottom: 12, background: 'var(--color-danger-bg)', border: '1px solid var(--color-danger-border)', color: 'var(--color-danger-text)' }}>
                                         <ShieldAlert size={13} style={{ flexShrink: 0, marginTop: 1 }} />
-                                        <span style={{ fontSize: 10, fontFamily: 'Montserrat, sans-serif' }}><strong>{acimaTeto.length}</strong> conglomerado(s) acima do teto FGC ({fmt(TETO_FGC)} por CPF).</span>
+                                        <span style={{ fontSize: 'var(--text-2xs)' }}><strong>{acimaTeto.length}</strong> conglomerado(s) acima do teto FGC ({fmt(TETO_FGC)} por CPF).</span>
                                     </div>
                                 )}
                                 {visual && <BarrasHorizontais dados={fgcBarras} teto />}
@@ -366,13 +371,13 @@ export default function Relatorio() {
                                     <tbody>
                                         {creditoBancario.slice(0, 10).map((d, i) => {
                                             const acima = !d.semConglomerado && d.value > TETO_FGC;
-                                            const cor = d.semConglomerado ? '#9CA3AF' : corPorte(d.porte);
+                                            const cor = d.semConglomerado ? '#99A2A9' : corPorte(d.porte);
                                             return (
                                                 <tr key={i}>
                                                     <td style={tdP}><div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><div style={{ width: 8, height: 8, borderRadius: 2, background: cor, flexShrink: 0 }} />{d.name}</div></td>
-                                                    <td style={{ ...tdP, textAlign: 'center', fontWeight: 800, color: cor }}>{d.porte || '—'}</td>
-                                                    <td style={{ ...tdR, fontWeight: 700 }}>{fmt(d.value)}</td>
-                                                    <td style={{ ...tdP, textAlign: 'center', fontSize: 9, fontWeight: 700, color: d.semConglomerado ? '#9CA3AF' : acima ? '#EF4444' : '#10B981' }}>{d.semConglomerado ? 'n/d' : acima ? 'acima' : 'coberto'}</td>
+                                                    <td style={{ ...tdP, textAlign: 'center', fontWeight: 'var(--weight-semibold)' as any, color: cor }}>{d.porte || '—'}</td>
+                                                    <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any }}>{fmt(d.value)}</td>
+                                                    <td style={{ ...tdP, textAlign: 'center', fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-semibold)' as any, color: d.semConglomerado ? 'var(--color-text-muted)' : acima ? 'var(--color-danger-text)' : 'var(--color-success-text)' }}>{d.semConglomerado ? 'n/d' : acima ? 'acima' : 'coberto'}</td>
                                                 </tr>
                                             );
                                         })}
@@ -385,9 +390,9 @@ export default function Relatorio() {
                             <div className="sem-quebra">
                                 <SecaoTitulo mt={4}>Exposição por Emissor (Crédito Privado)</SecaoTitulo>
                                 {creditoPrivado.some(d => d.pct > 15) && (
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 12px', borderRadius: 8, marginBottom: 12, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', color: '#B45309' }}>
+                                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 12px', borderRadius: 'var(--radius-md)', marginBottom: 12, background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)', color: 'var(--color-warning-text)' }}>
                                         <ShieldAlert size={13} style={{ flexShrink: 0, marginTop: 1 }} />
-                                        <span style={{ fontSize: 10, fontFamily: 'Montserrat, sans-serif' }}><strong>Atenção:</strong> Concentração superior a 15% num único emissor.</span>
+                                        <span style={{ fontSize: 'var(--text-2xs)' }}><strong>Atenção:</strong> Concentração superior a 15% num único emissor.</span>
                                     </div>
                                 )}
                                 {visual && <BarrasHorizontais dados={emissorBarras} />}
@@ -397,9 +402,9 @@ export default function Relatorio() {
                                         {creditoPrivado.slice(0, 8).map((e, i) => (
                                             <tr key={i}>
                                                 <td style={tdP}>{e.name}</td>
-                                                <td style={{ ...tdP, fontSize: 10, color: '#6B7280' }}>{e.setor && e.setor !== 'Sem setor' ? e.setor : '—'}</td>
-                                                <td style={{ ...tdR, fontWeight: 700 }}>{fmt(e.value)}</td>
-                                                <td style={{ ...tdR, fontWeight: 800, color: corPorPct(e.pct) }}>{e.pct.toFixed(1)}%</td>
+                                                <td style={{ ...tdP, fontSize: 'var(--text-2xs)', color: 'var(--color-text-secondary)' }}>{e.setor && e.setor !== 'Sem setor' ? e.setor : '—'}</td>
+                                                <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any }}>{fmt(e.value)}</td>
+                                                <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any, color: corPorPct(e.pct) }}>{e.pct.toFixed(1)}%</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -425,9 +430,9 @@ export default function Relatorio() {
                                         <tbody>
                                             {setorial.map((s, i) => (
                                                 <tr key={i}>
-                                                    <td style={tdP}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div style={{ width: 7, height: 7, borderRadius: '50%', background: s.fill }} />{s.setor}</div></td>
-                                                    <td style={{ ...tdR, fontWeight: 700 }}>{fmt(s.valor)}</td>
-                                                    <td style={{ ...tdR, fontWeight: 800, color: s.fill }}>{s.pct.toFixed(1)}%</td>
+                                                    <td style={tdP}><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><div style={{ width: 7, height: 7, borderRadius: 'var(--radius-full)', background: s.fill }} />{s.setor}</div></td>
+                                                    <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any }}>{fmt(s.valor)}</td>
+                                                    <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any, color: s.fill }}>{s.pct.toFixed(1)}%</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -455,7 +460,7 @@ export default function Relatorio() {
                         <PageHeader titulo="Vencimentos Detalhados" />
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
-                                <tr style={{ background: '#F9FAFB' }}>
+                                <tr style={{ background: 'var(--color-surface-sunken)' }}>
                                     <th style={{ ...thP, width: '35%' }}>Ativo</th>
                                     <th style={thP}>Instituição</th>
                                     <th style={thP}>Classe</th>
@@ -466,15 +471,15 @@ export default function Relatorio() {
                             <tbody>
                                 {comVencimento.slice(0, 20).map((a, i) => (
                                     <tr key={i} className="sem-quebra">
-                                        <td style={{ ...tdP, fontWeight: 600, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.nome}</td>
+                                        <td style={{ ...tdP, fontWeight: 'var(--weight-medium)' as any, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.nome}</td>
                                         <td style={tdP}>{a.instituicao}</td>
-                                        <td style={tdP}><span style={{ fontSize: 9, background: '#F3F4F6', padding: '2px 5px', borderRadius: 4 }}>{a.tipo}</span></td>
-                                        <td style={{ ...tdR, fontWeight: 700 }}>{fmtDate(a.vencimento)}</td>
-                                        <td style={{ ...tdR, fontWeight: 700 }}>{fmt(a.valorLiquido)}</td>
+                                        <td style={tdP}><span style={{ fontSize: 'var(--text-2xs)', background: 'var(--color-surface-sunken)', padding: '2px 5px', borderRadius: 'var(--radius-sm)' }}>{a.tipo}</span></td>
+                                        <td style={{ ...tdR, fontWeight: 'var(--weight-medium)' as any }}>{fmtDate(a.vencimento)}</td>
+                                        <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any }}>{fmt(a.valorLiquido)}</td>
                                     </tr>
                                 ))}
                                 {comVencimento.length > 20 && (
-                                    <tr><td colSpan={5} style={{ ...tdP, opacity: 0.4, textAlign: 'center', fontSize: 10 }}>+ {comVencimento.length - 20} ativos adicionais na carteira completa</td></tr>
+                                    <tr><td colSpan={5} style={{ ...tdP, color: 'var(--color-text-muted)', textAlign: 'center', fontSize: 'var(--text-2xs)' }}>+ {comVencimento.length - 20} ativos adicionais na carteira completa</td></tr>
                                 )}
                             </tbody>
                         </table>
@@ -484,13 +489,13 @@ export default function Relatorio() {
 
                 {/* ════ CARTEIRA COMPLETA ════ */}
                 <div className="pagina">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, paddingBottom: 12, borderBottom: '2px solid #0083CB' }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#0083CB' }}>Carteira Completa de Ativos</span>
-                        <span style={{ fontSize: 10, color: '#9CA3AF', fontFamily: 'Montserrat, sans-serif' }}>{metrics.todosAtivos?.length || 0} ativos · {fmt(pTotal)}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, paddingBottom: 12, borderBottom: '2px solid var(--primary-500)' }}>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-bold)' as any, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--primary-500)' }}>Carteira Completa de Ativos</span>
+                        <span style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)', fontVariantNumeric: 'tabular-nums' }}>{metrics.todosAtivos?.length || 0} ativos · {fmt(pTotal)}</span>
                     </div>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
-                            <tr style={{ background: '#F9FAFB' }}>
+                            <tr style={{ background: 'var(--color-surface-sunken)' }}>
                                 <th style={{ ...thP, width: '32%' }}>Ativo</th>
                                 <th style={thP}>Instituição</th>
                                 <th style={thP}>Classe</th>
@@ -504,24 +509,24 @@ export default function Relatorio() {
                                 const peso = pTotal > 0 ? (a.valorLiquido / pTotal) * 100 : 0;
                                 return (
                                     <tr key={i} className="sem-quebra">
-                                        <td style={{ ...tdP, fontWeight: 600, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        <td style={{ ...tdP, fontWeight: 'var(--weight-medium)' as any, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                             {a.nome}
-                                            {a.subTipo && <span style={{ display: 'block', fontSize: 9, fontWeight: 400, color: '#9CA3AF' }}>{a.subTipo}</span>}
+                                            {a.subTipo && <span style={{ display: 'block', fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-regular)' as any, color: 'var(--color-text-muted)' }}>{a.subTipo}</span>}
                                         </td>
                                         <td style={tdP}>{a.instituicao}</td>
-                                        <td style={tdP}><span style={{ fontSize: 9, background: '#F3F4F6', padding: '2px 5px', borderRadius: 4 }}>{a.tipo}</span></td>
-                                        <td style={{ ...tdR, fontSize: 10 }}>{fmtDate(a.vencimento)}</td>
-                                        <td style={{ ...tdR, fontWeight: 700 }}>{fmt(a.valorLiquido)}</td>
-                                        <td style={{ ...tdR, fontWeight: 700, opacity: 0.6 }}>{peso.toFixed(2)}%</td>
+                                        <td style={tdP}><span style={{ fontSize: 'var(--text-2xs)', background: 'var(--color-surface-sunken)', padding: '2px 5px', borderRadius: 'var(--radius-sm)' }}>{a.tipo}</span></td>
+                                        <td style={{ ...tdR, fontSize: 'var(--text-2xs)' }}>{fmtDate(a.vencimento)}</td>
+                                        <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any }}>{fmt(a.valorLiquido)}</td>
+                                        <td style={{ ...tdR, fontWeight: 'var(--weight-medium)' as any, color: 'var(--color-text-secondary)' }}>{peso.toFixed(2)}%</td>
                                     </tr>
                                 );
                             })}
                         </tbody>
                         <tfoot>
-                            <tr style={{ background: '#F9FAFB' }}>
-                                <td colSpan={4} style={{ ...tdP, fontWeight: 700, borderTop: '2px solid #E5E7EB', borderBottom: 'none' }}>Total Consolidado</td>
-                                <td style={{ ...tdR, fontWeight: 800, fontSize: 13, borderTop: '2px solid #E5E7EB', borderBottom: 'none' }}>{fmt(pTotal)}</td>
-                                <td style={{ ...tdR, fontWeight: 800, borderTop: '2px solid #E5E7EB', borderBottom: 'none' }}>100%</td>
+                            <tr style={{ background: 'var(--color-surface-sunken)' }}>
+                                <td colSpan={4} style={{ ...tdP, fontWeight: 'var(--weight-semibold)' as any, borderTop: '2px solid var(--color-border-subtle)', borderBottom: 'none' }}>Total Consolidado</td>
+                                <td style={{ ...tdR, fontWeight: 'var(--weight-bold)' as any, fontSize: 'var(--text-sm)', borderTop: '2px solid var(--color-border-subtle)', borderBottom: 'none' }}>{fmt(pTotal)}</td>
+                                <td style={{ ...tdR, fontWeight: 'var(--weight-bold)' as any, borderTop: '2px solid var(--color-border-subtle)', borderBottom: 'none' }}>100%</td>
                             </tr>
                         </tfoot>
                     </table>
