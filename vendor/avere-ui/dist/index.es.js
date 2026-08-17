@@ -11478,75 +11478,76 @@ var cb = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
 }));
 cb.displayName = "CardFooter";
 var $ = {
-	overlay: "_overlay_1x31s_3",
-	sidebar: "_sidebar_1x31s_23",
-	expanded: "_expanded_1x31s_53",
-	collapsed: "_collapsed_1x31s_61",
-	header: "_header_1x31s_71",
-	logoContainer: "_logoContainer_1x31s_111",
-	toggleButton: "_toggleButton_1x31s_141",
-	nav: "_nav_1x31s_177",
-	item: "_item_1x31s_199",
-	iconWrap: "_iconWrap_1x31s_245",
-	badge: "_badge_1x31s_263",
-	itemActive: "_itemActive_1x31s_287",
-	badgeDot: "_badgeDot_1x31s_299",
-	itemCollapsed: "_itemCollapsed_1x31s_343",
-	itemExpanded: "_itemExpanded_1x31s_353",
-	itemLabel: "_itemLabel_1x31s_363",
-	labelHidden: "_labelHidden_1x31s_377",
-	section: "_section_1x31s_391",
-	sectionCollapsed: "_sectionCollapsed_1x31s_405",
-	sectionLabel: "_sectionLabel_1x31s_413",
-	sectionRule: "_sectionRule_1x31s_431",
-	footer: "_footer_1x31s_445",
-	footerCollapsed: "_footerCollapsed_1x31s_459",
-	userMenu: "_userMenu_1x31s_473",
-	userMenuCollapsed: "_userMenuCollapsed_1x31s_499",
-	userMenuLogout: "_userMenuLogout_1x31s_513",
-	userProfileButton: "_userProfileButton_1x31s_557",
-	userButtonCollapsed: "_userButtonCollapsed_1x31s_593",
-	userInfo: "_userInfo_1x31s_603",
-	userName: "_userName_1x31s_619",
-	userRole: "_userRole_1x31s_637",
-	userMenuIcon: "_userMenuIcon_1x31s_655",
-	mobileOpen: "_mobileOpen_1x31s_679",
-	logoPlaceholder: "_logoPlaceholder_1x31s_705",
-	logoPulse: "_logoPulse_1x31s_1"
+	overlay: "_overlay_kfgoo_3",
+	sidebar: "_sidebar_kfgoo_23",
+	expanded: "_expanded_kfgoo_53",
+	collapsed: "_collapsed_kfgoo_61",
+	header: "_header_kfgoo_71",
+	logoContainer: "_logoContainer_kfgoo_111",
+	toggleButton: "_toggleButton_kfgoo_141",
+	nav: "_nav_kfgoo_177",
+	item: "_item_kfgoo_199",
+	iconWrap: "_iconWrap_kfgoo_249",
+	badge: "_badge_kfgoo_267",
+	itemActive: "_itemActive_kfgoo_291",
+	badgeDot: "_badgeDot_kfgoo_303",
+	itemCollapsed: "_itemCollapsed_kfgoo_347",
+	itemExpanded: "_itemExpanded_kfgoo_357",
+	itemLabel: "_itemLabel_kfgoo_367",
+	labelHidden: "_labelHidden_kfgoo_381",
+	section: "_section_kfgoo_395",
+	sectionCollapsed: "_sectionCollapsed_kfgoo_409",
+	sectionLabel: "_sectionLabel_kfgoo_417",
+	sectionRule: "_sectionRule_kfgoo_435",
+	footer: "_footer_kfgoo_449",
+	footerCollapsed: "_footerCollapsed_kfgoo_463",
+	userMenu: "_userMenu_kfgoo_477",
+	userMenuCollapsed: "_userMenuCollapsed_kfgoo_503",
+	userMenuLogout: "_userMenuLogout_kfgoo_517",
+	userProfileButton: "_userProfileButton_kfgoo_561",
+	userButtonCollapsed: "_userButtonCollapsed_kfgoo_597",
+	userInfo: "_userInfo_kfgoo_607",
+	userName: "_userName_kfgoo_623",
+	userRole: "_userRole_kfgoo_641",
+	userMenuIcon: "_userMenuIcon_kfgoo_659",
+	mobileOpen: "_mobileOpen_kfgoo_683",
+	logoPlaceholder: "_logoPlaceholder_kfgoo_709",
+	logoPulse: "_logoPulse_kfgoo_1"
 }, lb = n({ isCollapsed: !1 });
-function ub({ icon: e, label: t, active: n, badge: r, className: i, ...a }) {
-	let { isCollapsed: s } = o(lb), c = /* @__PURE__ */ m("button", {
-		className: x($.item, n && $.itemActive, s ? $.itemCollapsed : $.itemExpanded, i),
+function ub({ icon: e, label: t, active: n, badge: r, href: i, className: a, ...s }) {
+	let { isCollapsed: c } = o(lb), l = /* @__PURE__ */ m(i ? "a" : "button", {
+		href: i,
+		className: x($.item, n && $.itemActive, c ? $.itemCollapsed : $.itemExpanded, a),
 		"aria-current": n ? "page" : void 0,
-		...a,
+		...s,
 		children: [
 			/* @__PURE__ */ m("span", {
 				className: $.iconWrap,
-				children: [/* @__PURE__ */ p(e, { size: 20 }), s && r != null && r !== 0 && /* @__PURE__ */ p("span", {
+				children: [/* @__PURE__ */ p(e, { size: 20 }), c && r != null && r !== 0 && /* @__PURE__ */ p("span", {
 					className: $.badgeDot,
 					"aria-hidden": "true"
 				})]
 			}),
 			/* @__PURE__ */ p("span", {
-				className: x($.itemLabel, s && $.labelHidden),
+				className: x($.itemLabel, c && $.labelHidden),
 				children: t
 			}),
-			!s && r != null && r !== 0 && /* @__PURE__ */ p("span", {
+			!c && r != null && r !== 0 && /* @__PURE__ */ p("span", {
 				className: $.badge,
 				children: r
 			})
 		]
 	});
-	return s ? /* @__PURE__ */ p(sv, {
+	return c ? /* @__PURE__ */ p(sv, {
 		delayDuration: 150,
 		children: /* @__PURE__ */ m(cv, { children: [/* @__PURE__ */ p(lv, {
 			asChild: !0,
-			children: c
+			children: l
 		}), /* @__PURE__ */ p(uv, {
 			side: "right",
 			children: t
 		})] })
-	}) : c;
+	}) : l;
 }
 function db({ label: e }) {
 	let { isCollapsed: t } = o(lb);

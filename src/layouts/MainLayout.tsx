@@ -94,6 +94,15 @@ export default function MainLayout() {
     setConsultorPerfilId(pid);
   }, [consultorSelecionado, consultores, isMaster, perfil?.id, setConsultorPerfilId]);
 
+
+  // Navegação SPA em links reais: clique simples navega client-side;
+  // Ctrl/Cmd/Shift/botão-do-meio seguem o comportamento nativo (nova aba).
+  const navTo = (to: string) => (e: React.MouseEvent) => {
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.button === 1) return;
+    e.preventDefault();
+    navigate(to);
+  };
+
   const handleSelectCliente = (id: string) => {
     const clienteEncontrado = clientes.find(c => c.id === id);
     if (clienteEncontrado) {
@@ -203,40 +212,40 @@ export default function MainLayout() {
         {(isMaster || isConsultor) && (
           <SideBarItem
             icon={LayoutDashboard} label="Dashboard"
-            active={location.pathname === '/dashboard'} onClick={() => navigate('/dashboard')}
+            active={location.pathname === '/dashboard'} href="/dashboard" onClick={navTo('/dashboard')}
           />
         )}
         {(isMaster || isConsultor) && (
           <SideBarItem
             icon={Bell} label="Alertas"
-            active={location.pathname === '/alertas'} onClick={() => navigate('/alertas')}
+            active={location.pathname === '/alertas'} href="/alertas" onClick={navTo('/alertas')}
           />
         )}
         {(isMaster || isConsultor) && (
           <SideBarItem
             icon={ListTodo} label="Tarefas"
-            active={location.pathname === '/tarefas'} onClick={() => navigate('/tarefas')}
+            active={location.pathname === '/tarefas'} href="/tarefas" onClick={navTo('/tarefas')}
           />
         )}
         <SideBarItem
           icon={User} label="Cliente"
-          active={location.pathname.startsWith('/cliente')} onClick={() => navigate('/cliente')}
+          active={location.pathname.startsWith('/cliente')} href="/cliente" onClick={navTo('/cliente')}
         />
         <SideBarItem
           icon={LayoutGrid} label="Hub"
-          active={location.pathname === '/hub'} onClick={() => navigate('/hub')}
+          active={location.pathname === '/hub'} href="/hub" onClick={navTo('/hub')}
         />
         {isConsultor && (
           <SideBarItem
             icon={SlidersHorizontal} label="Personalizar Ativos"
-            active={location.pathname === '/personalizar'} onClick={() => navigate('/personalizar')}
+            active={location.pathname === '/personalizar'} href="/personalizar" onClick={navTo('/personalizar')}
           />
         )}
 
         {isConsultor && (
           <SideBarItem
             icon={FileStack} label="Meus Envios"
-            active={location.pathname === '/documentos-manuais'} onClick={() => navigate('/documentos-manuais')}
+            active={location.pathname === '/documentos-manuais'} href="/documentos-manuais" onClick={navTo('/documentos-manuais')}
           />
         )}
 
@@ -247,19 +256,19 @@ export default function MainLayout() {
               icon={ClipboardCheck}
               label="Pendências"
               badge={pendenciasCount > 0 ? pendenciasCount : undefined}
-              active={location.pathname.startsWith('/pendencias')} onClick={() => navigate('/pendencias')}
+              active={location.pathname.startsWith('/pendencias')} href="/pendencias" onClick={navTo('/pendencias')}
             />
             <SideBarItem
               icon={UsersRound} label="Cadastros"
-              active={location.pathname.startsWith('/cadastros')} onClick={() => navigate('/cadastros')}
+              active={location.pathname.startsWith('/cadastros')} href="/cadastros" onClick={navTo('/cadastros')}
             />
             <SideBarItem
               icon={Database} label="Inteligência"
-              active={location.pathname.startsWith('/inteligencia')} onClick={() => navigate('/inteligencia')}
+              active={location.pathname.startsWith('/inteligencia')} href="/inteligencia" onClick={navTo('/inteligencia')}
             />
             <SideBarItem
               icon={Wrench} label="Operação"
-              active={location.pathname.startsWith('/operacao')} onClick={() => navigate('/operacao')}
+              active={location.pathname.startsWith('/operacao')} href="/operacao" onClick={navTo('/operacao')}
             />
           </>
         )}

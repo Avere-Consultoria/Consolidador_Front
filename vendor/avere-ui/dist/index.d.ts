@@ -336,9 +336,9 @@ export declare interface SelectProps {
 
 export declare function SideBar({ isCollapsed, onToggle, isOpenMobile, onCloseMobile, logo, children, userName, userRole, userAvatarUrl, onLogout, className, ...props }: SideBarProps): JSX.Element;
 
-export declare function SideBarItem({ icon: Icon, label, active, badge, className, ...props }: SideBarItemProps): JSX.Element;
+export declare function SideBarItem({ icon: Icon, label, active, badge, href, className, ...props }: SideBarItemProps): JSX.Element;
 
-export declare interface SideBarItemProps extends HTMLAttributes<HTMLButtonElement> {
+export declare interface SideBarItemProps extends HTMLAttributes<HTMLElement> {
     icon: ElementType;
     label: string;
     active?: boolean;
@@ -346,6 +346,10 @@ export declare interface SideBarItemProps extends HTMLAttributes<HTMLButtonEleme
      *  não texto no label). No modo rail vira um dot sobre o ícone — a
      *  informação de "tem pendência" não some quando a barra colapsa. */
     badge?: ReactNode;
+    /** Rota do item. Com href o item renderiza <a> (padrão APG para
+     *  navegação): Ctrl/Cmd+clique e botão do meio abrem em nova aba.
+     *  O app SPA intercepta o clique simples (preventDefault + navigate). */
+    href?: string;
 }
 
 export declare interface SideBarProps extends HTMLAttributes<HTMLElement> {
