@@ -77,14 +77,14 @@ export default function MovimentacoesMes() {
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '16px' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <div style={{ background: 'rgba(0, 131, 203, 0.1)', padding: '8px', borderRadius: '8px' }}>
+                        <div style={{ background: 'var(--color-accent-subtle)', padding: '8px', borderRadius: '8px' }}>
                             <GitCompareArrows size={24} color="var(--color-primaria)" />
                         </div>
                         <Typography variant="h1" style={{ fontWeight: 700, fontSize: '24px' }}>
                             Movimentações — {formatarMesReferencia(mes)}
                         </Typography>
                     </div>
-                    <Typography variant="p" style={{ opacity: 0.6, fontSize: '14px' }}>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-md)' }}>
                         O que mudou na carteira ao longo do mês. Cliente: <strong>{selectedClient.nome}</strong>
                     </Typography>
                 </div>

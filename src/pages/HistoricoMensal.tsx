@@ -38,7 +38,7 @@ function formatarMoeda(v: number | null | undefined): string {
 }
 
 const CORES_INST: Record<string, string> = {
-    BTG: '#0369A1', XP: '#C2410C', AVENUE: '#92400E', AGORA: '#15803D',
+    BTG: '#0369A1', XP: 'var(--color-warning-text)', AVENUE: 'var(--color-warning-text)', AGORA: 'var(--color-success-text)',
 };
 const PALETA_INST = ['#0083CB', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16', '#06B6D4'];
 const PALETA_CLASSES = ['#0083CB', '#00B4D8', '#F59E0B', '#8B5CF6', '#10B981', '#EF4444', '#EC4899', '#6366F1', '#F97316', '#84CC16'];
@@ -107,7 +107,7 @@ export default function HistoricoMensal() {
         const corMapInst = new Map<string, string>();
         let p = 0;
         instSet.forEach(inst => corMapInst.set(inst, CORES_INST[inst] ?? PALETA_INST[p++ % PALETA_INST.length]));
-        const corInstFn = (inst: string) => corMapInst.get(inst) ?? '#9CA3AF';
+        const corInstFn = (inst: string) => corMapInst.get(inst) ?? 'var(--color-text-muted)';
 
         // Patrimônio total + por instituição por mês
         const totaisPorMes = new Map<string, { total: number; porInst: Record<string, number> }>();
@@ -184,12 +184,12 @@ export default function HistoricoMensal() {
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <div style={{ background: 'rgba(0, 131, 203, 0.1)', padding: '8px', borderRadius: '8px' }}>
+                        <div style={{ background: 'var(--color-accent-subtle)', padding: '8px', borderRadius: '8px' }}>
                             <History size={24} color="var(--color-primaria)" />
                         </div>
                         <Typography variant="h1" style={{ fontWeight: 700, fontSize: '24px' }}>Histórico Mensal</Typography>
                     </div>
-                    <Typography variant="p" style={{ opacity: 0.6, fontSize: '14px' }}>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-md)' }}>
                         Posição materializada de meses fechados. Cliente: <strong>{selectedClient.nome}</strong>
                     </Typography>
                 </div>
@@ -197,7 +197,7 @@ export default function HistoricoMensal() {
 
             {mesesUnicos.length === 0 ? (
                 <Card style={{ padding: '40px', textAlign: 'center' }}>
-                    <Typography variant="p" style={{ opacity: 0.6 }}>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
                         Nenhum mês fechado ainda. Use a tela de <strong>Fechamento de Mês</strong> para materializar o primeiro.
                     </Typography>
                 </Card>

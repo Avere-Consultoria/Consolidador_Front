@@ -292,9 +292,9 @@ export function MatrizMovimentacoes({ clienteId, mes, apelidoMap }: Props) {
         const pd = prevExpandedOf.get(d) ?? null;
         const prev = pd != null ? (valores.has(pd) ? valores.get(pd)! : null) : null;
         let bg = 'transparent', color = '#374151', peso = 500;
-        if (v != null && prev == null && pd != null) { bg = '#DCFCE7'; color = '#15803D'; peso = 700; }
-        else if (v == null && prev != null) { return <td key={d} style={tdCell('#FEF2F2')}><span style={{ color: '#DC2626' }}>—</span></td>; }
-        else if (v != null && prev != null) { if (v > prev + 0.005) color = '#15803D'; else if (v < prev - 0.005) color = '#DC2626'; }
+        if (v != null && prev == null && pd != null) { bg = 'var(--color-success-bg)'; color = 'var(--color-success-text)'; peso = 700; }
+        else if (v == null && prev != null) { return <td key={d} style={tdCell('var(--color-danger-bg)')}><span style={{ color: 'var(--color-danger-text)' }}>—</span></td>; }
+        else if (v != null && prev != null) { if (v > prev + 0.005) color = 'var(--color-success-text)'; else if (v < prev - 0.005) color = 'var(--color-danger-text)'; }
         return <td key={d} style={tdCell(bg)} title={fmtMoeda(v)}><span style={{ color, fontWeight: peso }}>{v == null ? '—' : fmtCompacto(v)}</span></td>;
     };
 
@@ -322,17 +322,17 @@ export function MatrizMovimentacoes({ clienteId, mes, apelidoMap }: Props) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
                     <KpiCard titulo="Patrimônio" valor={fmtMoeda(kpis.fim)}
                         sub={`${fmtMoeda(kpis.inicio)} → ${fmtMoeda(kpis.fim)}`}
-                        destaque={fmtDelta(kpis.deltaTotal)} destaqueCor={kpis.deltaTotal >= 0 ? '#15803D' : '#DC2626'}
+                        destaque={fmtDelta(kpis.deltaTotal)} destaqueCor={kpis.deltaTotal >= 0 ? 'var(--color-success-text)' : 'var(--color-danger-text)'}
                         destaque2={fmtPct(kpis.deltaTotal, kpis.inicio)} />
                     <KpiCard titulo="Captação líquida" valor={fmtDelta(kpis.entradas - kpis.saidas)}
-                        valorCor={(kpis.entradas - kpis.saidas) >= 0 ? '#15803D' : '#DC2626'}
+                        valorCor={(kpis.entradas - kpis.saidas) >= 0 ? 'var(--color-success-text)' : 'var(--color-danger-text)'}
                         sub={`entradas − saídas`} />
-                    <KpiCard titulo="Entradas" valor={fmtCompacto(kpis.entradas)} valorCor="#15803D"
+                    <KpiCard titulo="Entradas" valor={fmtCompacto(kpis.entradas)} valorCor="var(--color-success-text)"
                         sub={`${kpis.nEnt} ativo(s)`} extra={kpis.maiorEnt ? `maior: ${kpis.maiorEnt.nome}` : undefined} />
-                    <KpiCard titulo="Saídas" valor={fmtCompacto(kpis.saidas)} valorCor="#DC2626"
+                    <KpiCard titulo="Saídas" valor={fmtCompacto(kpis.saidas)} valorCor="var(--color-danger-text)"
                         sub={`${kpis.nSai} ativo(s)`} extra={kpis.maiorSai ? `maior: ${kpis.maiorSai.nome}` : undefined} />
                     <KpiCard titulo="Variação (mantidos)" valor={fmtDelta(kpis.variacao)}
-                        valorCor={kpis.variacao >= 0 ? '#15803D' : '#DC2626'} sub="≈ rendimento / marcação" />
+                        valorCor={kpis.variacao >= 0 ? 'var(--color-success-text)' : 'var(--color-danger-text)'} sub="≈ rendimento / marcação" />
                 </div>
             )}
 
@@ -341,7 +341,7 @@ export function MatrizMovimentacoes({ clienteId, mes, apelidoMap }: Props) {
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                     {chip('Tudo', 'TODOS')}{chip('Entradas', 'entrada')}{chip('Saídas', 'saida')}{chip('Variações', 'variacao')}
                     <div style={{ position: 'relative', marginLeft: 6 }}>
-                        <Search size={13} style={{ position: 'absolute', left: 8, top: 8, color: '#9CA3AF' }} />
+                        <Search size={13} style={{ position: 'absolute', left: 8, top: 8, color: 'var(--color-text-muted)' }} />
                         <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar ativo…"
                             style={{ padding: '6px 10px 6px 28px', border: '1px solid var(--color-borda)', borderRadius: 6, fontSize: 12, width: 160 }} />
                     </div>
@@ -360,9 +360,9 @@ export function MatrizMovimentacoes({ clienteId, mes, apelidoMap }: Props) {
             {loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}><Spinner size="lg" /></div>
             ) : datas.length <= 1 ? (
-                <Card style={{ padding: '60px', textAlign: 'center', color: '#6B7280' }}>
+                <Card style={{ padding: '60px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
                     <Typography variant="p">Não há histórico diário suficiente para comparar.</Typography>
-                    <Typography variant="p" style={{ fontSize: '12px', marginTop: 8, opacity: 0.7 }}>
+                    <Typography variant="p" style={{ fontSize: 'var(--text-xs)', marginTop: 8, color: 'var(--color-text-secondary)' }}>
                         Esta análise usa o fechamento do mês anterior + os snapshots diários do mês (que existem antes da poda).
                     </Typography>
                 </Card>
@@ -378,14 +378,14 @@ export function MatrizMovimentacoes({ clienteId, mes, apelidoMap }: Props) {
                                         if (colsOcultas.has(d)) {
                                             return (
                                                 <th key={d} style={{ ...thSticky, ...slimHeaderStyle }} onClick={() => expandir(d)} title={`Reabrir ${fmtDiaMes(d)}`}>
-                                                    <span style={{ fontSize: 9, color: '#9CA3AF' }}>{d.split('-')[2]}</span>
+                                                    <span style={{ fontSize: 9, color: 'var(--color-text-muted)' }}>{d.split('-')[2]}</span>
                                                 </th>
                                             );
                                         }
                                         const ehBase = d === baselineDate;
                                         const ehUlt = d === datas[datas.length - 1];
                                         return (
-                                            <th key={d} style={{ ...thSticky, zIndex: 2, textAlign: 'right', minWidth: 92, color: ehBase ? '#7C3AED' : ehUlt ? 'var(--color-primaria)' : '#6B7280' }}>
+                                            <th key={d} style={{ ...thSticky, zIndex: 2, textAlign: 'right', minWidth: 92, color: ehBase ? '#7C3AED' : ehUlt ? 'var(--color-primaria)' : 'var(--color-text-secondary)' }}>
                                                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
                                                     {ehBase ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}><Lock size={9} /> {baseLabel}</span> : `${fmtDiaMes(d)}${ehUlt ? ' •' : ''}`}
                                                     <ChevronsRightLeft size={11} style={{ cursor: 'pointer', opacity: 0.4 }} onClick={() => recolher(d)} />
@@ -397,15 +397,15 @@ export function MatrizMovimentacoes({ clienteId, mes, apelidoMap }: Props) {
                             </thead>
                             <tbody>
                                 {caixaPorData.size > 0 && (
-                                    <tr style={{ background: '#FFFBEB' }}>
-                                        <td style={{ ...tdSticky, left: 0, fontWeight: 700, background: '#FFFBEB' }}>Caixa / saldo</td>
-                                        <td style={{ ...tdSticky, left: 240, background: '#FFFBEB' }}>{renderDeltaResumo(deltaSerie(caixaPorData, datas))}</td>
+                                    <tr style={{ background: 'var(--color-warning-bg)' }}>
+                                        <td style={{ ...tdSticky, left: 0, fontWeight: 700, background: 'var(--color-warning-bg)' }}>Caixa / saldo</td>
+                                        <td style={{ ...tdSticky, left: 240, background: 'var(--color-warning-bg)' }}>{renderDeltaResumo(deltaSerie(caixaPorData, datas))}</td>
                                         {datas.map(d => tdColored(caixaPorData, d))}
                                     </tr>
                                 )}
-                                <tr style={{ background: '#F8FAFC' }}>
-                                    <td style={{ ...tdSticky, left: 0, fontWeight: 800, background: '#F8FAFC' }}>Patrimônio total</td>
-                                    <td style={{ ...tdSticky, left: 240, background: '#F8FAFC' }}>{renderDeltaResumo(deltaSerie(totaisPorData, datas))}</td>
+                                <tr style={{ background: 'var(--gray-50)' }}>
+                                    <td style={{ ...tdSticky, left: 0, fontWeight: 700, background: 'var(--gray-50)' }}>Patrimônio total</td>
+                                    <td style={{ ...tdSticky, left: 240, background: 'var(--gray-50)' }}>{renderDeltaResumo(deltaSerie(totaisPorData, datas))}</td>
                                     {datas.map(d => tdPlain(totaisPorData.get(d) ?? null, d, true, 'transparent'))}
                                 </tr>
 
@@ -413,19 +413,19 @@ export function MatrizMovimentacoes({ clienteId, mes, apelidoMap }: Props) {
                                     const recolhido = classesRecolhidas.has(g.classe);
                                     return (
                                         <Fragment key={g.classe}>
-                                            <tr style={{ background: '#EEF2FF', cursor: 'pointer' }}
+                                            <tr style={{ background: 'var(--color-accent-subtle)', cursor: 'pointer' }}
                                                 onClick={() => setClassesRecolhidas(s => { const n = new Set(s); n.has(g.classe) ? n.delete(g.classe) : n.add(g.classe); return n; })}>
-                                                <td style={{ ...tdSticky, left: 0, fontWeight: 700, background: '#EEF2FF' }}>
+                                                <td style={{ ...tdSticky, left: 0, fontWeight: 700, background: 'var(--color-accent-subtle)' }}>
                                                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                                                         {recolhido ? <ChevronRight size={13} /> : <ChevronDown size={13} />}
-                                                        {g.classe} <span style={{ color: '#6B7280', fontWeight: 500 }}>({g.rows.length})</span>
+                                                        {g.classe} <span style={{ color: 'var(--color-text-secondary)', fontWeight: 500 }}>({g.rows.length})</span>
                                                     </span>
                                                 </td>
-                                                <td style={{ ...tdSticky, left: 240, background: '#EEF2FF' }}>{renderDeltaResumo(g.delta)}</td>
-                                                {datas.map(d => tdPlain(g.valores.get(d) ?? null, d, false, '#EEF2FF'))}
+                                                <td style={{ ...tdSticky, left: 240, background: 'var(--color-accent-subtle)' }}>{renderDeltaResumo(g.delta)}</td>
+                                                {datas.map(d => tdPlain(g.valores.get(d) ?? null, d, false, 'var(--color-accent-subtle)'))}
                                             </tr>
                                             {!recolhido && g.rows.map(l => (
-                                                <tr key={l.key} style={{ borderTop: '1px solid #F1F5F9' }}>
+                                                <tr key={l.key} style={{ borderTop: '1px solid var(--color-border-subtle)' }}>
                                                     <td style={{ ...tdSticky, left: 0 }}>
                                                         <div style={{ fontWeight: 600, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 216, paddingLeft: 16 }}>{l.nome}</div>
                                                     </td>
@@ -433,7 +433,7 @@ export function MatrizMovimentacoes({ clienteId, mes, apelidoMap }: Props) {
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                                             {badgeTipo(l.tipo)}
                                                             {l.tipo !== 'estatico' && (
-                                                                <span style={{ fontSize: '11px', fontWeight: 700, color: l.delta >= 0 ? '#15803D' : '#DC2626' }}>
+                                                                <span style={{ fontSize: '11px', fontWeight: 700, color: l.delta >= 0 ? 'var(--color-success-text)' : 'var(--color-danger-text)' }}>
                                                                     {fmtDelta(l.delta)} {l.tipo === 'variacao' && l.primeiro ? <span style={{ opacity: 0.7 }}>({fmtPct(l.delta, l.primeiro)})</span> : null}
                                                                 </span>
                                                             )}
@@ -446,7 +446,7 @@ export function MatrizMovimentacoes({ clienteId, mes, apelidoMap }: Props) {
                                     );
                                 })}
                                 {grupos.length === 0 && (
-                                    <tr><td colSpan={nDateCols} style={{ padding: '32px', textAlign: 'center', color: '#9CA3AF' }}>Nenhum ativo com os filtros atuais.</td></tr>
+                                    <tr><td colSpan={nDateCols} style={{ padding: '32px', textAlign: 'center', color: 'var(--color-text-muted)' }}>Nenhum ativo com os filtros atuais.</td></tr>
                                 )}
                             </tbody>
                         </table>
@@ -455,10 +455,10 @@ export function MatrizMovimentacoes({ clienteId, mes, apelidoMap }: Props) {
             )}
 
             {!loading && datas.length > 1 && (
-                <div style={{ display: 'flex', gap: '16px', fontSize: '11px', color: '#6B7280', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '16px', fontSize: '11px', color: 'var(--color-text-secondary)', flexWrap: 'wrap' }}>
                     {baselineDate && <span><Lock size={10} style={{ verticalAlign: 'middle' }} /> referência = fechamento do mês anterior</span>}
-                    <span><span style={legBox('#DCFCE7')} /> entrou / subiu</span>
-                    <span><span style={legBox('#FEF2F2')} /> saiu</span>
+                    <span><span style={legBox('var(--color-success-bg)')} /> entrou / subiu</span>
+                    <span><span style={legBox('var(--color-danger-bg)')} /> saiu</span>
                     <span>• coluna marcada = posição mais recente (hoje)</span>
                     <span>clique no ⟨⟩ do cabeçalho para retrair uma coluna; clique na faixa fina para reabrir</span>
                 </div>
@@ -472,11 +472,11 @@ function KpiCard({ titulo, valor, valorCor, sub, extra, destaque, destaqueCor, d
     { titulo: string; valor: string; valorCor?: string; sub?: string; extra?: string; destaque?: string; destaqueCor?: string; destaque2?: string }) {
     return (
         <Card style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Typography variant="p" style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{titulo}</Typography>
-            <Typography variant="p" style={{ fontSize: 18, fontWeight: 800, color: valorCor ?? '#111827' }}>{valor}</Typography>
+            <Typography variant="p" style={{ fontSize: 10, fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{titulo}</Typography>
+            <Typography variant="p" style={{ fontSize: 18, fontWeight: 700, color: valorCor ?? '#111827' }}>{valor}</Typography>
             {destaque && <span style={{ fontSize: 12, fontWeight: 700, color: destaqueCor }}>{destaque} {destaque2 ? <span style={{ opacity: 0.7 }}>({destaque2})</span> : null}</span>}
-            {sub && <span style={{ fontSize: 11, color: '#6B7280' }}>{sub}</span>}
-            {extra && <span style={{ fontSize: 10, color: '#9CA3AF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{extra}</span>}
+            {sub && <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>{sub}</span>}
+            {extra && <span style={{ fontSize: 10, color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{extra}</span>}
         </Card>
     );
 }
@@ -486,17 +486,17 @@ function deltaSerie(serie: Map<string, number>, datas: string[]): number {
     return (serie.get(datas[datas.length - 1]) ?? 0) - (serie.get(datas[0]) ?? 0);
 }
 function renderDeltaResumo(delta: number) {
-    if (Math.abs(delta) < 0.005) return <span style={{ fontSize: '11px', color: '#9CA3AF' }}>—</span>;
-    return <span style={{ fontSize: '11px', fontWeight: 700, color: delta >= 0 ? '#15803D' : '#DC2626' }}>{fmtDelta(delta)}</span>;
+    if (Math.abs(delta) < 0.005) return <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>—</span>;
+    return <span style={{ fontSize: '11px', fontWeight: 700, color: delta >= 0 ? 'var(--color-success-text)' : 'var(--color-danger-text)' }}>{fmtDelta(delta)}</span>;
 }
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
-const thSticky: React.CSSProperties = { position: 'sticky', top: 0, background: '#F8FAFC', padding: '10px 12px', fontSize: '11px', fontWeight: 700, color: '#6B7280', borderBottom: '1px solid var(--color-borda)' };
-const tdSticky: React.CSSProperties = { position: 'sticky', background: '#fff', padding: '8px 12px', verticalAlign: 'top', borderRight: '1px solid #F1F5F9' };
+const thSticky: React.CSSProperties = { position: 'sticky', top: 0, background: 'var(--gray-50)', padding: '10px 12px', fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', borderBottom: '1px solid var(--color-borda)' };
+const tdSticky: React.CSSProperties = { position: 'sticky', background: '#fff', padding: '8px 12px', verticalAlign: 'top', borderRight: '1px solid var(--color-border-subtle)' };
 const tdCell = (bg: string): React.CSSProperties => ({ padding: '8px 12px', textAlign: 'right', background: bg, whiteSpace: 'nowrap' });
 const slimHeaderStyle: React.CSSProperties = { width: 18, minWidth: 18, padding: '10px 0', textAlign: 'center', cursor: 'pointer', background: '#EEF1F5', borderLeft: '1px solid var(--color-borda)' };
-const slimCellStyle: React.CSSProperties = { width: 18, minWidth: 18, padding: 0, cursor: 'pointer', background: '#F3F4F6', borderLeft: '1px solid #E5E7EB' };
+const slimCellStyle: React.CSSProperties = { width: 18, minWidth: 18, padding: 0, cursor: 'pointer', background: 'var(--color-surface-sunken)', borderLeft: '1px solid var(--color-border-subtle)' };
 const pill: React.CSSProperties = { fontSize: '10px', display: 'inline-flex', alignItems: 'center', gap: 3, width: 'fit-content' };
 const legBox = (c: string): React.CSSProperties => ({ display: 'inline-block', width: 10, height: 10, background: c, borderRadius: 2, marginRight: 4, verticalAlign: 'middle' });
-const chipStyle: React.CSSProperties = { padding: '5px 10px', fontSize: 12, border: '1px solid var(--color-borda)', borderRadius: 16, background: '#fff', color: '#6B7280', cursor: 'pointer' };
+const chipStyle: React.CSSProperties = { padding: '5px 10px', fontSize: 12, border: '1px solid var(--color-borda)', borderRadius: 16, background: '#fff', color: 'var(--color-text-secondary)', cursor: 'pointer' };
 const chipAtivo: React.CSSProperties = { background: 'var(--color-primaria)', color: '#fff', borderColor: 'var(--color-primaria)', fontWeight: 700 };

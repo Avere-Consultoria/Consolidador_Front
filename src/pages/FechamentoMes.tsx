@@ -44,11 +44,11 @@ function formatarMoeda(v: number | null | undefined): string {
 
 const CORES_INST: Record<string, { bg: string; fg: string; border: string }> = {
     BTG:    { bg: '#E0F2FE', fg: '#0369A1', border: '#7DD3FC' },
-    XP:     { bg: '#FFEDD5', fg: '#C2410C', border: '#FDBA74' },
-    AVENUE: { bg: '#FEF3C7', fg: '#92400E', border: '#FCD34D' },
-    AGORA:  { bg: '#DCFCE7', fg: '#15803D', border: '#86EFAC' },
+    XP:     { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)', border: 'var(--color-warning-border)' },
+    AVENUE: { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)', border: 'var(--color-warning-border)' },
+    AGORA:  { bg: 'var(--color-success-bg)', fg: 'var(--color-success-text)', border: '#86EFAC' },
 };
-const COR_MANUAL = { bg: '#F1F5F9', fg: '#475569', border: '#CBD5E1' };
+const COR_MANUAL = { bg: 'var(--color-surface-sunken)', fg: 'var(--color-text-secondary)', border: 'var(--color-border-default)' };
 const corDe = (inst: string) => CORES_INST[inst] ?? COR_MANUAL;
 
 // ── Card por conta ───────────────────────────────────────────────────────────
@@ -58,19 +58,19 @@ function CardConta({ status, label }: { status: ContaStatus; label: string }) {
     return (
         <div style={{ background: cor.bg, border: `1px solid ${cor.border}`, borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ background: '#fff', color: cor.fg, fontSize: '10px', fontWeight: 800, padding: '3px 7px', borderRadius: '4px', letterSpacing: '0.04em' }}>
+                <span style={{ background: '#fff', color: cor.fg, fontSize: '10px', fontWeight: 700, padding: '3px 7px', borderRadius: '4px', letterSpacing: '0.04em' }}>
                     {label}
                 </span>
                 {isFechado ? <Lock size={12} color={cor.fg} /> : <CheckCircle2 size={12} color={cor.fg} opacity={0.5} />}
             </div>
             <div>
-                <Typography variant="p" style={{ fontSize: '10px', color: cor.fg, opacity: 0.7, fontWeight: 600 }}>{isFechado ? 'FECHADO EM' : 'FOTO DE'}</Typography>
+                <Typography variant="p" style={{ fontSize: 'var(--text-2xs)', color: cor.fg, opacity: 0.8, fontWeight: 600, letterSpacing: 'var(--tracking-wide)' }}>{isFechado ? 'FECHADO EM' : 'FOTO DE'}</Typography>
                 <Typography variant="p" style={{ fontSize: '12px', color: cor.fg, fontWeight: 700 }}>
                     {formatarDataBR(isFechado ? status.fechado_data_referencia : status.disponivel_data_referencia)}
                 </Typography>
             </div>
             <div>
-                <Typography variant="p" style={{ fontSize: '10px', color: cor.fg, opacity: 0.7, fontWeight: 600 }}>PATRIMÔNIO</Typography>
+                <Typography variant="p" style={{ fontSize: 'var(--text-2xs)', color: cor.fg, opacity: 0.8, fontWeight: 600, letterSpacing: 'var(--tracking-wide)' }}>PATRIMÔNIO</Typography>
                 <Typography variant="p" style={{ fontSize: '11px', color: cor.fg, fontWeight: 700 }}>
                     {formatarMoeda(isFechado ? status.fechado_patrimonio : status.disponivel_patrimonio)}
                 </Typography>
@@ -125,7 +125,7 @@ function CardMes({ mes, apelidoMap, onRevisar }: {
                         {!algumFechado && disponiveis.length > 0 && <Badge intent="neutro" variant="ghost" style={{ fontSize: '10px' }}>ABERTO</Badge>}
                     </div>
                     {dataFechamento && (
-                        <Typography variant="p" style={{ fontSize: '12px', color: '#6B7280' }}>
+                        <Typography variant="p" style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
                             Último fechamento: {formatarTimestampBR(dataFechamento)}
                         </Typography>
                     )}
@@ -194,12 +194,12 @@ export default function FechamentoMes() {
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <div style={{ background: 'rgba(0, 131, 203, 0.1)', padding: '8px', borderRadius: '8px' }}>
+                        <div style={{ background: 'var(--color-accent-subtle)', padding: '8px', borderRadius: '8px' }}>
                             <Calendar size={24} color="var(--color-primaria)" />
                         </div>
                         <Typography variant="h1" style={{ fontWeight: 700, fontSize: '24px' }}>Fechamento de Mês</Typography>
                     </div>
-                    <Typography variant="p" style={{ opacity: 0.6, fontSize: '14px' }}>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-md)' }}>
                         Materializa a posição do final de cada mês de forma imutável, por conta. Cliente: <strong>{selectedClient.nome}</strong>
                     </Typography>
                 </div>
@@ -209,7 +209,7 @@ export default function FechamentoMes() {
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}><Spinner size="lg" /></div>
             ) : meses.length === 0 ? (
                 <Card style={{ padding: '40px', textAlign: 'center' }}>
-                    <Typography variant="p" style={{ opacity: 0.6 }}>Nenhum mês com dados de posição encontrado para este cliente.</Typography>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>Nenhum mês com dados de posição encontrado para este cliente.</Typography>
                 </Card>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
