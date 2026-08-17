@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Typography, Card, Select, Spinner, Badge, toast } from 'avere-ui';
 import { Sparkles, PenLine, AlertTriangle, Check, X, Trash2 } from 'lucide-react';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 import { supabase } from '../services/supabase';
 import { useClient } from '../contexts/ClientContext';
 import { fmt } from '../utils/formatters';
+import { CORES, isValidHex } from '../utils/colors';
 import { NenhumClienteSelecionado } from '../components/home/NenhumClienteSelecionado';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -33,6 +35,16 @@ interface Linha {
     tem_dados: boolean;
     rent: Partial<Record<JanelaKey, number | null>>;
 }
+interface PontoSerie { mes: string; rent: number | null; acumulado: number | null }
+interface SerieConta { instituicao: string; conta_codigo: string; chave: string; pontos: PontoSerie[] }
+interface SerieData {
+    mes_referencia: string;
+    meses: string[];
+    series: SerieConta[];
+    consolidado: PontoSerie[];
+    cdi: PontoSerie[];
+}
+
 interface Contrato {
     mes_referencia: string;
     linhas: Linha[];
@@ -63,6 +75,25 @@ function mesesFechados(): { value: string; label: string }[] {
 const pct = (v: number | null | undefined, casas = 2) =>
     v === null || v === undefined ? null : `${(v * 100).toFixed(casas).replace('.', ',')}%`;
 
+const MESES_ABREV = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+const mesCurto = (ym: string) => {
+    const [a, m] = ym.split('-');
+    return `${MESES_ABREV[Number(m) - 1]}/${a.slice(2)}`;
+};
+
+// Paleta reserva das linhas (quando a instituição não tem cor cadastrada)
+const PALETA = ['#0A2C57', '#C2410C', '#0E7C6B', '#7C3AED', '#DB2777', '#D97706'];
+
+// Cor da instituição: cadastro (Gestão Master) > fallback fixo do sistema > paleta
+function corInstituicao(nome: string, corDb: string | undefined, idx: number): string {
+    if (isValidHex(corDb)) return corDb as string;
+    if (/btg/i.test(nome)) return CORES.btg;
+    if (/xp/i.test(nome)) return CORES.xp;
+    if (/avenue/i.test(nome)) return CORES.avenue;
+    if (/agora|ágora/i.test(nome)) return CORES.agora;
+    return PALETA[idx % PALETA.length];
+}
+
 const corRent = (v: number | null | undefined) =>
     v === null || v === undefined ? '#9CA3AF' : v < 0 ? '#DC2626' : 'var(--color-secundaria)';
 
@@ -86,6 +117,9 @@ export default function Rentabilidade() {
     const [avisosBloco, setAvisosBloco] = useState<string[]>([]);
     const [desmarcadas, setDesmarcadas] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
+    const [serie, setSerie] = useState<SerieData | null>(null);
+    const [coresDb, setCoresDb] = useState<Record<string, string>>({});      // upper(nome) → cor_primaria
+    const [linhasOcultas, setLinhasOcultas] = useState<Set<string>>(new Set());
 
     // Edição manual (célula do MÊS — o tijolo; as janelas derivam)
     const [editando, setEditando] = useState<string | null>(null);
@@ -116,6 +150,55 @@ export default function Rentabilidade() {
             setLoading(false);
         })();
     }, [carregar]);
+
+    // Cores oficiais das instituições (as mesmas do resto do sistema)
+    useEffect(() => {
+        (async () => {
+            const { data } = await supabase.from('instituicoes').select('nome, cor_primaria');
+            const mapa: Record<string, string> = {};
+            for (const i of data ?? []) if (i.cor_primaria) mapa[String(i.nome).toUpperCase()] = i.cor_primaria;
+            setCoresDb(mapa);
+        })();
+    }, []);
+
+    const alternarLinha = (nome: string) => {
+        setLinhasOcultas(prev => {
+            const novo = new Set(prev);
+            if (novo.has(nome)) novo.delete(nome); else novo.add(nome);
+            return novo;
+        });
+    };
+
+    // Série do gráfico (acumulado 12m por conta + CDI) — independente do bloco
+    useEffect(() => {
+        (async () => {
+            if (!selectedClient?.id) return;
+            const { data, error } = await supabase.rpc('rentabilidade_cliente_serie', {
+                p_cliente_id: selectedClient.id,
+                p_mes_ref: mesRef,
+                p_meses: 12,
+            });
+            if (error) { console.error('Rentabilidade: série do gráfico falhou', error); setSerie(null); return; }
+            setSerie(data as SerieData);
+        })();
+    }, [selectedClient?.id, mesRef]);
+
+    // Dados do gráfico: uma linha por mês, colunas = contas + CDI (em %)
+    const chartData = useMemo(() => {
+        if (!serie) return [];
+        return serie.meses.map((ym, i) => {
+            const row: Record<string, number | string | null> = { mes: mesCurto(ym) };
+            for (const s of serie.series) {
+                const ac = s.pontos[i]?.acumulado;
+                row[`${s.instituicao} ${s.conta_codigo}`.trim()] = ac === null || ac === undefined ? null : ac * 100;
+            }
+            const cons = serie.consolidado?.[i]?.acumulado;
+            row.Consolidado = cons === null || cons === undefined ? null : cons * 100;
+            const cdi = serie.cdi[i]?.acumulado;
+            row.CDI = cdi === null || cdi === undefined ? null : cdi * 100;
+            return row;
+        });
+    }, [serie]);
 
     // Recarrega universo E consolidado respeitando o bloco marcado atual
     const recarregarTudo = useCallback(async (desm: Set<string>) => {
@@ -334,6 +417,62 @@ export default function Rentabilidade() {
                     </tfoot>
                 </table>
             </Card>
+
+            {/* ── Gráfico: acumulado 12m por conta vs CDI ── */}
+            {chartData.length > 0 && serie && serie.series.length > 0 && (
+                <Card style={{ padding: 0, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', background: 'var(--color-secundaria)', color: '#fff' }}>
+                        <Typography variant="p" style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: '0.04em', color: '#fff' }}>
+                            RENTABILIDADE ACUMULADA — ÚLTIMOS 12 MESES
+                        </Typography>
+                        <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 600 }}>
+                            REF. {mesCurto(serie.mes_referencia).toUpperCase()} · POR CONTA vs CDI
+                        </span>
+                    </div>
+                    <div style={{ padding: '20px 12px 8px' }}>
+                        <ResponsiveContainer width="100%" height={320}>
+                            <LineChart data={chartData} margin={{ top: 8, right: 24, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
+                                <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#6B7280' }} tickLine={false} axisLine={{ stroke: '#E5E7EB' }} />
+                                <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} tickLine={false} axisLine={false}
+                                    tickFormatter={(v: number) => `${v.toFixed(1).replace('.', ',')}%`} width={52} />
+                                <Tooltip
+                                    formatter={(v: unknown) => [`${Number(v).toFixed(2).replace('.', ',')}%`]}
+                                    labelStyle={{ fontWeight: 700, color: 'var(--color-secundaria)' }}
+                                    contentStyle={{ borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 12, fontFamily: 'var(--font-family)' }}
+                                />
+                                <Legend
+                                    wrapperStyle={{ fontSize: 12, fontFamily: 'var(--font-family)', cursor: 'pointer', userSelect: 'none' }}
+                                    onClick={(e: any) => alternarLinha(String(e?.dataKey ?? e?.value ?? ''))}
+                                    formatter={(value: string) => (
+                                        <span style={{
+                                            color: linhasOcultas.has(value) ? '#B0B7C3' : '#374151',
+                                            textDecoration: linhasOcultas.has(value) ? 'line-through' : 'none',
+                                        }}>
+                                            {value}
+                                        </span>
+                                    )}
+                                />
+                                {serie.series.map((s, i) => {
+                                    const nome = `${s.instituicao} ${s.conta_codigo}`.trim();
+                                    return (
+                                        <Line key={s.chave} type="monotone" dataKey={nome} name={nome}
+                                            stroke={corInstituicao(s.instituicao, coresDb[s.instituicao.toUpperCase()], i)}
+                                            strokeWidth={2.5} dot={{ r: 2.5 }} activeDot={{ r: 4 }}
+                                            connectNulls={false} hide={linhasOcultas.has(nome)} />
+                                    );
+                                })}
+                                <Line type="monotone" dataKey="Consolidado" name="Consolidado" stroke="#111827"
+                                    strokeWidth={3.5} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls={false}
+                                    hide={linhasOcultas.has('Consolidado')} />
+                                <Line type="monotone" dataKey="CDI" name="CDI" stroke="#9CA3AF"
+                                    strokeWidth={2} strokeDasharray="6 4" dot={false} connectNulls={false}
+                                    hide={linhasOcultas.has('CDI')} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                </Card>
+            )}
 
             <Typography variant="p" style={{ fontSize: 12, color: '#9CA3AF' }}>
                 Consolidado = média das rentabilidades ponderada pela NET de fechamento do mês, por janela, sobre as contas marcadas que têm número.
