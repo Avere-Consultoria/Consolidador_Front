@@ -11478,47 +11478,87 @@ var cb = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
 }));
 cb.displayName = "CardFooter";
 var $ = {
-	overlay: "_overlay_1s52k_3",
-	sidebar: "_sidebar_1s52k_23",
-	expanded: "_expanded_1s52k_53",
-	collapsed: "_collapsed_1s52k_61",
-	header: "_header_1s52k_71",
-	logoContainer: "_logoContainer_1s52k_111",
-	toggleButton: "_toggleButton_1s52k_141",
-	nav: "_nav_1s52k_177",
-	item: "_item_1s52k_199",
-	itemActive: "_itemActive_1s52k_241",
-	itemCollapsed: "_itemCollapsed_1s52k_251",
-	itemExpanded: "_itemExpanded_1s52k_261",
-	itemLabel: "_itemLabel_1s52k_271",
-	labelHidden: "_labelHidden_1s52k_285",
-	footer: "_footer_1s52k_299",
-	footerCollapsed: "_footerCollapsed_1s52k_313",
-	userMenu: "_userMenu_1s52k_327",
-	userMenuCollapsed: "_userMenuCollapsed_1s52k_353",
-	userMenuLogout: "_userMenuLogout_1s52k_367",
-	userProfileButton: "_userProfileButton_1s52k_411",
-	userButtonCollapsed: "_userButtonCollapsed_1s52k_447",
-	userInfo: "_userInfo_1s52k_457",
-	userText: "_userText_1s52k_473",
-	userMenuIcon: "_userMenuIcon_1s52k_491",
-	mobileOpen: "_mobileOpen_1s52k_515",
-	logoPlaceholder: "_logoPlaceholder_1s52k_541",
-	logoPulse: "_logoPulse_1s52k_1"
+	overlay: "_overlay_1x31s_3",
+	sidebar: "_sidebar_1x31s_23",
+	expanded: "_expanded_1x31s_53",
+	collapsed: "_collapsed_1x31s_61",
+	header: "_header_1x31s_71",
+	logoContainer: "_logoContainer_1x31s_111",
+	toggleButton: "_toggleButton_1x31s_141",
+	nav: "_nav_1x31s_177",
+	item: "_item_1x31s_199",
+	iconWrap: "_iconWrap_1x31s_245",
+	badge: "_badge_1x31s_263",
+	itemActive: "_itemActive_1x31s_287",
+	badgeDot: "_badgeDot_1x31s_299",
+	itemCollapsed: "_itemCollapsed_1x31s_343",
+	itemExpanded: "_itemExpanded_1x31s_353",
+	itemLabel: "_itemLabel_1x31s_363",
+	labelHidden: "_labelHidden_1x31s_377",
+	section: "_section_1x31s_391",
+	sectionCollapsed: "_sectionCollapsed_1x31s_405",
+	sectionLabel: "_sectionLabel_1x31s_413",
+	sectionRule: "_sectionRule_1x31s_431",
+	footer: "_footer_1x31s_445",
+	footerCollapsed: "_footerCollapsed_1x31s_459",
+	userMenu: "_userMenu_1x31s_473",
+	userMenuCollapsed: "_userMenuCollapsed_1x31s_499",
+	userMenuLogout: "_userMenuLogout_1x31s_513",
+	userProfileButton: "_userProfileButton_1x31s_557",
+	userButtonCollapsed: "_userButtonCollapsed_1x31s_593",
+	userInfo: "_userInfo_1x31s_603",
+	userName: "_userName_1x31s_619",
+	userRole: "_userRole_1x31s_637",
+	userMenuIcon: "_userMenuIcon_1x31s_655",
+	mobileOpen: "_mobileOpen_1x31s_679",
+	logoPlaceholder: "_logoPlaceholder_1x31s_705",
+	logoPulse: "_logoPulse_1x31s_1"
 }, lb = n({ isCollapsed: !1 });
-function ub({ icon: e, label: t, active: n, className: r, ...i }) {
-	let { isCollapsed: a } = o(lb);
-	return /* @__PURE__ */ m("button", {
-		className: x($.item, n && $.itemActive, a ? $.itemCollapsed : $.itemExpanded, r),
-		title: a ? t : void 0,
-		...i,
-		children: [/* @__PURE__ */ p(e, { size: a ? 24 : 20 }), /* @__PURE__ */ p("span", {
-			className: x($.itemLabel, a && $.labelHidden),
+function ub({ icon: e, label: t, active: n, badge: r, className: i, ...a }) {
+	let { isCollapsed: s } = o(lb), c = /* @__PURE__ */ m("button", {
+		className: x($.item, n && $.itemActive, s ? $.itemCollapsed : $.itemExpanded, i),
+		"aria-current": n ? "page" : void 0,
+		...a,
+		children: [
+			/* @__PURE__ */ m("span", {
+				className: $.iconWrap,
+				children: [/* @__PURE__ */ p(e, { size: 20 }), s && r != null && r !== 0 && /* @__PURE__ */ p("span", {
+					className: $.badgeDot,
+					"aria-hidden": "true"
+				})]
+			}),
+			/* @__PURE__ */ p("span", {
+				className: x($.itemLabel, s && $.labelHidden),
+				children: t
+			}),
+			!s && r != null && r !== 0 && /* @__PURE__ */ p("span", {
+				className: $.badge,
+				children: r
+			})
+		]
+	});
+	return s ? /* @__PURE__ */ p(sv, {
+		delayDuration: 150,
+		children: /* @__PURE__ */ m(cv, { children: [/* @__PURE__ */ p(lv, {
+			asChild: !0,
+			children: c
+		}), /* @__PURE__ */ p(uv, {
+			side: "right",
 			children: t
-		})]
+		})] })
+	}) : c;
+}
+function db({ label: e }) {
+	let { isCollapsed: t } = o(lb);
+	return /* @__PURE__ */ m("div", {
+		className: x($.section, t && $.sectionCollapsed),
+		children: [!t && /* @__PURE__ */ p("span", {
+			className: $.sectionLabel,
+			children: e
+		}), /* @__PURE__ */ p("span", { className: $.sectionRule })]
 	});
 }
-function db({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, logo: i, children: a, userName: o = "Usuário", userRole: c = "Colaborador", userAvatarUrl: l, onLogout: h, className: g, ..._ }) {
+function fb({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, logo: i, children: a, userName: o = "Usuário", userRole: c = "Colaborador", userAvatarUrl: l, onLogout: h, className: g, ..._ }) {
 	let [v, y] = d(!1), b = u(null);
 	return s(() => {
 		if (!v) return;
@@ -11550,6 +11590,7 @@ function db({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, lo
 				value: { isCollapsed: e },
 				children: /* @__PURE__ */ p("nav", {
 					className: $.nav,
+					"aria-label": "Principal",
 					children: a
 				})
 			}),
@@ -11573,10 +11614,10 @@ function db({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, lo
 					}), !e && /* @__PURE__ */ m(f, { children: [/* @__PURE__ */ m("div", {
 						className: $.userInfo,
 						children: [/* @__PURE__ */ p("span", {
-							className: $.userText,
+							className: $.userName,
 							children: o
 						}), /* @__PURE__ */ p("span", {
-							className: $.userText,
+							className: $.userRole,
 							children: c
 						})]
 					}), /* @__PURE__ */ p(le, {
@@ -11588,7 +11629,7 @@ function db({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, lo
 		]
 	})] });
 }
-var fb = {
+var pb = {
 	header: "_header_u5732_1",
 	buttonGroup: "_buttonGroup_u5732_43",
 	contextArea: "_contextArea_u5732_53",
@@ -11597,25 +11638,25 @@ var fb = {
 };
 //#endregion
 //#region src/components/TopBar/index.tsx
-function pb({ onToggleMobile: e, className: t, children: n, ...r }) {
+function mb({ onToggleMobile: e, className: t, children: n, ...r }) {
 	return /* @__PURE__ */ m("header", {
-		className: x(fb.header, t),
+		className: x(pb.header, t),
 		...r,
 		children: [/* @__PURE__ */ p("div", {
-			className: fb.buttonGroup,
+			className: pb.buttonGroup,
 			children: /* @__PURE__ */ p(xe, {
 				variant: "ghost",
 				intent: "secundaria",
-				className: x(fb.mobileOnly),
+				className: x(pb.mobileOnly),
 				onClick: e,
 				"aria-label": "Abrir menu",
 				children: /* @__PURE__ */ p(pe, { size: 20 })
 			})
 		}), /* @__PURE__ */ p("div", {
-			className: fb.contextArea,
+			className: pb.contextArea,
 			children: n
 		})]
 	});
 }
 //#endregion
-export { M as Avatar, A as Badge, xe as Button, v_ as Calendar, rb as Card, sb as CardContent, ob as CardDescription, cb as CardFooter, ib as CardHeader, ab as CardTitle, Ee as Checkbox, Cc as Combobox, ep as DataTable, y_ as DatePicker, Wy as Drawer, Zy as DrawerBody, qy as DrawerClose, Yy as DrawerContent, eb as DrawerDescription, Qy as DrawerFooter, Xy as DrawerHeader, Jy as DrawerOverlay, Ky as DrawerPortal, tb as DrawerSeparator, $y as DrawerTitle, Gy as DrawerTrigger, zf as DropdownMenu, Yf as DropdownMenuCheckboxItem, qf as DropdownMenuContent, Vf as DropdownMenuGroup, Jf as DropdownMenuItem, Zf as DropdownMenuLabel, Hf as DropdownMenuPortal, Wf as DropdownMenuRadioGroup, Xf as DropdownMenuRadioItem, Qf as DropdownMenuSeparator, $f as DropdownMenuShortcut, Uf as DropdownMenuSub, Kf as DropdownMenuSubContent, Gf as DropdownMenuSubTrigger, Bf as DropdownMenuTrigger, Tc as FileUpload, tu as HierarchicalCombobox, Ny as Modal, Iy as ModalClose, Ry as ModalContent, Hy as ModalDescription, By as ModalFooter, zy as ModalHeader, Ly as ModalOverlay, Fy as ModalPortal, Vy as ModalTitle, Py as ModalTrigger, cr as MultiSelect, h_ as Popover, __ as PopoverContent, g_ as PopoverTrigger, en as RadioGroup, tn as RadioItem, x_ as Select, db as SideBar, ub as SideBarItem, ye as Skeleton, Gn as Slider, ve as Spinner, or as Switch, ru as TagInput, we as TextField, Uv as Toaster, cv as Tooltip, uv as TooltipContent, sv as TooltipProvider, lv as TooltipTrigger, pb as TopBar, D as Typography, k as badgeVariants, be as buttonVariants, x as cn, Ce as inputVariants, Ev as toast, E as typographyVariants };
+export { M as Avatar, A as Badge, xe as Button, v_ as Calendar, rb as Card, sb as CardContent, ob as CardDescription, cb as CardFooter, ib as CardHeader, ab as CardTitle, Ee as Checkbox, Cc as Combobox, ep as DataTable, y_ as DatePicker, Wy as Drawer, Zy as DrawerBody, qy as DrawerClose, Yy as DrawerContent, eb as DrawerDescription, Qy as DrawerFooter, Xy as DrawerHeader, Jy as DrawerOverlay, Ky as DrawerPortal, tb as DrawerSeparator, $y as DrawerTitle, Gy as DrawerTrigger, zf as DropdownMenu, Yf as DropdownMenuCheckboxItem, qf as DropdownMenuContent, Vf as DropdownMenuGroup, Jf as DropdownMenuItem, Zf as DropdownMenuLabel, Hf as DropdownMenuPortal, Wf as DropdownMenuRadioGroup, Xf as DropdownMenuRadioItem, Qf as DropdownMenuSeparator, $f as DropdownMenuShortcut, Uf as DropdownMenuSub, Kf as DropdownMenuSubContent, Gf as DropdownMenuSubTrigger, Bf as DropdownMenuTrigger, Tc as FileUpload, tu as HierarchicalCombobox, Ny as Modal, Iy as ModalClose, Ry as ModalContent, Hy as ModalDescription, By as ModalFooter, zy as ModalHeader, Ly as ModalOverlay, Fy as ModalPortal, Vy as ModalTitle, Py as ModalTrigger, cr as MultiSelect, h_ as Popover, __ as PopoverContent, g_ as PopoverTrigger, en as RadioGroup, tn as RadioItem, x_ as Select, fb as SideBar, ub as SideBarItem, db as SideBarSection, ye as Skeleton, Gn as Slider, ve as Spinner, or as Switch, ru as TagInput, we as TextField, Uv as Toaster, cv as Tooltip, uv as TooltipContent, sv as TooltipProvider, lv as TooltipTrigger, mb as TopBar, D as Typography, k as badgeVariants, be as buttonVariants, x as cn, Ce as inputVariants, Ev as toast, E as typographyVariants };

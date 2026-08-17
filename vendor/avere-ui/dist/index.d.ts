@@ -336,12 +336,16 @@ export declare interface SelectProps {
 
 export declare function SideBar({ isCollapsed, onToggle, isOpenMobile, onCloseMobile, logo, children, userName, userRole, userAvatarUrl, onLogout, className, ...props }: SideBarProps): JSX.Element;
 
-export declare function SideBarItem({ icon: Icon, label, active, className, ...props }: SideBarItemProps): JSX.Element;
+export declare function SideBarItem({ icon: Icon, label, active, badge, className, ...props }: SideBarItemProps): JSX.Element;
 
 export declare interface SideBarItemProps extends HTMLAttributes<HTMLButtonElement> {
     icon: ElementType;
     label: string;
     active?: boolean;
+    /** Contagem/aviso à direita do rótulo (ficha sidebar: badge é elemento,
+     *  não texto no label). No modo rail vira um dot sobre o ícone — a
+     *  informação de "tem pendência" não some quando a barra colapsa. */
+    badge?: ReactNode;
 }
 
 export declare interface SideBarProps extends HTMLAttributes<HTMLElement> {
@@ -355,6 +359,14 @@ export declare interface SideBarProps extends HTMLAttributes<HTMLElement> {
     userRole?: string;
     userAvatarUrl?: string;
     onLogout?: () => void;
+}
+
+/** Rótulo de grupo (ficha sidebar: seções nomeadas, caixa alta, divisor).
+ *  Colapsada, mostra só a linha divisória. */
+export declare function SideBarSection({ label }: SideBarSectionProps): JSX.Element;
+
+export declare interface SideBarSectionProps {
+    label: string;
 }
 
 export declare const Skeleton: React_2.ForwardRefExoticComponent<SkeletonProps & React_2.RefAttributes<HTMLDivElement>>;

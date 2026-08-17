@@ -1,7 +1,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, ClipboardCheck, LayoutGrid, ListTodo } from 'lucide-react';
-import { SideBar, SideBarItem, TopBar, HierarchicalCombobox, Toaster, Spinner, type ComboboxLevel } from 'avere-ui';
+import { SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -177,18 +177,6 @@ export default function MainLayout() {
     },
   ];
 
-  // Divisória de seção da sidebar (rótulo suave + linha).
-  const secao = (label: string) => (
-    <div style={{ padding: isCollapsed ? '24px 12px 8px' : '24px 20px 8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-      {!isCollapsed && (
-        <span style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>
-          {label}
-        </span>
-      )}
-      <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-    </div>
-  );
-
   return (
     <div className={styles.shell}>
       <Toaster position="top-right" richColors />
@@ -197,7 +185,11 @@ export default function MainLayout() {
         userRole={perfil?.role === 'MASTER' ? 'Administrador' : 'Consultor'}
         onLogout={signOut}
         isCollapsed={isCollapsed}
-        onToggle={() => setIsCollapsed(!isCollapsed)}
+        onToggle={() => {
+          const novo = !isCollapsed;
+          setIsCollapsed(novo);
+          localStorage.setItem('sidebar:collapsed', novo ? '1' : '0');
+        }}
         logo={
           isCollapsed ? (
             <img src={LogoAvereIcone} alt="Avere" className={styles.logoIcon} />
@@ -250,10 +242,11 @@ export default function MainLayout() {
 
         {isMaster && (
           <>
-            {secao('Administração')}
+            <SideBarSection label="Administração" />
             <SideBarItem
               icon={ClipboardCheck}
-              label={pendenciasCount > 0 ? `Pendências (${pendenciasCount})` : 'Pendências'}
+              label="Pendências"
+              badge={pendenciasCount > 0 ? pendenciasCount : undefined}
               active={location.pathname.startsWith('/pendencias')} onClick={() => navigate('/pendencias')}
             />
             <SideBarItem
