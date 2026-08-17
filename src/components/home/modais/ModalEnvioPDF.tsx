@@ -15,9 +15,9 @@ interface Props {
     cliente: { id: string; nome: string; codigoAvere: string; consultorId?: string | null } | null;
 }
 
-const lbl: React.CSSProperties = { fontSize: 11, fontWeight: 700, textTransform: 'uppercase', opacity: 0.5, letterSpacing: '0.05em', display: 'block', marginBottom: 6 };
-const ctrl: React.CSSProperties = { width: '100%', boxSizing: 'border-box', height: 40, padding: '0 12px', fontSize: 14, fontFamily: 'inherit', border: '1.5px solid rgba(0,0,0,0.15)', borderRadius: 8, outline: 'none', background: '#fff' };
-const ro: React.CSSProperties = { ...ctrl, background: '#F3F4F6', color: '#6B7280' };
+const lbl: React.CSSProperties = { fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-caps)', display: 'block', marginBottom: 6 };
+const ctrl: React.CSSProperties = { width: '100%', boxSizing: 'border-box', height: 40, padding: '0 12px', fontSize: 14, fontFamily: 'inherit', border: '1.5px solid var(--color-border-default)', borderRadius: 8, outline: 'none', background: '#fff' };
+const ro: React.CSSProperties = { ...ctrl, background: 'var(--color-surface-sunken)', color: 'var(--color-text-secondary)' };
 
 export function ModalEnvioPDF({ aberto, onClose, cliente }: Props) {
     const [consultor, setConsultor] = useState('');
@@ -137,13 +137,13 @@ export function ModalEnvioPDF({ aberto, onClose, cliente }: Props) {
                             <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
                                 {files.map((f, i) => (
                                     <div key={`${f.name}-${f.size}-${i}`}
-                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '6px 10px', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 6, fontSize: 13, background: '#F9FAFB' }}>
+                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '6px 10px', border: '1px solid var(--color-border-subtle)', borderRadius: 6, fontSize: 13, background: 'var(--gray-50)' }}>
                                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={f.name}>
-                                            {f.name} <span style={{ color: '#9CA3AF', fontSize: 11 }}>({(f.size / 1024).toFixed(0)} KB)</span>
+                                            {f.name} <span style={{ color: 'var(--color-text-muted)', fontSize: 11 }}>({(f.size / 1024).toFixed(0)} KB)</span>
                                         </span>
                                         <button type="button" title="Remover"
                                             onClick={() => setFiles(prev => prev.filter((_, idx) => idx !== i))}
-                                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#DC2626', display: 'flex', alignItems: 'center', padding: 2, flexShrink: 0 }}>
+                                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--color-danger-solid)', display: 'flex', alignItems: 'center', padding: 2, flexShrink: 0 }}>
                                             <X size={15} />
                                         </button>
                                     </div>

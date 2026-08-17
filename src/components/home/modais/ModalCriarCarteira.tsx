@@ -104,7 +104,7 @@ export function ModalCriarCarteira({ aberto, onClose, temBtg, temXp, temAvenue, 
 
                 <div style={{ padding: '0 24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     <div>
-                        <label style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.5, letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
+                        <label style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-caps)', display: 'block', marginBottom: '8px' }}>
                             Nome da carteira
                         </label>
                         <input
@@ -115,16 +115,16 @@ export function ModalCriarCarteira({ aberto, onClose, temBtg, temXp, temAvenue, 
                             maxLength={60}
                             style={{
                                 width: '100%', boxSizing: 'border-box', padding: '10px 14px', fontSize: '14px',
-                                fontFamily: 'Montserrat, sans-serif', border: '1.5px solid rgba(0,0,0,0.15)',
+                                border: '1.5px solid var(--color-border-default)',
                                 borderRadius: '8px', outline: 'none', background: 'transparent', transition: 'border-color 0.15s',
                             }}
                             onFocus={e => (e.target.style.borderColor = 'var(--color-primaria)')}
-                            onBlur={e => (e.target.style.borderColor = 'rgba(0,0,0,0.15)')}
+                            onBlur={e => (e.target.style.borderColor = 'var(--color-border-default)')}
                         />
                     </div>
 
                     <div>
-                        <label style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.5, letterSpacing: '0.05em', display: 'block', marginBottom: '8px' }}>
+                        <label style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-caps)', display: 'block', marginBottom: '8px' }}>
                             Instituições
                         </label>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -136,13 +136,13 @@ export function ModalCriarCarteira({ aberto, onClose, temBtg, temXp, temAvenue, 
                                         onClick={() => toggleInstituicao(inst.key)}
                                         style={{
                                             display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px',
-                                            borderRadius: '10px', cursor: 'pointer', border: `1.5px solid ${ativa ? inst.cor : 'rgba(0,0,0,0.1)'}`,
+                                            borderRadius: '10px', cursor: 'pointer', border: `1.5px solid ${ativa ? inst.cor : 'var(--color-border-subtle)'}`,
                                             background: ativa ? `${inst.cor}0D` : 'transparent', transition: 'all 0.15s', userSelect: 'none',
                                         }}
                                     >
                                         <div style={{
                                             width: 18, height: 18, borderRadius: '5px', flexShrink: 0,
-                                            border: `2px solid ${ativa ? inst.cor : 'rgba(0,0,0,0.2)'}`, background: ativa ? inst.cor : 'transparent',
+                                            border: `2px solid ${ativa ? inst.cor : 'var(--color-border-strong)'}`, background: ativa ? inst.cor : 'transparent',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
                                         }}>
                                             {ativa && (
@@ -154,7 +154,7 @@ export function ModalCriarCarteira({ aberto, onClose, temBtg, temXp, temAvenue, 
                                         <div style={{ width: 8, height: 8, borderRadius: '50%', background: inst.cor, flexShrink: 0 }} />
                                         <div>
                                             <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>{inst.label}</Typography>
-                                            <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>{inst.desc}</Typography>
+                                            <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>{inst.desc}</Typography>
                                         </div>
                                     </div>
                                 );
@@ -162,7 +162,7 @@ export function ModalCriarCarteira({ aberto, onClose, temBtg, temXp, temAvenue, 
                         </div>
                     </div>
 
-                    {erro && <Typography variant="p" style={{ fontSize: '12px', color: '#EF4444' }}>{erro}</Typography>}
+                    {erro && <Typography variant="p" style={{ fontSize: '12px', color: 'var(--color-danger-solid)' }}>{erro}</Typography>}
                 </div>
 
                 <ModalFooter>

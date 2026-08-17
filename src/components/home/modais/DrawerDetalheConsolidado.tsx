@@ -38,7 +38,7 @@ function TabBar({ tabs, active, onChange }: {
     return (
         <div style={{
             display: 'flex', gap: '4px',
-            background: 'rgba(0,0,0,0.04)',
+            background: 'var(--color-surface-sunken)',
             padding: '4px', borderRadius: '10px',
             marginBottom: '20px',
         }}>
@@ -52,7 +52,7 @@ function TabBar({ tabs, active, onChange }: {
                         fontWeight: 600, fontFamily: 'var(--font-family)',
                         transition: 'all 0.15s',
                         background: active === t.id ? '#fff' : 'transparent',
-                        color: active === t.id ? 'var(--color-secundaria)' : '#9CA3AF',
+                        color: active === t.id ? 'var(--color-secundaria)' : 'var(--color-text-muted)',
                         boxShadow: active === t.id ? '0 1px 4px rgba(0,0,0,0.10)' : 'none',
                     }}
                 >
@@ -68,18 +68,18 @@ function TabBar({ tabs, active, onChange }: {
 function AquisicaoCard({ acq }: { acq: any }) {
     return (
         <div style={{
-            background: 'rgba(0,131,203,0.04)', border: '1px solid rgba(0,131,203,0.10)',
+            background: 'var(--color-accent-subtle)', border: '1px solid var(--primary-100)',
             borderRadius: '10px', padding: '14px',
             display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px',
         }}>
             <div style={{ gridColumn: '1 / -1' }}>
-                <div style={{ fontSize: '10px', opacity: 0.4, textTransform: 'uppercase', fontWeight: 600, marginBottom: '2px' }}>Data de Compra</div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--color-primaria)' }}>{fmtDate(acq.acquisition_date)}</div>
+                <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: 'var(--tracking-wide)', marginBottom: '2px' }}>Data de Compra</div>
+                <div style={{ fontSize: 'var(--text-md)', fontWeight: 600, color: 'var(--color-primaria)', fontVariantNumeric: 'tabular-nums' }}>{fmtDate(acq.acquisition_date)}</div>
             </div>
             {acq.initial_investment_value != null && <DetalheItem label="Investido" value={fmt(acq.initial_investment_value)} />}
             {acq.gross_value != null && <DetalheItem label="Bruto Actual" value={fmt(acq.gross_value)} />}
             {acq.net_value != null && <DetalheItem label="Líquido Actual" value={fmt(acq.net_value)} highlight />}
-            {acq.income_tax != null && acq.income_tax > 0 && <DetalheItem label="IR" value={fmt(acq.income_tax)} accentColor="#EF4444" />}
+            {acq.income_tax != null && acq.income_tax > 0 && <DetalheItem label="IR" value={fmt(acq.income_tax)} accentColor="var(--color-danger-solid)" />}
             {acq.quantity != null && <DetalheItem label="Quantidade" value={fmtNum(acq.quantity, 0)} />}
             {acq.yield_to_maturity != null && <DetalheItem label="Yield to Maturity" value={`${fmtNum(acq.yield_to_maturity)}%`} />}
             {acq.index_yield_rate != null && <DetalheItem label="Taxa do Índice" value={`${fmtNum(acq.index_yield_rate)}%`} />}
@@ -148,7 +148,7 @@ function TabGeral({ ativo, raw, pesoPct, isAvenue }: {
             <DrawerSeparator />
             <Secao titulo="Rentabilidade">
                 <DetalheItem label="Taxa"        value={padronizarTaxaExibicao(ativo.taxa) ?? '—'} />
-                <DetalheItem label="Tributação"  value={isento ? 'Isento' : 'Tributado'} accentColor={isento ? '#16a34a' : undefined} />
+                <DetalheItem label="Tributação"  value={isento ? 'Isento' : 'Tributado'} accentColor={isento ? 'var(--color-success-text)' : undefined} />
             </Secao>
 
             {/* ── Datas e Liquidez ── */}
@@ -208,8 +208,8 @@ function TabBTG({ raw }: { raw: any }) {
                 {raw.valor_liquido     != null && <DetalheItem label="Valor Líquido"     value={fmt(Number(raw.valor_liquido))} />}
                 {raw.quantidade        != null && <DetalheItem label="Quantidade"        value={fmtNum(Number(raw.quantidade), 0)} />}
                 {raw.preco_mercado     != null && raw.preco_mercado > 0 && <DetalheItem label="Preço Unitário (PU)" value={fmt(Number(raw.preco_mercado))} />}
-                {raw.ir                != null && raw.ir > 0           && <DetalheItem label="IR Estimado"          value={fmt(Number(raw.ir))}                accentColor="#EF4444" />}
-                {raw.iof_tax           != null && raw.iof_tax > 0      && <DetalheItem label="IOF"                  value={fmt(Number(raw.iof_tax))}           accentColor="#EF4444" />}
+                {raw.ir                != null && raw.ir > 0           && <DetalheItem label="IR Estimado"          value={fmt(Number(raw.ir))}                accentColor="var(--color-danger-solid)" />}
+                {raw.iof_tax           != null && raw.iof_tax > 0      && <DetalheItem label="IOF"                  value={fmt(Number(raw.iof_tax))}           accentColor="var(--color-danger-solid)" />}
                 {raw.price_income_tax  != null && raw.price_income_tax > 0 && <DetalheItem label="PU c/ IR descontado" value={fmt(Number(raw.price_income_tax))} />}
                 {raw.price_virtual_iof != null && raw.price_virtual_iof > 0 && <DetalheItem label="PU c/ IOF virtual"  value={fmt(Number(raw.price_virtual_iof))} />}
             </Secao>
@@ -240,8 +240,8 @@ function TabBTG({ raw }: { raw: any }) {
             {/* ── Características ── */}
             <DrawerSeparator />
             <Secao titulo="Características">
-                <DetalheItem label="Isento de IR"     value={raw.tax_free     ? 'Sim' : 'Não'} accentColor={raw.tax_free     ? '#16a34a' : undefined} />
-                <DetalheItem label="Liquidez Imediata" value={raw.is_liquidity ? 'Sim' : 'Não'} accentColor={raw.is_liquidity ? '#0083CB' : undefined} />
+                <DetalheItem label="Isento de IR"     value={raw.tax_free     ? 'Sim' : 'Não'} accentColor={raw.tax_free     ? 'var(--color-success-text)' : undefined} />
+                <DetalheItem label="Liquidez Imediata" value={raw.is_liquidity ? 'Sim' : 'Não'} accentColor={raw.is_liquidity ? 'var(--color-primaria)' : undefined} />
                 <DetalheItem label="Operação Repo"    value={raw.is_repo      ? 'Sim' : 'Não'} />
                 <DetalheItem label="FII"              value={raw.is_fii       ? 'Sim' : 'Não'} />
             </Secao>
@@ -262,18 +262,18 @@ function TabBTG({ raw }: { raw: any }) {
                 <>
                     <DrawerSeparator />
                     <section>
-                        <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '12px' }}>
+                        <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-caps)', marginBottom: '12px' }}>
                             Janelas de Liquidez Antecipada ({schedules.length})
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             {schedules.map((s: any, i: number) => (
                                 <div key={i} style={{
-                                    background: 'rgba(0,131,203,0.05)', borderRadius: '8px',
+                                    background: 'var(--color-accent-subtle)', borderRadius: '8px',
                                     padding: '12px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px'
                                 }}>
                                     {[['Tipo', s.type], ['De', fmtDate(s.from_date)], ['Até', fmtDate(s.to_date)]].map(([lbl, val]) => (
                                         <div key={lbl as string}>
-                                            <div style={{ fontSize: '10px', opacity: 0.4, textTransform: 'uppercase', fontWeight: 600, marginBottom: '2px' }}>{lbl}</div>
+                                            <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: 'var(--tracking-wide)', marginBottom: '2px' }}>{lbl}</div>
                                             <div style={{ fontSize: '13px', fontWeight: 500 }}>{val || '—'}</div>
                                         </div>
                                     ))}
@@ -289,7 +289,7 @@ function TabBTG({ raw }: { raw: any }) {
                 <>
                     <DrawerSeparator />
                     <section>
-                        <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '12px' }}>
+                        <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-caps)', marginBottom: '12px' }}>
                             Histórico de Aquisições ({acquisitions.length})
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -334,11 +334,11 @@ function TabXP({ raw }: { raw: any }) {
                 {raw.valor_aplicado     != null && <DetalheItem label="Valor Aplicado"       value={fmt(Number(raw.valor_aplicado))} />}
                 {raw.valor_bruto        != null && <DetalheItem label="Valor Bruto"          value={fmt(Number(raw.valor_bruto))} />}
                 {raw.valor_liquido      != null && <DetalheItem label="Valor Líquido"        value={fmt(Number(raw.valor_liquido))} />}
-                {raw.valor_rendimento   != null && <DetalheItem label="Rendimento"           value={fmt(Number(raw.valor_rendimento))} accentColor="#16a34a" />}
-                {raw.resultado          != null && <DetalheItem label="Resultado"            value={fmt(Number(raw.resultado))} accentColor={Number(raw.resultado) >= 0 ? '#16a34a' : '#EF4444'} />}
+                {raw.valor_rendimento   != null && <DetalheItem label="Rendimento"           value={fmt(Number(raw.valor_rendimento))} accentColor="var(--color-success-text)" />}
+                {raw.resultado          != null && <DetalheItem label="Resultado"            value={fmt(Number(raw.resultado))} accentColor={Number(raw.resultado) >= 0 ? 'var(--color-success-text)' : 'var(--color-danger-solid)'} />}
                 {raw.resultado_percentual != null && <DetalheItem label="Resultado %"         value={`${fmtNum(Number(raw.resultado_percentual))}%`} />}
-                {raw.valor_imposto_renda != null && raw.valor_imposto_renda > 0 && <DetalheItem label="IR"                value={fmt(Number(raw.valor_imposto_renda))} accentColor="#EF4444" />}
-                {raw.valor_iof           != null && raw.valor_iof > 0           && <DetalheItem label="IOF"               value={fmt(Number(raw.valor_iof))}           accentColor="#EF4444" />}
+                {raw.valor_imposto_renda != null && raw.valor_imposto_renda > 0 && <DetalheItem label="IR"                value={fmt(Number(raw.valor_imposto_renda))} accentColor="var(--color-danger-solid)" />}
+                {raw.valor_iof           != null && raw.valor_iof > 0           && <DetalheItem label="IOF"               value={fmt(Number(raw.valor_iof))}           accentColor="var(--color-danger-solid)" />}
             </Secao>
 
             {/* ── Quantidades e Preços ── */}
@@ -394,8 +394,8 @@ function TabXP({ raw }: { raw: any }) {
             {/* ── Características ── */}
             <DrawerSeparator />
             <Secao titulo="Características">
-                <DetalheItem label="Isento de IR"      value={raw.is_isento_ir ? 'Sim' : 'Não'} accentColor={raw.is_isento_ir ? '#16a34a' : undefined} />
-                <DetalheItem label="Liquidez Imediata" value={raw.is_liquidity ? 'Sim' : 'Não'} accentColor={raw.is_liquidity ? '#0083CB' : undefined} />
+                <DetalheItem label="Isento de IR"      value={raw.is_isento_ir ? 'Sim' : 'Não'} accentColor={raw.is_isento_ir ? 'var(--color-success-text)' : undefined} />
+                <DetalheItem label="Liquidez Imediata" value={raw.is_liquidity ? 'Sim' : 'Não'} accentColor={raw.is_liquidity ? 'var(--color-primaria)' : undefined} />
             </Secao>
 
             {/* ── COE específico ── */}
@@ -433,7 +433,7 @@ function TabAvenue({ raw }: { raw: any }) {
                 <>
                     <DrawerSeparator />
                     <Secao titulo="Valores na Moeda Original (USD)">
-                        {usd != null && <DetalheItem label="Posição (USD)"  value={fmtUsd(usd)} highlight accentColor="#0083CB" />}
+                        {usd != null && <DetalheItem label="Posição (USD)"  value={fmtUsd(usd)} highlight accentColor="var(--color-primaria)" />}
                         {brl != null && <DetalheItem label="Equivalente em BRL" value={fmt(brl)} />}
                         {cot != null && <DetalheItem label="Cotação Implícita" value={`R$ ${cot.toFixed(4)}`} />}
                     </Secao>
@@ -444,7 +444,7 @@ function TabAvenue({ raw }: { raw: any }) {
                 <>
                     <DrawerSeparator />
                     <Secao titulo="Características">
-                        <DetalheItem label="Liquidez Imediata" value={raw.is_liquidity ? 'Sim' : 'Não'} accentColor="#0083CB" />
+                        <DetalheItem label="Liquidez Imediata" value={raw.is_liquidity ? 'Sim' : 'Não'} accentColor="var(--color-primaria)" />
                     </Secao>
                 </>
             )}
@@ -456,18 +456,18 @@ function AquisicaoCardAgora({ acq }: { acq: any }) {
     const isTd = acq.tipo_aquisicao === 'TESOURO_DIRETO';
     return (
         <div style={{
-            background: 'rgba(21,128,61,0.05)', border: '1px solid rgba(21,128,61,0.12)',
+            background: 'var(--color-success-bg)', border: '1px solid var(--color-success-border)',
             borderRadius: '10px', padding: '14px',
             display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px',
         }}>
             <div style={{ gridColumn: '1 / -1' }}>
-                <div style={{ fontSize: '10px', opacity: 0.4, textTransform: 'uppercase', fontWeight: 600, marginBottom: '2px' }}>
+                <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: 'var(--tracking-wide)', marginBottom: '2px' }}>
                     {isTd ? 'Data de Compra' : 'Data do Certificado'}
                 </div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: '#15803D' }}>
+                <div style={{ fontSize: 'var(--text-md)', fontWeight: 600, color: 'var(--color-success-text)', fontVariantNumeric: 'tabular-nums' }}>
                     {fmtDate(acq.application_date)}
                     {isTd && acq.days != null && (
-                        <span style={{ fontSize: '11px', marginLeft: '8px', opacity: 0.6, fontWeight: 500 }}>· {acq.days} dias atrás</span>
+                        <span style={{ fontSize: 'var(--text-xs)', marginLeft: '8px', opacity: 0.6, fontWeight: 500 }}>· {acq.days} dias atrás</span>
                     )}
                 </div>
             </div>
@@ -476,10 +476,10 @@ function AquisicaoCardAgora({ acq }: { acq: any }) {
             {acq.market_price != null && <DetalheItem label="Preço Atual (PU)" value={fmt(acq.market_price)} />}
             {acq.gross_value != null && <DetalheItem label={isTd ? "Posição (Bruto)" : "Bruto"} value={fmt(acq.gross_value)} />}
             {acq.net_value != null && <DetalheItem label="Líquido" value={fmt(acq.net_value)} highlight />}
-            {acq.profit_value != null && <DetalheItem label="Lucro Acumulado" value={fmt(acq.profit_value)} accentColor="#16a34a" />}
-            {acq.tax_rate != null && <DetalheItem label="Taxa Contratada" value={`${fmtNum(acq.tax_rate)}% a.a.`} accentColor="#0083CB" />}
-            {acq.ir_value != null && acq.ir_value > 0 && <DetalheItem label="IR" value={fmt(acq.ir_value)} accentColor="#EF4444" />}
-            {acq.iof_value != null && acq.iof_value > 0 && <DetalheItem label="IOF" value={fmt(acq.iof_value)} accentColor="#EF4444" />}
+            {acq.profit_value != null && <DetalheItem label="Lucro Acumulado" value={fmt(acq.profit_value)} accentColor="var(--color-success-text)" />}
+            {acq.tax_rate != null && <DetalheItem label="Taxa Contratada" value={`${fmtNum(acq.tax_rate)}% a.a.`} accentColor="var(--color-primaria)" />}
+            {acq.ir_value != null && acq.ir_value > 0 && <DetalheItem label="IR" value={fmt(acq.ir_value)} accentColor="var(--color-danger-solid)" />}
+            {acq.iof_value != null && acq.iof_value > 0 && <DetalheItem label="IOF" value={fmt(acq.iof_value)} accentColor="var(--color-danger-solid)" />}
             {acq.operation_status && <DetalheItem label="Status" value={acq.operation_status} />}
         </div>
     );
@@ -518,8 +518,8 @@ function TabAgora({ raw }: { raw: any }) {
                 {raw.preco_unitario      != null && <DetalheItem label="Preço Unitário"        value={fmt(Number(raw.preco_unitario))} />}
                 {raw.preco_mercado       != null && <DetalheItem label="Preço de Mercado"      value={fmt(Number(raw.preco_mercado))} />}
                 {raw.percentual_patrimonio != null && <DetalheItem label="% do Patrimônio"     value={`${fmtNum(Number(raw.percentual_patrimonio))}%`} />}
-                {raw.valorizacao_reais   != null && <DetalheItem label="Valorização (R$)"      value={fmt(Number(raw.valorizacao_reais))}     accentColor={Number(raw.valorizacao_reais) >= 0 ? '#16a34a' : '#EF4444'} />}
-                {raw.valorizacao_pct     != null && <DetalheItem label="Valorização %"         value={`${fmtNum(Number(raw.valorizacao_pct))}%`}     accentColor={Number(raw.valorizacao_pct) >= 0 ? '#16a34a' : '#EF4444'} />}
+                {raw.valorizacao_reais   != null && <DetalheItem label="Valorização (R$)"      value={fmt(Number(raw.valorizacao_reais))}     accentColor={Number(raw.valorizacao_reais) >= 0 ? 'var(--color-success-text)' : 'var(--color-danger-solid)'} />}
+                {raw.valorizacao_pct     != null && <DetalheItem label="Valorização %"         value={`${fmtNum(Number(raw.valorizacao_pct))}%`}     accentColor={Number(raw.valorizacao_pct) >= 0 ? 'var(--color-success-text)' : 'var(--color-danger-solid)'} />}
                 {raw.valorizacao         != null && <DetalheItem label="Valorização (detalhe)" value={fmt(Number(raw.valorizacao))} />}
                 {raw.percent_valorizacao != null && <DetalheItem label="% Valorização"         value={`${fmtNum(Number(raw.percent_valorizacao))}%`} />}
             </Secao>
@@ -542,9 +542,9 @@ function TabAgora({ raw }: { raw: any }) {
                     <DrawerSeparator />
                     <Secao titulo="Tributação">
                         {raw.ir_descricao  && <DetalheItem label="Tipo de IR"  value={String(raw.ir_descricao)} fullWidth />}
-                        {raw.ir_percentual && <DetalheItem label="Alíquota IR" value={`${String(raw.ir_percentual)}%`} accentColor="#EF4444" />}
-                        {raw.ir_valor      != null && raw.ir_valor > 0  && <DetalheItem label="IR"  value={fmt(Number(raw.ir_valor))}  accentColor="#EF4444" />}
-                        {raw.iof_valor     != null && raw.iof_valor > 0 && <DetalheItem label="IOF" value={fmt(Number(raw.iof_valor))} accentColor="#EF4444" />}
+                        {raw.ir_percentual && <DetalheItem label="Alíquota IR" value={`${String(raw.ir_percentual)}%`} accentColor="var(--color-danger-solid)" />}
+                        {raw.ir_valor      != null && raw.ir_valor > 0  && <DetalheItem label="IR"  value={fmt(Number(raw.ir_valor))}  accentColor="var(--color-danger-solid)" />}
+                        {raw.iof_valor     != null && raw.iof_valor > 0 && <DetalheItem label="IOF" value={fmt(Number(raw.iof_valor))} accentColor="var(--color-danger-solid)" />}
                     </Secao>
                 </>
             )}
@@ -556,7 +556,7 @@ function TabAgora({ raw }: { raw: any }) {
                     <Secao titulo="Datas e Liquidez">
                         {raw.data_aplicacao  && <DetalheItem label="Data de Aplicação"  value={fmtDate(raw.data_aplicacao)} />}
                         {raw.data_vencimento && <DetalheItem label="Vencimento"         value={fmtDate(raw.data_vencimento)} />}
-                        {raw.liquidez_diaria != null && <DetalheItem label="Liquidez Diária" value={raw.liquidez_diaria ? 'Sim' : 'Não'} accentColor={raw.liquidez_diaria ? '#0083CB' : undefined} />}
+                        {raw.liquidez_diaria != null && <DetalheItem label="Liquidez Diária" value={raw.liquidez_diaria ? 'Sim' : 'Não'} accentColor={raw.liquidez_diaria ? 'var(--color-primaria)' : undefined} />}
                     </Secao>
                 </>
             )}
@@ -565,7 +565,7 @@ function TabAgora({ raw }: { raw: any }) {
                 <>
                     <DrawerSeparator />
                     <section>
-                        <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', opacity: 0.4, marginBottom: '12px' }}>
+                        <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-caps)', marginBottom: '12px' }}>
                             Histórico de Aplicações ({acquisitions.length})
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -632,9 +632,9 @@ export function DrawerDetalheConsolidado({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
                         <Badge variant="solid" style={{ fontSize: '12px' }}>{ativo.instituicao}</Badge>
                         {ativo.subTipo && <Badge variant="outline" style={{ fontSize: '12px' }}>{ativo.subTipo}</Badge>}
-                        {raw.tax_free      && <Badge intent="primaria" variant="ghost" style={{ fontSize: '11px' }}>Isento IR</Badge>}
-                        {raw.is_liquidity  && <Badge intent="primaria" variant="ghost" style={{ fontSize: '11px' }}>Liquidez</Badge>}
-                        {raw.liquidez_diaria && <Badge intent="primaria" variant="ghost" style={{ fontSize: '11px' }}>Liquidez Diária</Badge>}
+                        {raw.tax_free      && <Badge intent="primaria" variant="ghost" style={{ fontSize: 'var(--text-xs)' }}>Isento IR</Badge>}
+                        {raw.is_liquidity  && <Badge intent="primaria" variant="ghost" style={{ fontSize: 'var(--text-xs)' }}>Liquidez</Badge>}
+                        {raw.liquidez_diaria && <Badge intent="primaria" variant="ghost" style={{ fontSize: 'var(--text-xs)' }}>Liquidez Diária</Badge>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
                         <DrawerTitle>{ativo.nome}</DrawerTitle>

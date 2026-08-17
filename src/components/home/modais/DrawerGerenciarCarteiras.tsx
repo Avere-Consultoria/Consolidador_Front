@@ -94,8 +94,8 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAv
         setTimeout(() => setCarteiraEditando(null), 300);
     }
 
-    const labelStyle: React.CSSProperties = { fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', opacity: 0.4, marginBottom: '8px' };
-    const itemStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: '10px', background: 'rgba(0,0,0,0.03)', marginBottom: '6px' };
+    const labelStyle: React.CSSProperties = { fontSize: 'var(--text-xs)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--tracking-caps)', color: 'var(--color-text-muted)', marginBottom: '8px' };
+    const itemStyle: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderRadius: '10px', background: 'var(--color-surface-sunken)', marginBottom: '6px' };
     const dotStyle = (cor: string): React.CSSProperties => ({ width: 8, height: 8, borderRadius: '50%', background: cor, flexShrink: 0 });
     const corInstituicao: Record<string, string> = { BTG: CORES.btg, XP: CORES.xp, AVENUE: CORES.avenue, AGORA: CORES.agora };
     const actionBtnStyle: React.CSSProperties = { background: 'transparent', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' };
@@ -120,10 +120,10 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAv
                                             <div style={dotStyle('var(--color-primaria)')} />
                                             <div>
                                                 <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>Consolidada</Typography>
-                                                <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>Visão unificada de todas as corretoras</Typography>
+                                                <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>Visão unificada de todas as corretoras</Typography>
                                             </div>
                                         </div>
-                                        <Badge variant="ghost" style={{ fontSize: '10px', opacity: 0.5 }}>Padrão</Badge>
+                                        <Badge variant="ghost" style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)' }}>Padrão</Badge>
                                     </div>
                                 )}
                                 {temBtg && (
@@ -132,10 +132,10 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAv
                                             <div style={dotStyle(CORES.btg)} />
                                             <div>
                                                 <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>BTG Pactual</Typography>
-                                                <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>Posição BTG sincronizada</Typography>
+                                                <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>Posição BTG sincronizada</Typography>
                                             </div>
                                         </div>
-                                        <Badge variant="ghost" style={{ fontSize: '10px', opacity: 0.5 }}>Padrão</Badge>
+                                        <Badge variant="ghost" style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)' }}>Padrão</Badge>
                                     </div>
                                 )}
                                 {temXp && (
@@ -144,10 +144,10 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAv
                                             <div style={dotStyle(CORES.xp)} />
                                             <div>
                                                 <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>XP Investimentos</Typography>
-                                                <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>Posição XP sincronizada</Typography>
+                                                <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>Posição XP sincronizada</Typography>
                                             </div>
                                         </div>
-                                        <Badge variant="ghost" style={{ fontSize: '10px', opacity: 0.5 }}>Padrão</Badge>
+                                        <Badge variant="ghost" style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)' }}>Padrão</Badge>
                                     </div>
                                 )}
                                 {temAvenue && (
@@ -156,10 +156,10 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAv
                                             <div style={dotStyle(CORES.avenue)} />
                                             <div>
                                                 <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>Avenue</Typography>
-                                                <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>Posição internacional sincronizada</Typography>
+                                                <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>Posição internacional sincronizada</Typography>
                                             </div>
                                         </div>
-                                        <Badge variant="ghost" style={{ fontSize: '10px', opacity: 0.5 }}>Padrão</Badge>
+                                        <Badge variant="ghost" style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)' }}>Padrão</Badge>
                                     </div>
                                 )}
                                 {temAgora && (
@@ -168,10 +168,10 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAv
                                             <div style={dotStyle(CORES.agora)} />
                                             <div>
                                                 <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>Ágora</Typography>
-                                                <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>Posição Ágora sincronizada</Typography>
+                                                <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>Posição Ágora sincronizada</Typography>
                                             </div>
                                         </div>
-                                        <Badge variant="ghost" style={{ fontSize: '10px', opacity: 0.5 }}>Padrão</Badge>
+                                        <Badge variant="ghost" style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)' }}>Padrão</Badge>
                                     </div>
                                 )}
                             </section>
@@ -181,8 +181,8 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAv
                             <section>
                                 <Typography variant="p" style={labelStyle}>Carteiras personalizadas</Typography>
                                 {carteiras.length === 0 ? (
-                                    <div style={{ padding: '24px 16px', textAlign: 'center', borderRadius: '10px', border: '1.5px dashed rgba(0,0,0,0.12)', marginBottom: '12px' }}>
-                                        <Typography variant="p" style={{ fontSize: '13px', opacity: 0.4 }}>Nenhuma carteira personalizada criada ainda.</Typography>
+                                    <div style={{ padding: '24px 16px', textAlign: 'center', borderRadius: '10px', border: '1.5px dashed var(--color-border-default)', marginBottom: '12px' }}>
+                                        <Typography variant="p" style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Nenhuma carteira personalizada criada ainda.</Typography>
                                     </div>
                                 ) : (
                                     <div style={{ marginBottom: '12px' }}>
@@ -190,27 +190,27 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAv
                                             <div key={c.id} style={itemStyle}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                     <div style={{ display: 'flex', gap: '3px' }}>
-                                                        {c.instituicoes.map(inst => <div key={inst} style={dotStyle(corInstituicao[inst] ?? '#6B7280')} />)}
+                                                        {c.instituicoes.map(inst => <div key={inst} style={dotStyle(corInstituicao[inst] ?? 'var(--color-text-secondary)')} />)}
                                                     </div>
                                                     <div>
                                                         <Typography variant="p" style={{ fontWeight: 600, fontSize: '13px' }}>{c.nome}</Typography>
-                                                        <Typography variant="p" style={{ fontSize: '11px', opacity: 0.45 }}>{c.instituicoes.map(labelInst).join(' + ')}</Typography>
+                                                        <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>{c.instituicoes.map(labelInst).join(' + ')}</Typography>
                                                     </div>
                                                 </div>
 
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                     <button
                                                         onClick={() => abrirModalEdicao(c)}
-                                                        style={{ ...actionBtnStyle, color: '#6B7280' }}
+                                                        style={{ ...actionBtnStyle, color: 'var(--color-text-secondary)' }}
                                                         title="Editar carteira"
-                                                        onMouseOver={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.05)'}
+                                                        onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-surface-sunken)'}
                                                         onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                                                     >
                                                         <Pencil size={14} />
                                                     </button>
                                                     <button
                                                         onClick={() => setCarteiraParaExcluir(c)} // Abre o modal de exclusão
-                                                        style={{ ...actionBtnStyle, color: '#EF4444' }}
+                                                        style={{ ...actionBtnStyle, color: 'var(--color-danger-solid)' }}
                                                         title="Excluir carteira"
                                                         onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
                                                         onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
@@ -272,7 +272,7 @@ export function DrawerGerenciarCarteiras({ aberto, onClose, temBtg, temXp, temAv
                             variant="solid"
                             onClick={confirmarExclusao}
                             disabled={excluindo}
-                            style={{ backgroundColor: '#EF4444', color: 'white', borderColor: '#EF4444' }} // Força o vermelho destrutivo
+                            style={{ backgroundColor: 'var(--color-danger-solid)', color: 'white', borderColor: 'var(--color-danger-solid)' }} // Força o vermelho destrutivo
                         >
                             {excluindo ? 'A excluir...' : 'Sim, excluir'}
                         </Button>
