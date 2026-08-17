@@ -23,10 +23,10 @@ function corSetor(d: { cor?: string | null }): string {
 
 // ── Estilos de Tabela ────────────────────────────────────────────────────────
 const tableStyle: React.CSSProperties = {
-    width: '100%', borderCollapse: 'collapse', fontSize: '12px', fontFamily: 'Montserrat, sans-serif',
+    width: '100%', borderCollapse: 'collapse', fontSize: '12px', fontFamily: 'Inter Variable, system-ui, sans-serif',
 };
 const thStyle: React.CSSProperties = {
-    textAlign: 'left', padding: '8px 4px', borderBottom: '1px solid rgba(0,0,0,0.06)', opacity: 0.4,
+    textAlign: 'left', padding: '8px 4px', borderBottom: '1px solid var(--color-border-subtle)', color: 'var(--color-text-muted)',
     textTransform: 'uppercase', fontWeight: 700, fontSize: '10px', letterSpacing: '0.05em',
 };
 const tdStyle: React.CSSProperties = {
@@ -47,15 +47,15 @@ function TooltipBar({ active, payload }: any) {
     if (!p?.name) return null;
     return (
         <div style={{
-            background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8,
-            padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontFamily: 'Montserrat, sans-serif', maxWidth: 280,
+            background: 'var(--color-surface)', border: '1px solid var(--color-border-subtle)', borderRadius: 'var(--radius-md)',
+            padding: '10px 14px', boxShadow: 'var(--shadow-overlay)', fontFamily: 'Inter Variable, system-ui, sans-serif', maxWidth: 280,
         }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-secundaria)', marginBottom: 4 }}>{p.name}</div>
             {p.setor && p.setor !== 'Sem setor' && (
-                <div style={{ fontSize: 10, opacity: 0.5, marginBottom: 6 }}>{p.setor}</div>
+                <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)', marginBottom: 6 }}>{p.setor}</div>
             )}
-            <div style={{ fontSize: 15, fontWeight: 800, color: corPorPct(p.pct ?? 0) }}>{(p.pct ?? 0).toFixed(1)}%</div>
-            <div style={{ fontSize: 12, color: 'var(--color-secundaria)', opacity: 0.7, marginTop: 2 }}>{fmt(p.value ?? 0)}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: corPorPct(p.pct ?? 0) }}>{(p.pct ?? 0).toFixed(1)}%</div>
+            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2 }}>{fmt(p.value ?? 0)}</div>
         </div>
     );
 }
@@ -90,13 +90,13 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                     <XAxis
                         type="number"
                         tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-                        tick={{ fontSize: 10, fontFamily: 'Montserrat, sans-serif', fill: 'var(--color-secundaria)' }}
+                        tick={{ fontSize: 10, fontFamily: 'Inter Variable, system-ui, sans-serif', fill: 'var(--color-secundaria)' }}
                     />
                     <YAxis
                         type="category"
                         dataKey="name"
                         width={140}
-                        tick={{ fontSize: 10, fontFamily: 'Montserrat, sans-serif', fill: 'var(--color-secundaria)' }}
+                        tick={{ fontSize: 10, fontFamily: 'Inter Variable, system-ui, sans-serif', fill: 'var(--color-secundaria)' }}
                         tickFormatter={(v: string) => (v.length > 22 ? v.slice(0, 22) + '…' : v)}
                     />
                     <Tooltip content={<TooltipBar />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
@@ -126,12 +126,12 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                                 {emissor.name}
                             </td>
                             <td style={tdStyle}>
-                                <Badge variant="ghost" style={{ fontSize: '10px', fontFamily: 'Montserrat, sans-serif', color: corSetor(emissor), background: `${corSetor(emissor)}1A` }}>
+                                <Badge variant="ghost" style={{ fontSize: '10px', fontFamily: 'Inter Variable, system-ui, sans-serif', color: corSetor(emissor), background: `${corSetor(emissor)}1A` }}>
                                     {emissor.setor || 'N/A'}
                                 </Badge>
                             </td>
                             <td style={{ ...tdStyle, fontWeight: 700, textAlign: 'right' }}>{fmt(emissor.value)}</td>
-                            <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 800, color: corPorPct(emissor.pct) }}>
+                            <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700, color: corPorPct(emissor.pct) }}>
                                 {emissor.pct.toFixed(1)}%
                             </td>
                         </tr>
@@ -142,7 +142,7 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
     );
 
     return (
-        <Card style={{ border: '1px solid rgba(0,0,0,0.08)' }}>
+        <Card style={{ border: '1px solid var(--color-border-subtle)' }}>
             <CardContent style={{ padding: '24px' }}>
 
                 <CardHeaderComSwitch
@@ -163,7 +163,7 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                                 onClick={() => setViewMode(opt.value)}
                                 style={{
                                     height: '28px', padding: '0 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600,
-                                    fontFamily: 'Montserrat, sans-serif',
+                                    fontFamily: 'Inter Variable, system-ui, sans-serif',
                                     background: viewMode === opt.value ? '#fff' : 'transparent',
                                     color: viewMode === opt.value ? 'var(--color-secundaria)' : '#6B7280',
                                     boxShadow: viewMode === opt.value ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
@@ -179,10 +179,10 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                 {(!dados || dados.length === 0) ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', gap: '12px', opacity: 0.4 }}>
                         <ShieldAlert size={32} />
-                        <Typography variant="p" style={{ fontSize: '13px', fontWeight: 600, fontFamily: 'Montserrat, sans-serif', textAlign: 'center' }}>
+                        <Typography variant="p" style={{ fontSize: '13px', fontWeight: 600, fontFamily: 'Inter Variable, system-ui, sans-serif', textAlign: 'center' }}>
                             Nenhum emissor classificado
                         </Typography>
-                        <Typography variant="p" style={{ fontSize: '11px', fontFamily: 'Montserrat, sans-serif', textAlign: 'center', lineHeight: '1.5' }}>
+                        <Typography variant="p" style={{ fontSize: '11px', fontFamily: 'Inter Variable, system-ui, sans-serif', textAlign: 'center', lineHeight: '1.5' }}>
                             Associe emissores aos ativos no Master para visualizar a concentração de crédito.
                         </Typography>
                     </div>
@@ -196,9 +196,9 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                 )}
 
                 {dados && dados.some(d => d.pct > 15 && !d.semEmissor) && (
-                    <div style={{ marginTop: '20px', padding: '12px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', display: 'flex', gap: '8px', color: '#B45309', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                    <div style={{ marginTop: '20px', padding: '12px', background: 'rgba(245, 158, 11, 0.1)', borderRadius: '8px', display: 'flex', gap: '8px', color: 'var(--color-warning-text)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
                         <ShieldAlert size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-                        <Typography variant="p" style={{ fontSize: '12px', lineHeight: '1.4', fontFamily: 'Montserrat, sans-serif' }}>
+                        <Typography variant="p" style={{ fontSize: '12px', lineHeight: '1.4', fontFamily: 'Inter Variable, system-ui, sans-serif' }}>
                             <strong>Atenção:</strong> A carteira possui concentração superior a 15% num único emissor.
                         </Typography>
                     </div>
@@ -208,19 +208,19 @@ export function RiscoEmissor({ dados }: RiscoEmissorProps) {
                     const sem = (dados || []).find(d => d.semEmissor);
                     if (!sem || !sem.detalhes || sem.detalhes.length === 0) return null;
                     return (
-                        <div style={{ marginTop: 16, padding: 12, background: 'rgba(0,0,0,0.02)', borderRadius: 8, border: '1px solid rgba(0,0,0,0.06)' }}>
-                            <Typography variant="p" style={{ fontSize: 11, fontWeight: 700, opacity: 0.6, fontFamily: 'Montserrat, sans-serif', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <div style={{ marginTop: 16, padding: 12, background: 'var(--color-surface-sunken)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border-subtle)' }}>
+                            <Typography variant="p" style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-text-muted)', fontFamily: 'Inter Variable, system-ui, sans-serif', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 Sem emissor — não reconhecidos
                             </Typography>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                 {sem.detalhes.map((d, i) => (
-                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, fontFamily: 'Montserrat, sans-serif', padding: '3px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, fontFamily: 'Inter Variable, system-ui, sans-serif', padding: '3px 0', borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
                                         <span style={{ color: 'var(--color-secundaria)' }}>{d.nome}</span>
                                         <span style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{fmt(d.valor)}</span>
                                     </div>
                                 ))}
                             </div>
-                            <Typography variant="p" style={{ fontSize: 10, opacity: 0.45, fontFamily: 'Montserrat, sans-serif', marginTop: 8, lineHeight: 1.4 }}>
+                            <Typography variant="p" style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)', fontFamily: 'Inter Variable, system-ui, sans-serif', marginTop: 8, lineHeight: 1.4 }}>
                                 Cadastre esses emissores (com setor) em Gestão Master → Emissores. Depois de criados, os ativos classificam sozinhos.
                             </Typography>
                         </div>

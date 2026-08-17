@@ -9,12 +9,12 @@ export const TooltipCustom = ({ active, payload }: any) => {
 
     return (
         <div style={{
-            background: '#fff',
-            border: '1px solid rgba(0,0,0,0.08)',
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border-subtle)',
             borderRadius: '8px',
             padding: '10px 14px',
             boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-            fontFamily: 'Montserrat, sans-serif',
+            fontFamily: 'Inter Variable, system-ui, sans-serif',
         }}>
             <div style={{ fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>
                 {payload[0].name}
@@ -41,12 +41,12 @@ export const TooltipBarras = ({ active, payload, label }: any) => {
 
     return (
         <div style={{
-            background: '#fff',
-            border: '1px solid rgba(0,0,0,0.08)',
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border-subtle)',
             borderRadius: '8px',
             padding: '10px 14px',
             boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-            fontFamily: 'Montserrat, sans-serif',
+            fontFamily: 'Inter Variable, system-ui, sans-serif',
         }}>
             <div style={{ fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>
                 {label}

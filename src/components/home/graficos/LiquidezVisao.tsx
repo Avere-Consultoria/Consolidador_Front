@@ -23,10 +23,10 @@ function TooltipBarras({ active, payload }: any) {
     if (!active || !payload || !payload.length) return null;
     const p = payload[0].payload;
     return (
-        <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px', padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontFamily: 'Montserrat, sans-serif' }}>
+        <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border-subtle)', borderRadius: 'var(--radius-md)', padding: '10px 14px', boxShadow: 'var(--shadow-overlay)', fontFamily: 'Inter Variable, system-ui, sans-serif' }}>
             <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-secundaria)', marginBottom: '4px' }}>{p.label}</div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: p.cor }}>{p.pct.toFixed(1)}%</div>
-            <div style={{ fontSize: '12px', color: 'var(--color-secundaria)', opacity: 0.7, marginTop: '2px' }}>{fmt(p.value)}</div>
+            <div style={{ fontSize: '15px', fontWeight: 700, color: p.cor }}>{p.pct.toFixed(1)}%</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>{fmt(p.value)}</div>
         </div>
     );
 }
@@ -35,7 +35,7 @@ function BarChartLiquidez({ dados, faixas, total }: { dados: LiquidezItem[]; fai
     const chartData = useMemo(() => agregarLiquidez(dados, faixas, total), [dados, faixas, total]);
 
     if (chartData.length === 0) {
-        return <div style={{ padding: '24px', textAlign: 'center', opacity: 0.5, fontSize: '13px' }}>Sem dados de liquidez.</div>;
+        return <div style={{ padding: '24px', textAlign: 'center', fontSize: 'var(--text-sm)', color: 'var(--color-text-muted)' }}>Sem dados de liquidez.</div>;
     }
 
     return (
@@ -44,19 +44,19 @@ function BarChartLiquidez({ dados, faixas, total }: { dados: LiquidezItem[]; fai
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" vertical={false} />
                 <XAxis
                     dataKey="label"
-                    tick={{ fontSize: 11, fontWeight: 600, fill: 'var(--color-secundaria)', opacity: 0.75, fontFamily: 'Montserrat, sans-serif' }}
+                    tick={{ fontSize: 11, fontWeight: 600, fill: '#36424B', fontFamily: 'Inter Variable, system-ui, sans-serif' }}
                     axisLine={false} tickLine={false} interval={0} height={28}
                 />
                 <YAxis
                     tickFormatter={(v) => `${v}%`}
-                    tick={{ fontSize: 11, fill: 'var(--color-secundaria)', opacity: 0.45, fontFamily: 'Montserrat, sans-serif' }}
+                    tick={{ fontSize: 11, fill: '#69747C', fontFamily: 'Inter Variable, system-ui, sans-serif' }}
                     axisLine={false} tickLine={false} width={42}
                 />
                 <Tooltip content={<TooltipBarras />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
                 <Bar dataKey="pct" radius={[6, 6, 0, 0]} isAnimationActive={false}>
                     {chartData.map((entry, i) => <Cell key={i} fill={entry.cor} />)}
                     <LabelList dataKey="pct" position="top" formatter={(v: any) => `${Number(v).toFixed(1)}%`}
-                        style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif', fill: 'var(--color-secundaria)' }} />
+                        style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'Inter Variable, system-ui, sans-serif', fill: 'var(--color-secundaria)' }} />
                 </Bar>
             </BarChart>
         </ResponsiveContainer>
@@ -64,13 +64,13 @@ function BarChartLiquidez({ dados, faixas, total }: { dados: LiquidezItem[]; fai
 }
 
 const thStyle: React.CSSProperties = {
-    textAlign: 'left', padding: '8px 4px', borderBottom: '1px solid rgba(0,0,0,0.06)', opacity: 0.4,
+    textAlign: 'left', padding: '8px 4px', borderBottom: '1px solid var(--color-border-subtle)', color: 'var(--color-text-muted)',
     textTransform: 'uppercase', fontWeight: 700, fontSize: '10px', letterSpacing: '0.05em',
 };
 function TabelaFaixas({ dados, faixas, total }: { dados: LiquidezItem[]; faixas: Faixa[]; total: number }) {
     const agregadas = useMemo(() => agregarLiquidez(dados, faixas, total), [dados, faixas, total]);
     return (
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', fontFamily: 'Montserrat, sans-serif' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', fontFamily: 'Inter Variable, system-ui, sans-serif' }}>
             <thead>
                 <tr>
                     <th style={thStyle}>Prazo</th>
@@ -88,7 +88,7 @@ function TabelaFaixas({ dados, faixas, total }: { dados: LiquidezItem[]; faixas:
                             </div>
                         </td>
                         <td style={{ padding: '12px 4px', borderBottom: '1px solid rgba(0,0,0,0.04)', textAlign: 'right', fontWeight: 700, color: 'var(--color-secundaria)' }}>{fmt(f.value)}</td>
-                        <td style={{ padding: '12px 4px', borderBottom: '1px solid rgba(0,0,0,0.04)', textAlign: 'right', fontWeight: 800, color: f.cor }}>{f.pct.toFixed(1)}%</td>
+                        <td style={{ padding: '12px 4px', borderBottom: '1px solid rgba(0,0,0,0.04)', textAlign: 'right', fontWeight: 700, color: f.cor }}>{f.pct.toFixed(1)}%</td>
                     </tr>
                 ))}
             </tbody>
@@ -127,7 +127,7 @@ function LiquidezCompacta({ titulo, dados, faixas, total }: { titulo: string; da
     return (
         <Card>
             <CardContent style={{ padding: '20px 24px' }}>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-secundaria)', marginBottom: '14px', fontFamily: 'Montserrat, sans-serif' }}>{titulo}</div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-secundaria)', marginBottom: '14px', fontFamily: 'Inter Variable, system-ui, sans-serif' }}>{titulo}</div>
                 <div style={{ display: 'flex', height: 16, borderRadius: 8, overflow: 'hidden', background: 'rgba(0,0,0,0.04)' }}>
                     {agregadas.map((f, i) => (
                         <div key={i} title={`${f.label} · ${f.pct.toFixed(1)}% · ${fmt(f.value)}`} style={{ width: `${f.pct}%`, background: f.cor }} />

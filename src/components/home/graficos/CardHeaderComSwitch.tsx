@@ -24,11 +24,12 @@ export function CardHeaderComSwitch({
             <Typography
                 variant="p"
                 style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
+                    fontFamily: 'var(--font-display)',
+                    fontSize: 'var(--text-xs)',
+                    fontWeight: 600,
                     textTransform: 'uppercase',
-                    opacity: 0.4,
-                    letterSpacing: '0.05em',
+                    color: 'var(--color-text-muted)',
+                    letterSpacing: 'var(--tracking-caps)',
                     margin: 0
                 }}
             >
@@ -39,7 +40,7 @@ export function CardHeaderComSwitch({
             {mostrarSwitch && <div style={{
                 display: 'flex',
                 gap: '4px',
-                background: 'rgba(0,0,0,0.05)',
+                background: 'var(--color-surface-sunken)',
                 padding: '4px',
                 borderRadius: '8px'
             }}>
@@ -51,7 +52,7 @@ export function CardHeaderComSwitch({
                         padding: '0 12px',
                         borderRadius: '6px',
                         background: !modoTabela ? '#fff' : 'transparent',
-                        color: !modoTabela ? 'var(--color-secundaria)' : '#6B7280',
+                        color: !modoTabela ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
                         boxShadow: !modoTabela ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
                     }}
                 >
@@ -66,7 +67,7 @@ export function CardHeaderComSwitch({
                         padding: '0 12px',
                         borderRadius: '6px',
                         background: modoTabela ? '#fff' : 'transparent',
-                        color: modoTabela ? 'var(--color-secundaria)' : '#6B7280',
+                        color: modoTabela ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
                         boxShadow: modoTabela ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
                     }}
                 >

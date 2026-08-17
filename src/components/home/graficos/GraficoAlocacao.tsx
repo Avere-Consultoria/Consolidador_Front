@@ -43,11 +43,11 @@ type ModoVista = 'consolidado' | 'instituicao';
 
 const tableStyle: React.CSSProperties = {
     width: '100%', borderCollapse: 'collapse', fontSize: '12px',
-    marginTop: '8px', fontFamily: 'Montserrat, sans-serif',
+    marginTop: '8px', fontFamily: 'Inter Variable, system-ui, sans-serif',
 };
 const thStyle: React.CSSProperties = {
     textAlign: 'left', padding: '8px 4px',
-    borderBottom: '1px solid rgba(0,0,0,0.06)', opacity: 0.4,
+    borderBottom: '1px solid var(--color-border-subtle)', color: 'var(--color-text-muted)',
     textTransform: 'uppercase', fontWeight: 700, fontSize: '10px', letterSpacing: '0.05em',
 };
 const tdStyle: React.CSSProperties = {
@@ -59,7 +59,7 @@ const tdStyle: React.CSSProperties = {
 function TooltipPctInst({ active, payload, label }: any) {
     if (!active || !payload?.length) return null;
     return (
-        <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '8px', padding: '10px 14px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontFamily: 'Montserrat, sans-serif' }}>
+        <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border-subtle)', borderRadius: 'var(--radius-md)', padding: '10px 14px', boxShadow: 'var(--shadow-overlay)', fontFamily: 'Inter Variable, system-ui, sans-serif' }}>
             <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--color-secundaria)', marginBottom: '6px' }}>{label}</div>
             {payload.filter((p: any) => Number(p.value) > 0).map((p: any, i: number) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', fontSize: '12px', padding: '2px 0' }}>
@@ -110,7 +110,7 @@ export function GraficoAlocacao({ alocacaoData, comparativoData, comparativoInst
                     <XAxis type="number" hide />
                     <YAxis
                         type="category" dataKey="name" width={128} interval={0}
-                        tick={{ fontSize: 11, fontFamily: 'Montserrat, sans-serif', fill: 'var(--color-secundaria)', opacity: 0.6 }}
+                        tick={{ fontSize: 11, fontFamily: 'Inter Variable, system-ui, sans-serif', fill: '#4A565E' }}
                         axisLine={false} tickLine={false}
                     />
                     <Tooltip content={<TooltipCustom />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
@@ -122,7 +122,7 @@ export function GraficoAlocacao({ alocacaoData, comparativoData, comparativoInst
                             dataKey="value"
                             position="right"
                             formatter={(v: any) => fmtK(Number(v))}
-                            style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif', fill: 'var(--color-secundaria)', opacity: 0.7 }}
+                            style={{ fontSize: '11px', fontWeight: 700, fontFamily: 'Inter Variable, system-ui, sans-serif', fill: '#36424B' }}
                         />
                     </Bar>
                 </BarChart>
@@ -141,13 +141,13 @@ export function GraficoAlocacao({ alocacaoData, comparativoData, comparativoInst
                     barSize={28}
                 >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'Montserrat, sans-serif' }} axisLine={false} tickLine={false} />
-                    <YAxis tickFormatter={unidade === 'pct' ? (v) => `${Number(v).toFixed(0)}%` : fmtK} tick={{ fontSize: 11, opacity: 0.4, fontFamily: 'Montserrat, sans-serif' }} axisLine={false} tickLine={false} width={70} />
+                    <XAxis dataKey="name" tick={{ fontSize: 11, fontFamily: 'Inter Variable, system-ui, sans-serif' }} axisLine={false} tickLine={false} />
+                    <YAxis tickFormatter={unidade === 'pct' ? (v) => `${Number(v).toFixed(0)}%` : fmtK} tick={{ fontSize: 11, fill: '#69747C', fontFamily: 'Inter Variable, system-ui, sans-serif' }} axisLine={false} tickLine={false} width={70} />
                     <Tooltip content={unidade === 'pct' ? <TooltipPctInst /> : <TooltipBarras />} cursor={{ fill: 'rgba(0,0,0,0.03)' }} />
                     <Legend
                         iconType="circle" iconSize={10}
                         formatter={(value) => (
-                            <span style={{ fontSize: '12px', fontWeight: 600, fontFamily: 'Montserrat, sans-serif', color: 'var(--color-secundaria)' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 600, fontFamily: 'Inter Variable, system-ui, sans-serif', color: 'var(--color-secundaria)' }}>
                                 {value}
                             </span>
                         )}
@@ -264,7 +264,7 @@ export function GraficoAlocacao({ alocacaoData, comparativoData, comparativoInst
                                         border: 'none', cursor: 'pointer',
                                         padding: '4px 12px', borderRadius: '6px',
                                         fontSize: '11px', fontWeight: 600,
-                                        fontFamily: 'Montserrat, sans-serif',
+                                        fontFamily: 'Inter Variable, system-ui, sans-serif',
                                         background: modoVista === modo ? '#fff' : 'transparent',
                                         color: modoVista === modo ? 'var(--color-secundaria)' : '#6B7280',
                                         boxShadow: modoVista === modo ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
@@ -285,7 +285,7 @@ export function GraficoAlocacao({ alocacaoData, comparativoData, comparativoInst
                                         onClick={() => setUnidade(u)}
                                         style={{
                                             border: 'none', cursor: 'pointer', padding: '4px 10px', borderRadius: '6px',
-                                            fontSize: '11px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif',
+                                            fontSize: '11px', fontWeight: 700, fontFamily: 'Inter Variable, system-ui, sans-serif',
                                             background: unidade === u ? '#fff' : 'transparent',
                                             color: unidade === u ? 'var(--color-secundaria)' : '#6B7280',
                                             boxShadow: unidade === u ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
@@ -305,7 +305,7 @@ export function GraficoAlocacao({ alocacaoData, comparativoData, comparativoInst
                                 title={modoTabela ? 'Ver gráfico' : 'Ver tabela'}
                                 style={{
                                     border: 'none', cursor: 'pointer',
-                                    background: modoTabela ? 'rgba(0,0,0,0.08)' : 'transparent',
+                                    background: modoTabela ? 'var(--color-surface-sunken)' : 'transparent',
                                     color: modoTabela ? 'var(--color-secundaria)' : '#9CA3AF',
                                     padding: '6px', borderRadius: '6px',
                                     display: 'flex', alignItems: 'center',

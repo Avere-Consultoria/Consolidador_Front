@@ -20,11 +20,11 @@ const PALETA_SETORES = [
 // ── Estilos de Tabela ────────────────────────────────────────────────────────
 const tableStyle: React.CSSProperties = {
     width: '100%', borderCollapse: 'collapse', fontSize: '12px',
-    fontFamily: 'Montserrat, sans-serif',
+    fontFamily: 'Inter Variable, system-ui, sans-serif',
 };
 const thStyle: React.CSSProperties = {
     textAlign: 'left', padding: '8px 4px',
-    borderBottom: '1px solid rgba(0,0,0,0.06)', opacity: 0.4,
+    borderBottom: '1px solid var(--color-border-subtle)', color: 'var(--color-text-muted)',
     textTransform: 'uppercase', fontWeight: 700, fontSize: '10px', letterSpacing: '0.05em',
 };
 const tdStyle: React.CSSProperties = {
@@ -38,20 +38,20 @@ function TooltipDonut({ active, payload }: any) {
     const p = payload[0].payload;
     return (
         <div style={{
-            background: '#fff',
-            border: '1px solid rgba(0,0,0,0.08)',
+            background: 'var(--color-surface)',
+            border: '1px solid var(--color-border-subtle)',
             borderRadius: '8px',
             padding: '10px 14px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-            fontFamily: 'Montserrat, sans-serif',
+            boxShadow: 'var(--shadow-overlay)',
+            fontFamily: 'Inter Variable, system-ui, sans-serif',
         }}>
             <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-secundaria)', marginBottom: '4px' }}>
                 {p.setor}
             </div>
-            <div style={{ fontSize: '15px', fontWeight: 800, color: p.fill }}>
+            <div style={{ fontSize: '15px', fontWeight: 700, color: p.fill }}>
                 {p.pct.toFixed(1)}%
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--color-secundaria)', opacity: 0.7, marginTop: '2px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
                 {fmt(p.valor)}
             </div>
         </div>
@@ -93,7 +93,7 @@ export function DistribuicaoSetorial({ dados }: DistribuicaoSetorialProps) {
                     iconType="circle"
                     iconSize={10}
                     formatter={(_value, entry: any) => (
-                        <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-secundaria)', fontFamily: 'Montserrat, sans-serif' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-secundaria)', fontFamily: 'Inter Variable, system-ui, sans-serif' }}>
                             {entry.payload.setor} — {entry.payload.pct.toFixed(1)}%
                         </span>
                     )}
@@ -122,7 +122,7 @@ export function DistribuicaoSetorial({ dados }: DistribuicaoSetorialProps) {
                                 </div>
                             </td>
                             <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>{fmt(s.valor)}</td>
-                            <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 800, color: s.fill }}>{s.pct.toFixed(1)}%</td>
+                            <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700, color: s.fill }}>{s.pct.toFixed(1)}%</td>
                         </tr>
                     ))}
                 </tbody>
@@ -131,7 +131,7 @@ export function DistribuicaoSetorial({ dados }: DistribuicaoSetorialProps) {
     );
 
     return (
-        <Card style={{ border: '1px solid rgba(0,0,0,0.08)', overflow: 'hidden', background: '#fff' }}>
+        <Card style={{ border: '1px solid var(--color-border-subtle)', overflow: 'hidden', background: 'var(--color-surface)' }}>
             <CardContent style={{ padding: '24px' }}>
 
                 <CardHeaderComSwitch
@@ -144,10 +144,10 @@ export function DistribuicaoSetorial({ dados }: DistribuicaoSetorialProps) {
                 {(!dados || dados.length === 0) ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', gap: '12px', opacity: 0.4 }}>
                         <Layers size={32} />
-                        <Typography variant="p" style={{ fontSize: '13px', fontWeight: 600, fontFamily: 'Montserrat, sans-serif', textAlign: 'center' }}>
+                        <Typography variant="p" style={{ fontSize: '13px', fontWeight: 600, fontFamily: 'Inter Variable, system-ui, sans-serif', textAlign: 'center' }}>
                             Nenhum setor classificado
                         </Typography>
-                        <Typography variant="p" style={{ fontSize: '11px', fontFamily: 'Montserrat, sans-serif', textAlign: 'center', lineHeight: '1.5' }}>
+                        <Typography variant="p" style={{ fontSize: '11px', fontFamily: 'Inter Variable, system-ui, sans-serif', textAlign: 'center', lineHeight: '1.5' }}>
                             Preencha o setor dos emissores em Gestão Master para visualizar a distribuição.
                         </Typography>
                     </div>

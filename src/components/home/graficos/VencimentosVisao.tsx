@@ -45,14 +45,14 @@ const renderRotatedLabel = (props: any) => {
     const cx = Number(x) + Number(width) / 2;
     const py = Number(y) - 6;
     return (
-        <text x={cx} y={py} fill="#6B7280" fontSize={9} fontFamily="Montserrat, sans-serif" textAnchor="start" transform={`rotate(-90, ${cx}, ${py})`}>
+        <text x={cx} y={py} fill="#4A565E" fontSize={9} fontFamily="Inter Variable, system-ui, sans-serif" textAnchor="start" transform={`rotate(-90, ${cx}, ${py})`}>
             {fmtCompact(Number(value))}
         </text>
     );
 };
 
-const tableStyle: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginTop: '8px', fontFamily: 'Montserrat, sans-serif' };
-const thStyle: React.CSSProperties = { textAlign: 'left', padding: '8px 4px', borderBottom: '1px solid rgba(0,0,0,0.06)', opacity: 0.4, textTransform: 'uppercase', fontWeight: 700, fontSize: '10px', letterSpacing: '0.05em' };
+const tableStyle: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginTop: '8px', fontFamily: 'Inter Variable, system-ui, sans-serif' };
+const thStyle: React.CSSProperties = { textAlign: 'left', padding: '8px 4px', borderBottom: '1px solid var(--color-border-subtle)', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 700, fontSize: '10px', letterSpacing: '0.05em' };
 const tdStyle: React.CSSProperties = { padding: '12px 4px', borderBottom: '1px solid rgba(0,0,0,0.04)', fontWeight: 500, color: 'var(--color-secundaria)' };
 const segBtn = (active: boolean): React.CSSProperties => ({ padding: '6px 12px', fontSize: 12, border: 'none', cursor: 'pointer', background: active ? 'var(--color-primaria)' : '#fff', color: active ? '#fff' : '#6B7280', fontWeight: active ? 700 : 500 });
 
@@ -120,17 +120,17 @@ export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: 
     const handleSelectChange = (value: string) => setDiasVencimento(Number(value));
 
     return (
-        <Card style={{ border: '1px solid rgba(0,0,0,0.08)' }}>
+        <Card style={{ border: '1px solid var(--color-border-subtle)' }}>
             <CardContent style={{ padding: '24px' }}>
 
                 <CardHeaderComSwitch titulo="Agenda de Vencimentos" modoTabela={modoTabela} setModoTabela={setModoTabela} />
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '12px', flexWrap: 'wrap' }}>
                     <div>
-                        <Typography variant="p" style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', marginBottom: '2px', fontFamily: 'Montserrat, sans-serif' }}>
+                        <Typography variant="p" style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: '2px', fontFamily: 'Inter Variable, system-ui, sans-serif' }}>
                             Total a vencer · {ativosFiltrados.length} ativo{ativosFiltrados.length === 1 ? '' : 's'}
                         </Typography>
-                        <Typography variant="p" style={{ fontSize: '24px', fontWeight: 800, fontFamily: 'Montserrat, sans-serif', color: 'var(--color-secundaria)' }}>
+                        <Typography variant="p" style={{ fontSize: '24px', fontWeight: 700, fontFamily: 'Inter Variable, system-ui, sans-serif', color: 'var(--color-secundaria)' }}>
                             {fmt(totalFinanceiro)}
                         </Typography>
                     </div>
@@ -177,21 +177,21 @@ export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: 
                     </div>
                 ) : modoGrafico === 'mensal' ? (
                     dadosMensais.length === 0 ? (
-                        <Typography variant="p" style={{ textAlign: 'center', opacity: 0.5, padding: '20px', fontSize: '13px', fontFamily: 'Montserrat, sans-serif' }}>
+                        <Typography variant="p" style={{ textAlign: 'center', opacity: 0.5, padding: '20px', fontSize: '13px', fontFamily: 'Inter Variable, system-ui, sans-serif' }}>
                             Nenhum vencimento para o período selecionado.
                         </Typography>
                     ) : (
                         <ResponsiveContainer width="100%" height={360}>
                             <ComposedChart data={dadosMensais} margin={{ top: 64, right: 20, left: 10, bottom: 8 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
-                                <XAxis dataKey="mes" tick={{ fontSize: 11, fontFamily: 'Montserrat, sans-serif' }} tickLine={false} axisLine={{ stroke: 'rgba(0,0,0,0.1)' }} />
-                                <YAxis tickFormatter={(v) => fmtCompact(Number(v))} tick={{ fontSize: 11, fontFamily: 'Montserrat, sans-serif' }} width={72} tickLine={false} axisLine={false} />
+                                <XAxis dataKey="mes" tick={{ fontSize: 11, fontFamily: 'Inter Variable, system-ui, sans-serif' }} tickLine={false} axisLine={{ stroke: 'rgba(0,0,0,0.1)' }} />
+                                <YAxis tickFormatter={(v) => fmtCompact(Number(v))} tick={{ fontSize: 11, fontFamily: 'Inter Variable, system-ui, sans-serif' }} width={72} tickLine={false} axisLine={false} />
                                 <Tooltip
                                     formatter={(v: any, name: any) => [fmt(Number(v)), name === 'valor' ? 'No mês' : 'Acumulado']}
                                     labelStyle={{ fontWeight: 700 }}
-                                    contentStyle={{ fontSize: 12, borderRadius: 8, fontFamily: 'Montserrat, sans-serif' }}
+                                    contentStyle={{ fontSize: 12, borderRadius: 8, fontFamily: 'Inter Variable, system-ui, sans-serif' }}
                                 />
-                                <Legend wrapperStyle={{ fontSize: 12, fontFamily: 'Montserrat, sans-serif' }} formatter={(value) => value === 'valor' ? 'No mês' : 'Acumulado'} />
+                                <Legend wrapperStyle={{ fontSize: 12, fontFamily: 'Inter Variable, system-ui, sans-serif' }} formatter={(value) => value === 'valor' ? 'No mês' : 'Acumulado'} />
                                 <Bar dataKey="valor" name="valor" fill={COR_BARRA} radius={[4, 4, 0, 0]} maxBarSize={56} isAnimationActive={false}>
                                     <LabelList dataKey="valor" content={renderRotatedLabel} />
                                 </Bar>
@@ -201,7 +201,7 @@ export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: 
                     )
                 ) : (
                     faixasAgregadas.length === 0 ? (
-                        <Typography variant="p" style={{ textAlign: 'center', opacity: 0.5, padding: '20px', fontSize: '13px', fontFamily: 'Montserrat, sans-serif' }}>
+                        <Typography variant="p" style={{ textAlign: 'center', opacity: 0.5, padding: '20px', fontSize: '13px', fontFamily: 'Inter Variable, system-ui, sans-serif' }}>
                             Nenhum vencimento para o período selecionado.
                         </Typography>
                     ) : (
@@ -226,8 +226,8 @@ export function VencimentosVisao({ ativos, diasVencimento, setDiasVencimento }: 
                                                 <div style={{ height: '100%', width: `${Math.min(f.pct, 100)}%`, background: f.cor, borderRadius: '4px', opacity: 0.7, transition: 'width 0.8s ease' }} />
                                             </div>
                                         </div>
-                                        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-secundaria)', opacity: 0.7, whiteSpace: 'nowrap' }}>{fmt(f.value)}</span>
-                                        <span style={{ fontSize: '14px', fontWeight: 800, color: f.cor, minWidth: '48px', textAlign: 'right' }}>{f.pct.toFixed(1)}%</span>
+                                        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap' }}>{fmt(f.value)}</span>
+                                        <span style={{ fontSize: '14px', fontWeight: 700, color: f.cor, minWidth: '48px', textAlign: 'right' }}>{f.pct.toFixed(1)}%</span>
                                     </div>
                                 ))}
                             </div>
