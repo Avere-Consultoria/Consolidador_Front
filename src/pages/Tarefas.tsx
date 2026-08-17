@@ -163,7 +163,7 @@ export default function Tarefas() {
             <header style={{ borderBottom: '1px solid var(--color-borda)', paddingBottom: 20, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
                 <div>
                     <Typography variant="h1">Tarefas</Typography>
-                    <Typography variant="p" style={{ opacity: 0.6 }}>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
                         {selectedClient
                             ? `Foco no cliente: ${selectedClient.nome}`
                             : abertasHoje > 0 ? `${abertasHoje} para hoje (incluindo atrasadas).` : 'Nada pendente para hoje.'}
@@ -180,7 +180,7 @@ export default function Tarefas() {
             </header>
 
             {visiveis.length === 0 && (
-                <Card style={{ padding: 40, textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>
+                <Card style={{ padding: 40, textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>
                     {verConcluidas ? 'Nenhuma tarefa concluída.' : 'Nenhuma tarefa aberta. 🎉'}
                 </Card>
             )}
@@ -190,7 +190,7 @@ export default function Tarefas() {
                     key={d.data}
                     titulo={diaExtenso(d.data)}
                     rotulo={d.rotulo}
-                    cor={d.atrasado ? '#DC2626' : d.rotulo === 'Hoje' ? 'var(--color-primaria)' : '#94A3B8'}
+                    cor={d.atrasado ? 'var(--color-danger-solid)' : d.rotulo === 'Hoje' ? 'var(--color-primaria)' : 'var(--gray-400)'}
                     itens={d.itens}
                     onConcluir={concluir} onAdiar={adiar} onExcluir={excluir}
                 />
@@ -205,10 +205,10 @@ export default function Tarefas() {
 
             {modal && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(8,31,40,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 24 }}>
-                    <div style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 520, boxShadow: '0 24px 48px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 520, boxShadow: 'var(--shadow-modal)', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Typography variant="h2" style={{ fontSize: 18, margin: 0, fontWeight: 700, color: 'var(--color-secundaria)' }}>Nova tarefa</Typography>
-                            <X size={20} color="#9CA3AF" style={{ cursor: 'pointer' }} onClick={() => setModal(false)} />
+                            <X size={20} color="var(--color-text-muted)" style={{ cursor: 'pointer' }} onClick={() => setModal(false)} />
                         </div>
 
                         <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -242,7 +242,7 @@ export default function Tarefas() {
                             </div>
                         </div>
 
-                        <div style={{ padding: '16px 24px', borderTop: '1px solid rgba(0,0,0,0.06)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--color-border-subtle)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                             <Button variant="outline" onClick={() => setModal(false)}>Cancelar</Button>
                             <Button variant="solid" onClick={salvar} disabled={salvando}>
                                 {salvando ? 'Salvando...' : 'Criar tarefa'}
@@ -279,11 +279,11 @@ function BlocoDia({ titulo, rotulo, cor, itens, onConcluir, onAdiar, onExcluir }
                     {titulo}
                 </Typography>
                 {rotulo && (
-                    <Badge variant="ghost" style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.05em', background: cor, color: '#fff' }}>
+                    <Badge variant="ghost" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.05em', background: cor, color: '#fff' }}>
                         {rotulo.toUpperCase()}
                     </Badge>
                 )}
-                <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9CA3AF', fontWeight: 600 }}>
+                <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 600 }}>
                     {itens.length} {itens.length === 1 ? 'tarefa' : 'tarefas'}
                 </span>
             </div>
@@ -291,14 +291,14 @@ function BlocoDia({ titulo, rotulo, cor, itens, onConcluir, onAdiar, onExcluir }
             {itens.map((t, i) => (
                 <div key={t.id} style={{
                     display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 16px',
-                    borderTop: i === 0 ? 'none' : '1px solid #F3F4F6',
+                    borderTop: i === 0 ? 'none' : '1px solid var(--color-surface-sunken)',
                 }}>
                     <button
                         onClick={() => onConcluir(t)}
                         title={t.status === 'CONCLUIDA' ? 'Reabrir' : 'Concluir'}
                         style={{
                             width: 20, height: 20, marginTop: 2, flexShrink: 0, cursor: 'pointer',
-                            borderRadius: 5, border: `1.5px solid ${t.status === 'CONCLUIDA' ? 'var(--color-primaria)' : '#D1D5DB'}`,
+                            borderRadius: 5, border: `1.5px solid ${t.status === 'CONCLUIDA' ? 'var(--color-primaria)' : 'var(--color-border-default)'}`,
                             background: t.status === 'CONCLUIDA' ? 'var(--color-primaria)' : '#fff',
                             color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
                         }}
@@ -321,7 +321,7 @@ function BlocoDia({ titulo, rotulo, cor, itens, onConcluir, onAdiar, onExcluir }
                                 </Badge>
                             )}
                         </div>
-                        <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 2, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                             {t.cliente?.nome && <span style={{ fontWeight: 600 }}>{t.cliente.nome}</span>}
                             {t.descricao && <span>{t.descricao}</span>}
                         </div>
@@ -332,7 +332,7 @@ function BlocoDia({ titulo, rotulo, cor, itens, onConcluir, onAdiar, onExcluir }
                             <button onClick={() => onAdiar(t, 1)} title="Adiar para amanhã" style={btnIcone}><CalendarPlus size={15} /></button>
                             <button onClick={() => onAdiar(t, 7)} title="Adiar 7 dias" style={btnIcone}><RotateCcw size={15} /></button>
                             {t.origem === 'MANUAL' && (
-                                <button onClick={() => onExcluir(t)} title="Excluir" style={{ ...btnIcone, color: '#DC2626' }}><Trash2 size={15} /></button>
+                                <button onClick={() => onExcluir(t)} title="Excluir" style={{ ...btnIcone, color: 'var(--color-danger-solid)' }}><Trash2 size={15} /></button>
                             )}
                         </div>
                     )}
@@ -343,11 +343,11 @@ function BlocoDia({ titulo, rotulo, cor, itens, onConcluir, onAdiar, onExcluir }
 }
 
 const btnIcone: React.CSSProperties = {
-    background: 'transparent', border: 'none', cursor: 'pointer', color: '#9CA3AF',
+    background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)',
     padding: 4, borderRadius: 5, display: 'flex', alignItems: 'center',
 };
 const label: React.CSSProperties = {
-    display: 'block', fontSize: 11, fontWeight: 700, color: '#6B7280',
+    display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)',
     textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6,
 };
 const ctrl: React.CSSProperties = {

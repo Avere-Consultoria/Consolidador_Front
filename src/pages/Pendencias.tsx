@@ -93,7 +93,7 @@ export default function Pendencias() {
                         <Badge intent="alerta" variant="solid" style={{ fontSize: '12px' }}>{pendencias.length}</Badge>
                     )}
                 </div>
-                <Typography variant="p" style={{ opacity: 0.6, marginTop: '6px', maxWidth: 720 }}>
+                <Typography variant="p" style={{ color: 'var(--color-text-secondary)', marginTop: '6px', maxWidth: 720 }}>
                     Ativos <strong>sem classificação oficial</strong> que um consultor já classificou (rascunho ou
                     exceção). Clique em <strong>Curar</strong> para abrir na Master Ativos e definir a classificação
                     canônica — aí o item sai desta lista.
@@ -101,7 +101,7 @@ export default function Pendencias() {
             </header>
 
             {pendencias.length === 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 24px', gap: '14px', border: '2px dashed var(--color-borda)', borderRadius: '12px', opacity: 0.6 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 24px', gap: '14px', border: '2px dashed var(--color-border-default)', borderRadius: 'var(--radius-lg)', color: 'var(--color-text-secondary)' }}>
                     <Inbox size={44} />
                     <Typography variant="h2" style={{ margin: 0 }}>Nenhuma pendência</Typography>
                     <Typography variant="p" style={{ textAlign: 'center', maxWidth: 480 }}>
@@ -127,7 +127,7 @@ export default function Pendencias() {
                                         <Badge intent="primaria" variant="ghost" style={{ fontSize: '10px' }}>Palpite: {r.palpiteClasse}</Badge>
                                     )}
                                 </div>
-                                <Typography variant="p" style={{ margin: '4px 0 0', fontSize: '12px', opacity: 0.6 }}>
+                                <Typography variant="p" style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
                                     Por <strong>{r.consultorNome}</strong> · {formatarQuando(r.quando)}
                                 </Typography>
                             </div>

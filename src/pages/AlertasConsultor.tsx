@@ -45,9 +45,9 @@ interface CreditoAlerta {
 const MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 const mesLabel = (ym: string) => { const [a, m] = ym.split('-'); return `${MESES[Number(m) - 1]}/${a}`; };
 
-const th: React.CSSProperties = { padding: '9px 12px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', textAlign: 'left', whiteSpace: 'nowrap' };
+const th: React.CSSProperties = { padding: '9px 12px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', textAlign: 'left', whiteSpace: 'nowrap' };
 const thNum: React.CSSProperties = { ...th, textAlign: 'right' };
-const td: React.CSSProperties = { padding: '10px 12px', fontSize: 13, color: '#374151', borderTop: '1px solid #F3F4F6' };
+const td: React.CSSProperties = { padding: '10px 12px', fontSize: 13, color: 'var(--color-text-primary)', borderTop: '1px solid var(--color-surface-sunken)' };
 const tdNum: React.CSSProperties = { ...td, textAlign: 'right', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' };
 
 export default function AlertasConsultor() {
@@ -127,7 +127,7 @@ export default function AlertasConsultor() {
             <header style={{ borderBottom: '1px solid var(--color-borda)', paddingBottom: '20px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
                 <div>
                     <Typography variant="h1">Alertas</Typography>
-                    <Typography variant="p" style={{ opacity: 0.6 }}>{selectedClient ? `Foco no cliente: ${selectedClient.nome}` : 'Vencimentos e riscos consolidados da sua carteira.'}</Typography>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>{selectedClient ? `Foco no cliente: ${selectedClient.nome}` : 'Vencimentos e riscos consolidados da sua carteira.'}</Typography>
                 </div>
             </header>
 
@@ -136,18 +136,18 @@ export default function AlertasConsultor() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <CalendarClock size={20} color="var(--color-secundaria)" />
                     <Typography variant="p" style={{ fontWeight: 700, fontSize: 16 }}>Vencimentos próximos</Typography>
-                    <span style={{ fontSize: 12, color: '#9CA3AF' }}>{vencsF.length} ativos · {v(totalGeral)}</span>
+                    <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{vencsF.length} ativos · {v(totalGeral)}</span>
                 </div>
 
                 {porMes.length === 0 && (
-                    <Card style={{ padding: '32px', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>Nenhum vencimento futuro encontrado.</Card>
+                    <Card style={{ padding: '32px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>Nenhum vencimento futuro encontrado.</Card>
                 )}
 
                 {porMes.map(g => (
                     <Card key={g.ym} style={{ padding: 0, overflow: 'hidden' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#F9FAFB', borderBottom: '1px solid #F3F4F6' }}>
-                            <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--color-primaria)' }}>{mesLabel(g.ym)}</span>
-                            <span style={{ fontSize: 12, color: '#6B7280' }}>{g.clientes} cliente{g.clientes === 1 ? '' : 's'} · {g.itens.length} ativo{g.itens.length === 1 ? '' : 's'}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'var(--gray-50)', borderBottom: '1px solid var(--color-surface-sunken)' }}>
+                            <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-primaria)' }}>{mesLabel(g.ym)}</span>
+                            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{g.clientes} cliente{g.clientes === 1 ? '' : 's'} · {g.itens.length} ativo{g.itens.length === 1 ? '' : 's'}</span>
                             <div style={{ flex: 1 }} />
                             <span style={{ fontWeight: 700, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{v(g.total)}</span>
                         </div>
@@ -176,15 +176,15 @@ export default function AlertasConsultor() {
                                 <tbody>
                                     {g.itens.map((it, i) => (
                                         <tr key={i} onClick={() => abrirCliente(it.cliente_id, it.cliente_nome)} style={{ cursor: 'pointer' }}
-                                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,131,203,0.04)')}
+                                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-accent-subtle)')}
                                             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                                             <td style={{ ...td, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.cliente_nome}</td>
-                                            <td style={td}>{it.sub_tipo ? <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-secundaria)', background: 'rgba(0,131,203,0.08)', padding: '2px 6px', borderRadius: 4 }}>{it.sub_tipo}</span> : '—'}</td>
+                                            <td style={td}>{it.sub_tipo ? <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-secundaria)', background: 'var(--color-accent-subtle)', padding: '2px 6px', borderRadius: 4 }}>{it.sub_tipo}</span> : '—'}</td>
                                             <td style={{ ...td, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.nome}</td>
-                                            <td style={td}><span style={{ fontSize: 11, color: '#6B7280' }}>{it.instituicao}</span></td>
+                                            <td style={td}><span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>{it.instituicao}</span></td>
                                             <td style={tdNum}>{fmtDate(it.data_vencimento)}</td>
-                                            <td style={{ ...tdNum, fontWeight: 700, color: '#111827' }}>{v(it.valor)}</td>
-                                            <td style={{ ...td, textAlign: 'right' }}><ChevronRight size={15} color="#D1D5DB" /></td>
+                                            <td style={{ ...tdNum, fontWeight: 700, color: 'var(--color-text-primary)' }}>{v(it.valor)}</td>
+                                            <td style={{ ...td, textAlign: 'right' }}><ChevronRight size={15} color="var(--color-border-default)" /></td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -197,19 +197,19 @@ export default function AlertasConsultor() {
             {/* ── Seção: Limite FGC ── */}
             <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <ShieldAlert size={20} color="#B45309" />
+                    <ShieldAlert size={20} color="var(--color-warning-text)" />
                     <Typography variant="p" style={{ fontWeight: 700, fontSize: 16 }}>Limite FGC</Typography>
-                    <span style={{ fontSize: 12, color: '#9CA3AF' }}>{fgcF.length} alerta{fgcF.length === 1 ? '' : 's'} · exposições ≥70% do teto R$250k por conglomerado</span>
+                    <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{fgcF.length} alerta{fgcF.length === 1 ? '' : 's'} · exposições ≥70% do teto R$250k por conglomerado</span>
                 </div>
 
                 {fgcF.length === 0 ? (
-                    <Card style={{ padding: '28px', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>Nenhuma exposição FGC acima de 70% do limite. 👍</Card>
+                    <Card style={{ padding: '28px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>Nenhuma exposição FGC acima de 70% do limite. 👍</Card>
                 ) : (
                     <Card style={{ padding: 0, overflow: 'hidden' }}>
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 820 }}>
                                 <thead>
-                                    <tr style={{ background: '#F9FAFB' }}>
+                                    <tr style={{ background: 'var(--gray-50)' }}>
                                         <th style={th}>Cliente</th>
                                         <th style={th}>Conglomerado</th>
                                         <th style={th}>Ativos</th>
@@ -226,25 +226,25 @@ export default function AlertasConsultor() {
                                         const critico = f.pct_limite >= 0.9;
                                         return (
                                             <tr key={i} onClick={() => abrirCliente(f.cliente_id, f.cliente_nome)} style={{ cursor: 'pointer' }}
-                                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,131,203,0.04)')}
+                                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-accent-subtle)')}
                                                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                                                 <td style={{ ...td, fontWeight: 600 }}>{f.cliente_nome}</td>
                                                 <td style={td}>{f.conglomerado}</td>
-                                                <td style={{ ...td, fontSize: 12, color: '#6B7280' }}>{(f.sub_tipos || []).join(', ')} · {f.num_ativos}</td>
+                                                <td style={{ ...td, fontSize: 12, color: 'var(--color-text-secondary)' }}>{(f.sub_tipos || []).join(', ')} · {f.num_ativos}</td>
                                                 <td style={{ ...tdNum, fontWeight: 700 }}>{v(f.exposicao)}</td>
                                                 <td style={tdNum}>{f.vencimento_proximo ? fmtDate(f.vencimento_proximo) : '—'}</td>
                                                 <td style={td}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                        <div style={{ width: 70, height: 6, background: '#F3F4F6', borderRadius: 3, overflow: 'hidden' }}>
-                                                            <div style={{ height: '100%', width: `${pct}%`, background: critico ? '#DC2626' : '#F59E0B', borderRadius: 3 }} />
+                                                        <div style={{ width: 70, height: 6, background: 'var(--color-surface-sunken)', borderRadius: 3, overflow: 'hidden' }}>
+                                                            <div style={{ height: '100%', width: `${pct}%`, background: critico ? 'var(--color-danger-solid)' : 'var(--color-warning-solid)', borderRadius: 3 }} />
                                                         </div>
-                                                        <span style={{ fontSize: 12, fontWeight: 600, color: critico ? '#DC2626' : '#B45309' }}>{(f.pct_limite * 100).toFixed(0)}%</span>
+                                                        <span style={{ fontSize: 12, fontWeight: 600, color: critico ? 'var(--color-danger-solid)' : 'var(--color-warning-text)' }}>{(f.pct_limite * 100).toFixed(0)}%</span>
                                                     </div>
                                                 </td>
                                                 <td style={td}>
-                                                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, ...(critico ? { background: 'rgba(220,38,38,0.1)', color: '#DC2626' } : { background: 'rgba(245,158,11,0.14)', color: '#B45309' }) }}>{f.nivel}</span>
+                                                    <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, ...(critico ? { background: 'var(--color-danger-bg)', color: 'var(--color-danger-text)' } : { background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)' }) }}>{f.nivel}</span>
                                                 </td>
-                                                <td style={{ ...tdNum, color: f.folga < 0 ? '#DC2626' : '#059669', fontWeight: 600 }}>{v(f.folga)}</td>
+                                                <td style={{ ...tdNum, color: f.folga < 0 ? 'var(--color-danger-solid)' : 'var(--color-success-text)', fontWeight: 600 }}>{v(f.folga)}</td>
                                             </tr>
                                         );
                                     })}
@@ -260,13 +260,13 @@ export default function AlertasConsultor() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <Landmark size={20} color="var(--color-secundaria)" />
                     <Typography variant="p" style={{ fontWeight: 700, fontSize: 16 }}>Crédito privado</Typography>
-                    <span style={{ fontSize: 12, color: '#9CA3AF' }}>concentração por emissor (% do PL do cliente)</span>
+                    <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>concentração por emissor (% do PL do cliente)</span>
                     {creditoF.length > 0 && (
                         <div style={{ display: 'flex', gap: 6 }}>
                             {(['Crítico', 'Alto', 'Médio'] as const).map(n => {
                                 const q = creditoF.filter(c => c.nivel === n).length;
                                 if (!q) return null;
-                                const cor = n === 'Crítico' ? '#DC2626' : n === 'Alto' ? '#EA580C' : '#B45309';
+                                const cor = n === 'Crítico' ? 'var(--color-danger-solid)' : n === 'Alto' ? 'var(--color-warning-text)' : 'var(--color-warning-text)';
                                 return <span key={n} style={{ fontSize: 11, fontWeight: 700, color: cor, background: `${cor}18`, padding: '2px 8px', borderRadius: 6 }}>{q} {n.toLowerCase()}{q > 1 ? 's' : ''}</span>;
                             })}
                         </div>
@@ -274,13 +274,13 @@ export default function AlertasConsultor() {
                 </div>
 
                 {creditoF.length === 0 ? (
-                    <Card style={{ padding: '28px', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>Nenhuma concentração de crédito privado acima de 5% do PL. 👍</Card>
+                    <Card style={{ padding: '28px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>Nenhuma concentração de crédito privado acima de 5% do PL. 👍</Card>
                 ) : (
                     <Card style={{ padding: 0, overflow: 'hidden' }}>
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 820 }}>
                                 <thead>
-                                    <tr style={{ background: '#F9FAFB' }}>
+                                    <tr style={{ background: 'var(--gray-50)' }}>
                                         <th style={th}>Cliente</th>
                                         <th style={th}>Emissor</th>
                                         <th style={th}>Ativos</th>
@@ -292,19 +292,19 @@ export default function AlertasConsultor() {
                                 </thead>
                                 <tbody>
                                     {creditoF.map((c, i) => {
-                                        const cor = c.nivel === 'Crítico' ? '#DC2626' : c.nivel === 'Alto' ? '#EA580C' : '#B45309';
+                                        const cor = c.nivel === 'Crítico' ? 'var(--color-danger-solid)' : c.nivel === 'Alto' ? 'var(--color-warning-text)' : 'var(--color-warning-text)';
                                         const pctBar = Math.min(c.pct_pl, 0.5) / 0.5 * 100;
                                         return (
                                             <tr key={i} onClick={() => abrirCliente(c.cliente_id, c.cliente_nome)} style={{ cursor: 'pointer' }}
-                                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,131,203,0.04)')}
+                                                onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-accent-subtle)')}
                                                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                                                 <td style={{ ...td, fontWeight: 600 }}>{c.cliente_nome}</td>
                                                 <td style={td}>{c.emissor}</td>
-                                                <td style={{ ...td, fontSize: 12, color: '#6B7280' }}>{(c.sub_tipos || []).join(', ')} · {c.num_ativos}</td>
+                                                <td style={{ ...td, fontSize: 12, color: 'var(--color-text-secondary)' }}>{(c.sub_tipos || []).join(', ')} · {c.num_ativos}</td>
                                                 <td style={{ ...tdNum, fontWeight: 700 }}>{v(c.exposicao)}</td>
                                                 <td style={td}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                        <div style={{ width: 60, height: 6, background: '#F3F4F6', borderRadius: 3, overflow: 'hidden' }}>
+                                                        <div style={{ width: 60, height: 6, background: 'var(--color-surface-sunken)', borderRadius: 3, overflow: 'hidden' }}>
                                                             <div style={{ height: '100%', width: `${pctBar}%`, background: cor, borderRadius: 3 }} />
                                                         </div>
                                                         <span style={{ fontSize: 12, fontWeight: 700, color: cor }}>{(c.pct_pl * 100).toFixed(1)}%</span>
