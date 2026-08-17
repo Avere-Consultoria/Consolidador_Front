@@ -620,6 +620,34 @@ export function useHomeMetrics() {
                     return { data: acc, error: null };
                 };
 
+                // Só o snapshot MAIS RECENTE por conta interessa à Home (visão LIVE).
+                // Buscar o histórico inteiro com filhos aninhados estourava o
+                // statement_timeout (8s) via RLS por linha — o BTG (o único com
+                // aquisições/janelas aninhadas) sumia da tela silenciosamente.
+                // Passo 1 leve (3 colunas) escolhe os ids; o pesado busca só eles.
+                const idsMaisRecentes = async (tabela: string): Promise<string[]> => {
+                    const { data, error } = await supabase
+                        .from(tabela)
+                        .select('id, conta_id, data_referencia')
+                        .eq('cliente_id', selectedClient!.id)
+                        .order('data_referencia', { ascending: false })
+                        .limit(400);
+                    if (error) { console.error(`Home: falha ao listar ${tabela}`, error); return []; }
+                    const vistos = new Set<string>();
+                    const ids: string[] = [];
+                    for (const s of data ?? []) {
+                        const k = s.conta_id ?? '__none__';
+                        if (!vistos.has(k)) { vistos.add(k); ids.push(s.id); }
+                    }
+                    return ids;
+                };
+                const [idsBtg, idsXp, idsAvenue, idsAgora] = await Promise.all([
+                    idsMaisRecentes('posicao_btg_snapshots'),
+                    idsMaisRecentes('posicao_xp_snapshots'),
+                    idsMaisRecentes('posicao_avenue_snapshots'),
+                    idsMaisRecentes('posicao_agora_snapshots'),
+                ]);
+
                 // Índices fixos: 0=BTG, 1=XP, 2=Avenue, 3=Ágora, 4=canonicos, 5=emissores, 6=classes, 7=instituicoes
                 // Índice 8 (opcional): excecoes
                 const queries: any[] = [
@@ -641,7 +669,7 @@ export function useHomeMetrics() {
                                 )
                             )
                         `)
-                        .eq('cliente_id', selectedClient.id)
+                        .in('id', idsBtg)
                         .order('data_referencia', { ascending: false }),
 
                     // 1: XP
@@ -663,7 +691,7 @@ export function useHomeMetrics() {
                                 is_liquidity
                             )
                         `)
-                        .eq('cliente_id', selectedClient.id)
+                        .in('id', idsXp)
                         .order('data_referencia', { ascending: false }),
 
                     // 2: Avenue
@@ -677,7 +705,7 @@ export function useHomeMetrics() {
                                 valor_bruto_brl, valor_bruto_usd, quantidade, maturity_date, is_liquidity
                             )
                         `)
-                        .eq('cliente_id', selectedClient.id)
+                        .in('id', idsAvenue)
                         .order('data_referencia', { ascending: false }),
 
                     // 3: Ágora
@@ -703,7 +731,7 @@ export function useHomeMetrics() {
                                 )
                             )
                         `)
-                        .eq('cliente_id', selectedClient.id)
+                        .in('id', idsAgora)
                         .order('data_referencia', { ascending: false }),
 
                     // 4, 5, 6, 7: Infraestrutura
@@ -726,7 +754,8 @@ export function useHomeMetrics() {
                             )
                         `)
                         .eq('cliente_id', selectedClient.id)
-                        .order('data_referencia', { ascending: false }),
+                        .order('data_referencia', { ascending: false })
+                        .limit(60),
                 ];
 
                 // 10: Exceções pela LENTE DO HEADER (consultor selecionado no topo).
@@ -737,6 +766,12 @@ export function useHomeMetrics() {
                 }
 
                 const results = await Promise.all(queries);
+
+                // Erro em fonte de posição NUNCA pode ser silencioso — sem isto,
+                // uma query que falha vira "instituição sumiu da tela".
+                (['BTG', 'XP', 'Avenue', 'Ágora'] as const).forEach((nome, i) => {
+                    if (results[i]?.error) console.error(`Home: snapshots ${nome} falharam`, results[i].error);
+                });
 
                 setSnapshotData({
                     btg: results[0].data ?? [], xp: results[1].data ?? [],
