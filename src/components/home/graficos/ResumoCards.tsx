@@ -47,8 +47,8 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
                         const fs = valor.length <= 10 ? 20 : valor.length <= 13 ? 17 : valor.length <= 16 ? 14 : 12;
                         return (
                             <g>
-                                <text x={cx} y={cy - 10} textAnchor="middle" style={{ fontSize: 10, fontWeight: 700, fill: '#9CA3AF', letterSpacing: '0.05em' }}>TOTAL</text>
-                                <text x={cx} y={cy + 13} textAnchor="middle" style={{ fontSize: fs, fontWeight: 800, fill: 'var(--color-secundaria)' }}>{valor}</text>
+                                <text x={cx} y={cy - 10} textAnchor="middle" style={{ fontSize: 10, fontWeight: 600, fill: 'var(--color-text-muted)', letterSpacing: '0.05em' }}>TOTAL</text>
+                                <text x={cx} y={cy + 13} textAnchor="middle" style={{ fontSize: fs, fontWeight: 700, fill: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums' }}>{valor}</text>
                             </g>
                         );
                     }} />
@@ -58,7 +58,7 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
                     iconType="circle"
                     iconSize={10}
                     formatter={(value, entry: any) => (
-                        <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-secundaria)' }}>
+                        <span style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)' as any, color: 'var(--color-text-primary)' }}>
                             {value} — {entry.payload.pct.toFixed(1)}%
                         </span>
                     )}
@@ -70,46 +70,46 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
     const renderTabela = () => (
         <div>
             <div style={{ marginBottom: '16px' }}>
-                <Typography variant="p" style={{ fontWeight: 700, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF' }}>
+                <Typography variant="p" style={{ fontFamily: 'var(--font-display)', fontWeight: 'var(--weight-semibold)' as any, fontSize: 'var(--text-2xs)', textTransform: 'uppercase', letterSpacing: 'var(--tracking-caps)', color: 'var(--color-text-muted)' }}>
                     Patrimônio Total
                 </Typography>
-                <Typography variant="h1" style={{ fontSize: '28px', fontWeight: 800, color: 'var(--color-secundaria)' }}>
+                <Typography variant="h1" style={{ fontSize: '28px', fontWeight: 'var(--weight-bold)' as any, color: 'var(--color-text-primary)', fontVariantNumeric: 'tabular-nums', letterSpacing: 'var(--tracking-tight)' }}>
                     {fmt(metrics.patrimonioTotal)}
                 </Typography>
             </div>
             <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
-                    <tr style={{ textAlign: 'left', borderBottom: '1px solid #F3F4F6' }}>
-                        <th style={{ paddingBottom: '12px', fontSize: '11px', color: '#9CA3AF', textTransform: 'uppercase' }}>Instituição</th>
-                        <th style={{ paddingBottom: '12px', fontSize: '11px', color: '#9CA3AF', textTransform: 'uppercase' }}>Ref.</th>
-                        <th style={{ paddingBottom: '12px', fontSize: '11px', color: '#9CA3AF', textTransform: 'uppercase', textAlign: 'right' }}>Valor</th>
-                        <th style={{ paddingBottom: '12px', fontSize: '11px', color: '#9CA3AF', textTransform: 'uppercase', textAlign: 'right' }}>Share</th>
+                    <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--color-border-subtle)' }}>
+                        <th style={{ paddingBottom: '12px', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)' as any, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: 'var(--tracking-wide)' }}>Instituição</th>
+                        <th style={{ paddingBottom: '12px', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)' as any, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: 'var(--tracking-wide)' }}>Ref.</th>
+                        <th style={{ paddingBottom: '12px', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)' as any, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: 'var(--tracking-wide)', textAlign: 'right' }}>Valor</th>
+                        <th style={{ paddingBottom: '12px', fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)' as any, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: 'var(--tracking-wide)', textAlign: 'right' }}>Share</th>
                     </tr>
                 </thead>
                 <tbody>
                     {instituicoes.map((inst: any) => (
-                        <tr key={inst.id} style={{ borderBottom: '1px solid #F9FAFB' }}>
+                        <tr key={inst.id} style={{ borderBottom: '1px solid var(--color-surface-sunken)' }}>
                             <td style={{ padding: '14px 0' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: inst.cor }} />
-                                    <Typography variant="p" style={{ fontWeight: 600, fontSize: '14px', color: '#374151' }}>
+                                    <div style={{ width: 10, height: 10, borderRadius: 'var(--radius-full)', background: inst.cor }} />
+                                    <Typography variant="p" style={{ fontWeight: 'var(--weight-medium)' as any, fontSize: 'var(--text-md)', color: 'var(--color-text-primary)' }}>
                                         {inst.nome}
                                     </Typography>
                                 </div>
                             </td>
                             <td style={{ padding: '14px 8px' }}>
-                                <Typography variant="p" style={{ fontSize: '12px', opacity: 0.4 }}>
+                                <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
                                     {inst.ref ? fmtDate(inst.ref + 'T12:00:00Z') : '—'}
                                 </Typography>
                             </td>
                             <td style={{ textAlign: 'right', padding: '14px 0' }}>
-                                <Typography variant="p" style={{ fontWeight: 700, fontSize: '14px' }}>
+                                <Typography variant="p" style={{ fontWeight: 'var(--weight-semibold)' as any, fontSize: 'var(--text-md)', fontVariantNumeric: 'tabular-nums' }}>
                                     {fmt(inst.total)}
                                 </Typography>
                             </td>
                             <td style={{ textAlign: 'right', padding: '14px 0' }}>
-                                <Badge variant="ghost" style={{ fontSize: '11px', fontWeight: 700, color: inst.cor }}>
+                                <Badge variant="ghost" style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)' as any, color: inst.cor, fontVariantNumeric: 'tabular-nums' }}>
                                     {inst.pct.toFixed(1)}%
                                 </Badge>
                             </td>
@@ -122,7 +122,7 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
     );
 
     return (
-        <Card style={{ border: '1px solid rgba(0,0,0,0.08)', overflow: 'hidden', background: '#fff' }}>
+        <Card style={{ border: '1px solid var(--color-border-subtle)', overflow: 'hidden', background: 'var(--color-surface)' }}>
             <CardContent style={{ padding: '24px' }}>
 
                 <CardHeaderComSwitch

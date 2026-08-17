@@ -66,7 +66,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
     return (
         <section>
             {/* GRANDE MOLDURA UNIFICADA */}
-            <Card style={{ padding: 0, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', background: '#fff' }}>
+            <Card style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--color-border-subtle)', background: 'var(--color-surface)' }}>
 
                 {/* 1º - HEADER INTEGRADO AO CARD */}
                 <div style={{
@@ -74,21 +74,21 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                     alignItems: 'center',
                     gap: '12px',
                     padding: '20px 24px',
-                    background: 'rgba(0, 0, 0, 0.02)',
-                    borderBottom: '1px solid rgba(0,0,0,0.06)'
+                    background: 'var(--color-surface-sunken)',
+                    borderBottom: '1px solid var(--color-border-subtle)'
                 }}>
-                    <div style={{ background: 'rgba(0, 131, 203, 0.1)', padding: '8px', borderRadius: '8px', color: 'var(--color-primaria)' }}>
+                    <div style={{ background: 'var(--color-accent-subtle)', padding: '8px', borderRadius: 'var(--radius-md)', color: 'var(--color-accent)' }}>
                         <List size={20} />
                     </div>
                     <div>
-                        <Typography variant="h2" style={{ fontSize: '15px', fontWeight: 700 }}>
+                        <Typography variant="h2" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)' as any }}>
                             Detalhamento da Carteira
                         </Typography>
-                        <Typography variant="p" style={{ fontSize: '12px', opacity: 0.6, fontFamily: 'Montserrat, sans-serif' }}>
+                        <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
                             Visualização analítica por classe de ativo
                         </Typography>
                     </div>
-                    <Badge variant="outline" style={{ marginLeft: 'auto', opacity: 0.6, fontFamily: 'Montserrat, sans-serif', fontSize: '11px' }}>
+                    <Badge variant="outline" style={{ marginLeft: 'auto', color: 'var(--color-text-secondary)', fontSize: 'var(--text-xs)' }}>
                         {ativos.length} Ativos Totais
                     </Badge>
                 </div>
@@ -100,7 +100,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
 
                     return (
                         <div key={tipo} style={{
-                            borderBottom: ehUltimo && !aberto ? 'none' : '1px solid rgba(0,0,0,0.05)',
+                            borderBottom: ehUltimo && !aberto ? 'none' : '1px solid var(--color-border-subtle)',
                         }}>
                             {/* LINHA DO GRUPO */}
                             <div
@@ -129,21 +129,21 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                                 <LayoutGrid size={16} style={{ opacity: 0.3 }} />
                                 <Typography variant="h2" style={{
                                     textTransform: 'uppercase',
-                                    fontWeight: 700,
-                                    fontSize: '12px',
-                                    opacity: 0.8,
+                                    fontWeight: 'var(--weight-semibold)' as any,
+                                    fontSize: 'var(--text-xs)',
+                                    color: 'var(--color-text-secondary)',
                                     margin: 0,
-                                    fontFamily: 'Montserrat, sans-serif',
-                                    letterSpacing: '0.02em'
+                                    fontFamily: 'var(--font-display)',
+                                    letterSpacing: 'var(--tracking-caps)'
                                 }}>
                                     {tipo.replace(/_/g, ' ')}
                                 </Typography>
-                                <Badge variant="ghost" style={{ fontSize: '10px', fontFamily: 'Montserrat, sans-serif', opacity: 0.7 }}>
+                                <Badge variant="ghost" style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)' }}>
                                     {itens.length}
                                 </Badge>
 
                                 <div style={{ marginLeft: 'auto' }}>
-                                    <Typography variant="p" style={{ fontSize: '14px', fontWeight: 700 }}>
+                                    <Typography variant="p" style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--weight-semibold)' as any, fontVariantNumeric: 'tabular-nums' }}>
                                         {fmt(total)}
                                     </Typography>
                                 </div>
@@ -152,8 +152,8 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                             {/* TABELA EXPANDIDA */}
                             {aberto && (
                                 <div style={{
-                                    background: '#fcfcfc',
-                                    borderTop: '1px solid rgba(0,0,0,0.03)',
+                                    background: 'var(--gray-50)',
+                                    borderTop: '1px solid var(--color-border-subtle)',
                                     paddingBottom: '8px'
                                 }}>
                                     <style>{`
@@ -168,6 +168,9 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                                         .tabela-carteira th:nth-child(5), .tabela-carteira td:nth-child(5) { width: 16%; }
                                         .tabela-carteira th:nth-child(6), .tabela-carteira td:nth-child(6) { width: 16%; }
                                         .tabela-carteira th:nth-child(7), .tabela-carteira td:nth-child(7) { width: 6%; }
+                                        /* Coluna de valor: número à direita com dígitos tabulares (ficha: financeiro). */
+                                        .tabela-carteira th:nth-child(6), .tabela-carteira td:nth-child(6) { text-align: right; }
+                                        .tabela-carteira td:nth-child(6) { font-variant-numeric: tabular-nums lining-nums; }
                                     `}</style>
                                     <div className="tabela-carteira">
                                     <DataTable
@@ -179,8 +182,8 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                                                 cell: (item: ConsolidatedAtivo) => (
                                                     <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                                                         {item.subTipo
-                                                            ? <Badge intent="primaria" variant="ghost" style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(0,131,203,0.05)', fontFamily: 'Montserrat, sans-serif' }}>{item.subTipo}</Badge>
-                                                            : <span style={{ opacity: 0.3 }}>—</span>}
+                                                            ? <Badge intent="primaria" variant="ghost" style={{ fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-semibold)' as any, background: 'var(--color-accent-subtle)' }}>{item.subTipo}</Badge>
+                                                            : <span style={{ color: 'var(--color-text-disabled)' }}>—</span>}
                                                     </div>
                                                 ),
                                             },
@@ -192,8 +195,8 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                                                         <Typography
                                                             variant="p"
                                                             style={{
-                                                                fontWeight: 600,
-                                                                fontSize: '13px',
+                                                                fontWeight: 'var(--weight-medium)' as any,
+                                                                fontSize: 'var(--text-sm)',
                                                                 margin: 0,
                                                                 whiteSpace: 'nowrap',
                                                                 overflow: 'hidden',
@@ -207,7 +210,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                                                             <Badge
                                                                 variant="ghost"
                                                                 title="Entrada manual sem identificador único — não vinculada à biblioteca (dado não verificado)"
-                                                                style={{ flexShrink: 0, fontSize: '9px', fontWeight: 700, color: '#B45309', background: 'rgba(245,158,11,0.12)', fontFamily: 'Montserrat, sans-serif' }}
+                                                                style={{ flexShrink: 0, fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-semibold)' as any, color: 'var(--color-warning-text)', background: 'var(--color-warning-bg)' }}
                                                             >
                                                                 manual · não verif.
                                                             </Badge>
@@ -223,8 +226,8 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                                                     return (
                                                         <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                                                             {(!valor || valor === '-')
-                                                                ? <span style={{ opacity: 0.3 }}>—</span>
-                                                                : <Typography variant="p" style={{ fontSize: '11px', fontWeight: 600, color: '#6B7280', fontFamily: 'Montserrat, sans-serif', whiteSpace: 'nowrap', margin: 0 }}>{valor}</Typography>
+                                                                ? <span style={{ color: 'var(--color-text-disabled)' }}>—</span>
+                                                                : <Typography variant="p" style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)' as any, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap', margin: 0, fontVariantNumeric: 'tabular-nums' }}>{valor}</Typography>
                                                             }
                                                         </div>
                                                     );
@@ -236,7 +239,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                                                 cell: (item: ConsolidatedAtivo) => (
                                                     <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
                                                         <Badge variant="ghost" style={{
-                                                            fontSize: '10px', fontWeight: 700, fontFamily: 'Montserrat, sans-serif',
+                                                            fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-semibold)' as any,
                                                             color: corInstituicao(item.instituicao),
                                                             borderColor: corInstituicao(item.instituicao),
                                                             background: `${corInstituicao(item.instituicao)}0A`
@@ -250,11 +253,11 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                                                 header: 'Vencimento/Liquidez',
                                                 accessorKey: 'vencimento',
                                                 cell: (item: ConsolidatedAtivo) => {
-                                                    let conteudo: React.ReactNode = <span style={{ opacity: 0.3 }}>—</span>;
+                                                    let conteudo: React.ReactNode = <span style={{ color: 'var(--color-text-disabled)' }}>—</span>;
                                                     if (item.vencimento) {
-                                                        conteudo = <Typography variant="p" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 500, fontFamily: 'Montserrat, sans-serif', margin: 0 }}>{fmtDate(item.vencimento)}</Typography>;
+                                                        conteudo = <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', margin: 0, fontVariantNumeric: 'tabular-nums' }}>{fmtDate(item.vencimento)}</Typography>;
                                                     } else if (item.liquidez !== null && item.liquidez !== undefined && item.liquidez !== '') {
-                                                        conteudo = <Typography variant="p" style={{ fontSize: '12px', opacity: 0.6, fontWeight: 500, fontFamily: 'Montserrat, sans-serif', margin: 0 }}>D+{item.liquidez}</Typography>;
+                                                        conteudo = <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', margin: 0, fontVariantNumeric: 'tabular-nums' }}>D+{item.liquidez}</Typography>;
                                                     }
                                                     return <div style={{ display: 'flex', justifyContent: 'flex-start' }}>{conteudo}</div>;
                                                 },
@@ -263,8 +266,8 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                                                 header: 'Valor Bruto',
                                                 accessorKey: 'valorBruto',
                                                 cell: (item: ConsolidatedAtivo) => (
-                                                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                                                        <strong style={{ fontFamily: 'Montserrat, sans-serif' }}>{fmt(item.valorBruto ?? item.valorLiquido)}</strong>
+                                                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                                        <span style={{ fontWeight: 'var(--weight-semibold)' as any, fontSize: 'var(--text-sm)' }}>{fmt(item.valorBruto ?? item.valorLiquido)}</span>
                                                     </div>
                                                 ),
                                             },
