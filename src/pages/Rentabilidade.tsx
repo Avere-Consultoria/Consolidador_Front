@@ -95,7 +95,7 @@ function corInstituicao(nome: string, corDb: string | undefined, idx: number): s
 }
 
 const corRent = (v: number | null | undefined) =>
-    v === null || v === undefined ? '#9CA3AF' : v < 0 ? '#DC2626' : 'var(--color-secundaria)';
+    v === null || v === undefined ? 'var(--color-text-muted)' : v < 0 ? 'var(--color-danger-text)' : 'var(--color-text-primary)';
 
 // Aceita "150.000,50", "150000,50" e "150000.50"; vazio → null.
 function parseNumBR(s: string): number | null {
@@ -284,10 +284,10 @@ export default function Rentabilidade() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap', borderBottom: '1px solid var(--color-borda)', paddingBottom: 20 }}>
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap', borderBottom: '1px solid var(--color-border-subtle)', paddingBottom: 20 }}>
                 <div>
                     <Typography variant="h1">Rentabilidade</Typography>
-                    <Typography variant="p" style={{ opacity: 0.6 }}>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
                         O número de cada conta é o que a própria instituição acusa — igual ao app dela.
                     </Typography>
                 </div>
@@ -298,7 +298,7 @@ export default function Rentabilidade() {
             {avisosBloco.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {avisosBloco.map((a, i) => (
-                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '8px 14px', fontSize: 13, color: '#92400E' }}>
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)', borderRadius: 'var(--radius-md)', padding: '8px 14px', fontSize: 'var(--text-sm)', color: 'var(--color-warning-text)' }}>
                             <AlertTriangle size={15} style={{ flexShrink: 0 }} /> {a}
                         </div>
                     ))}
@@ -308,7 +308,7 @@ export default function Rentabilidade() {
             <Card style={{ padding: 0, overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
                     <thead>
-                        <tr style={{ background: '#F9FAFB' }}>
+                        <tr style={{ background: 'var(--color-surface-sunken)' }}>
                             <th style={{ ...th, width: 36 }} />
                             <th style={th}>Conta</th>
                             <th style={thNum}>NET de fechamento</th>
@@ -328,8 +328,8 @@ export default function Rentabilidade() {
                                     </td>
                                     <td style={td}>
                                         <span style={{ fontWeight: 700, color: 'var(--color-secundaria)' }}>{l.instituicao}</span>
-                                        {l.conta_codigo && <span style={{ color: '#9CA3AF', marginLeft: 8, fontSize: 12, fontFamily: 'monospace' }}>{l.conta_codigo}</span>}
-                                        {l.apelido && <span style={{ color: '#6B7280', marginLeft: 8, fontSize: 12 }}>({l.apelido})</span>}
+                                        {l.conta_codigo && <span style={{ color: 'var(--color-text-muted)', marginLeft: 8, fontSize: 12, fontFamily: 'var(--font-mono)' }}>{l.conta_codigo}</span>}
+                                        {l.apelido && <span style={{ color: 'var(--color-text-secondary)', marginLeft: 8, fontSize: 12 }}>({l.apelido})</span>}
                                     </td>
 
                                     {/* NET */}
@@ -352,10 +352,10 @@ export default function Rentabilidade() {
                                     <td style={{ ...td, textAlign: 'center', whiteSpace: 'nowrap' }}>
                                         {emEdicao ? (
                                             <>
-                                                <button title="Salvar" disabled={salvando} onClick={() => salvarManual(l)} style={{ ...btnCel, color: '#047857' }}><Check size={16} /></button>
+                                                <button title="Salvar" disabled={salvando} onClick={() => salvarManual(l)} style={{ ...btnCel, color: 'var(--color-success-text)' }}><Check size={16} /></button>
                                                 <button title="Cancelar" onClick={() => setEditando(null)} style={btnCel}><X size={16} /></button>
                                                 {l.origem === 'manual' && (
-                                                    <button title="Apagar lançamento" onClick={() => apagarManual(l)} style={{ ...btnCel, color: '#DC2626' }}><Trash2 size={15} /></button>
+                                                    <button title="Apagar lançamento" onClick={() => apagarManual(l)} style={{ ...btnCel, color: 'var(--color-danger-solid)' }}><Trash2 size={15} /></button>
                                                 )}
                                             </>
                                         ) : (
@@ -366,11 +366,11 @@ export default function Rentabilidade() {
                                                     </Badge>
                                                 )}
                                                 {l.origem === 'manual' && (
-                                                    <Badge variant="ghost" style={{ fontSize: 9, display: 'inline-flex', alignItems: 'center', gap: 4, background: '#FEF3C7', color: '#92400E', fontWeight: 700 }}>
+                                                    <Badge variant="ghost" style={{ fontSize: 9, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)', fontWeight: 600 }}>
                                                         <PenLine size={10} /> MANUAL
                                                     </Badge>
                                                 )}
-                                                {!l.tem_dados && <span style={{ fontSize: 11, color: '#9CA3AF', fontStyle: 'italic' }}>sem dados</span>}
+                                                {!l.tem_dados && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>sem dados</span>}
                                                 {l.origem !== 'auto' && (
                                                     <button title={l.origem === 'manual' ? 'Editar lançamento do mês' : 'Lançar manualmente (mês)'}
                                                         onClick={() => iniciarEdicao(l)} style={{ ...btnCel, marginLeft: 6 }}>
@@ -387,12 +387,12 @@ export default function Rentabilidade() {
                     <tfoot>
                         <tr style={{ background: 'color-mix(in srgb, var(--color-primaria), transparent 94%)', borderTop: '2px solid color-mix(in srgb, var(--color-primaria), transparent 70%)' }}>
                             <td style={td} />
-                            <td style={{ ...td, fontWeight: 800, color: 'var(--color-primaria)' }}>CONSOLIDADO</td>
-                            <td style={{ ...tdNum, fontWeight: 800, color: 'var(--color-primaria)' }}>{cons ? fmt(cons.net_bloco) : '—'}</td>
+                            <td style={{ ...td, fontWeight: 700, color: 'var(--color-primaria)' }}>CONSOLIDADO</td>
+                            <td style={{ ...tdNum, fontWeight: 700, color: 'var(--color-primaria)' }}>{cons ? fmt(cons.net_bloco) : '—'}</td>
                             {JANELAS.map(j => {
                                 const v = cons?.rent?.[j.key];
                                 return (
-                                    <td key={j.key} style={{ ...tdNum, fontWeight: 800, color: v !== null && v !== undefined && v < 0 ? '#DC2626' : 'var(--color-primaria)' }}>
+                                    <td key={j.key} style={{ ...tdNum, fontWeight: 700, color: v !== null && v !== undefined && v < 0 ? 'var(--color-danger-text)' : 'var(--color-primaria)' }}>
                                         {pct(v) ?? '—'}
                                     </td>
                                 );
@@ -404,10 +404,10 @@ export default function Rentabilidade() {
                         {reguas.map(b => (
                             <tr key={b.indexador}>
                                 <td style={td} />
-                                <td style={{ ...td, fontWeight: 600, color: '#6B7280' }}>{b.indexador}</td>
+                                <td style={{ ...td, fontWeight: 500, color: 'var(--color-text-secondary)' }}>{b.indexador}</td>
                                 <td style={td} />
                                 {JANELAS.map(j => (
-                                    <td key={j.key} style={{ ...tdNum, fontWeight: 600, color: '#6B7280' }}>
+                                    <td key={j.key} style={{ ...tdNum, fontWeight: 500, color: 'var(--color-text-secondary)' }}>
                                         {pct(b.valores?.[j.key]) ?? <SemDado />}
                                     </td>
                                 ))}
@@ -422,7 +422,7 @@ export default function Rentabilidade() {
             {chartData.length > 0 && serie && serie.series.length > 0 && (
                 <Card style={{ padding: 0, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px', background: 'var(--color-secundaria)', color: '#fff' }}>
-                        <Typography variant="p" style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: '0.04em', color: '#fff' }}>
+                        <Typography variant="p" style={{ margin: 0, fontFamily: 'var(--font-display)', fontSize: 'var(--text-sm)', fontWeight: 600, letterSpacing: 'var(--tracking-caps)', color: '#fff' }}>
                             RENTABILIDADE ACUMULADA — ÚLTIMOS 12 MESES
                         </Typography>
                         <span style={{ fontSize: 11, opacity: 0.7, fontWeight: 600 }}>
@@ -432,21 +432,21 @@ export default function Rentabilidade() {
                     <div style={{ padding: '20px 12px 8px' }}>
                         <ResponsiveContainer width="100%" height={320}>
                             <LineChart data={chartData} margin={{ top: 8, right: 24, left: 0, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false} />
-                                <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#6B7280' }} tickLine={false} axisLine={{ stroke: '#E5E7EB' }} />
-                                <YAxis tick={{ fontSize: 11, fill: '#6B7280' }} tickLine={false} axisLine={false}
+                                <CartesianGrid strokeDasharray="3 3" stroke="#E4E8EB" vertical={false} />
+                                <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#4A565E' }} tickLine={false} axisLine={{ stroke: '#E4E8EB' }} />
+                                <YAxis tick={{ fontSize: 11, fill: '#4A565E' }} tickLine={false} axisLine={false}
                                     tickFormatter={(v: number) => `${v.toFixed(1).replace('.', ',')}%`} width={52} />
                                 <Tooltip
                                     formatter={(v: unknown) => [`${Number(v).toFixed(2).replace('.', ',')}%`]}
                                     labelStyle={{ fontWeight: 700, color: 'var(--color-secundaria)' }}
-                                    contentStyle={{ borderRadius: 8, border: '1px solid #E5E7EB', fontSize: 12, fontFamily: 'var(--font-family)' }}
+                                    contentStyle={{ borderRadius: 8, border: '1px solid var(--color-border-subtle)', fontSize: 12, fontFamily: 'var(--font-family)' }}
                                 />
                                 <Legend
                                     wrapperStyle={{ fontSize: 12, fontFamily: 'var(--font-family)', cursor: 'pointer', userSelect: 'none' }}
                                     onClick={(e: any) => alternarLinha(String(e?.dataKey ?? e?.value ?? ''))}
                                     formatter={(value: string) => (
                                         <span style={{
-                                            color: linhasOcultas.has(value) ? '#B0B7C3' : '#374151',
+                                            color: linhasOcultas.has(value) ? 'var(--color-text-disabled)' : 'var(--color-text-primary)',
                                             textDecoration: linhasOcultas.has(value) ? 'line-through' : 'none',
                                         }}>
                                             {value}
@@ -462,10 +462,10 @@ export default function Rentabilidade() {
                                             connectNulls={false} hide={linhasOcultas.has(nome)} />
                                     );
                                 })}
-                                <Line type="monotone" dataKey="Consolidado" name="Consolidado" stroke="#111827"
+                                <Line type="monotone" dataKey="Consolidado" name="Consolidado" stroke="#0F1A21"
                                     strokeWidth={3.5} dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls={false}
                                     hide={linhasOcultas.has('Consolidado')} />
-                                <Line type="monotone" dataKey="CDI" name="CDI" stroke="#9CA3AF"
+                                <Line type="monotone" dataKey="CDI" name="CDI" stroke="#69747C"
                                     strokeWidth={2} strokeDasharray="6 4" dot={false} connectNulls={false}
                                     hide={linhasOcultas.has('CDI')} />
                             </LineChart>
@@ -474,7 +474,7 @@ export default function Rentabilidade() {
                 </Card>
             )}
 
-            <Typography variant="p" style={{ fontSize: 12, color: '#9CA3AF' }}>
+            <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
                 Consolidado = média das rentabilidades ponderada pela NET de fechamento do mês, por janela, sobre as contas marcadas que têm número.
                 Ano = do 1º de janeiro ao mês de referência. Janelas longas usam o valor publicado pela instituição quando existe (BTG) ou o encadeamento
                 dos meses disponíveis. Réguas de benchmark só aparecem com a janela completa. O lápis edita o MÊS — as janelas derivam dele.
@@ -484,7 +484,7 @@ export default function Rentabilidade() {
 }
 
 function SemDado() {
-    return <span style={{ color: '#D1D5DB' }}>—</span>;
+    return <span style={{ color: 'var(--color-text-disabled)' }}>—</span>;
 }
 
 const inputCel: React.CSSProperties = {
@@ -493,10 +493,10 @@ const inputCel: React.CSSProperties = {
     fontFamily: 'var(--font-family)', outline: 'none', color: 'var(--color-secundaria)',
 };
 const btnCel: React.CSSProperties = {
-    background: 'transparent', border: 'none', cursor: 'pointer', color: '#9CA3AF',
+    background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)',
     padding: 4, borderRadius: 5, verticalAlign: 'middle',
 };
-const th: React.CSSProperties = { padding: '10px 14px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', textAlign: 'left', whiteSpace: 'nowrap' };
+const th: React.CSSProperties = { padding: '10px 14px', fontSize: 'var(--text-2xs)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 'var(--tracking-caps)', color: 'var(--color-text-muted)', textAlign: 'left', whiteSpace: 'nowrap' };
 const thNum: React.CSSProperties = { ...th, textAlign: 'right' };
-const td: React.CSSProperties = { padding: '11px 14px', fontSize: 13, color: '#374151', borderTop: '1px solid #F3F4F6' };
+const td: React.CSSProperties = { padding: '11px 14px', fontSize: 'var(--text-sm)', color: 'var(--color-text-primary)', borderTop: '1px solid var(--color-border-subtle)' };
 const tdNum: React.CSSProperties = { ...td, textAlign: 'right', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' };
