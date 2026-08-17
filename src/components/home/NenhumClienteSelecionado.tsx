@@ -18,24 +18,24 @@ export function NenhumClienteSelecionado() {
             <div style={{
                 width: '88px',
                 height: '88px',
-                background: 'rgba(0, 131, 203, 0.05)',
-                borderRadius: '50%',
+                background: 'var(--color-accent-subtle)',
+                borderRadius: 'var(--radius-full)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'var(--color-primaria)',
                 marginBottom: '24px',
-                border: '8px solid rgba(0, 131, 203, 0.02)'
+                border: '8px solid var(--gray-50)'
             }}>
                 <UserSearch size={40} strokeWidth={1.5} />
             </div>
 
             {/* Textos Principais */}
-            <Typography variant="h2" style={{ fontSize: '24px', marginBottom: '12px' }}>
+            <Typography variant="h2" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-2xl)', fontWeight: 'var(--weight-semibold)' as any, marginBottom: '12px' }}>
                 Nenhum cliente selecionado
             </Typography>
 
-            <Typography variant="p" style={{ fontSize: '16px', color: '#6B7280', maxWidth: '460px', lineHeight: '1.5' }}>
+            <Typography variant="p" style={{ fontSize: '16px', color: 'var(--color-text-secondary)', maxWidth: '460px', lineHeight: '1.5' }}>
                 Para visualizar as carteiras, selecione um cliente no menu superior.
             </Typography>
 
@@ -45,9 +45,9 @@ export function NenhumClienteSelecionado() {
                 alignItems: 'center',
                 gap: '8px',
                 marginTop: '32px',
-                background: 'rgba(0, 131, 203, 0.08)',
+                background: 'var(--color-accent-subtle)',
                 padding: '10px 20px',
-                borderRadius: '100px',
+                borderRadius: 'var(--radius-full)',
                 color: 'var(--color-primaria)'
             }}>
                 <Typography variant="p" style={{ fontSize: '14px', fontWeight: 600 }}>

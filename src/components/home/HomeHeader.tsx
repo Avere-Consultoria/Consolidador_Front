@@ -77,7 +77,7 @@ export function HomeHeader({
                         options={opcoesCarteira}
                     />
                     {fechado && (
-                        <Badge intent="secundaria" variant="ghost" style={{ fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Badge intent="secundaria" variant="ghost" style={{ fontSize: 'var(--text-xs)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                             <Lock size={11} /> Relatório fechado · somente leitura
                         </Badge>
                     )}
@@ -100,7 +100,7 @@ export function HomeHeader({
             </div>
 
             {/* Carimbo único: o FECHAMENTO que a carteira representa (não o dia do sync). */}
-            <div style={{ opacity: 0.6, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-md)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 {cliente?.nome}
                 {dataRef && !fechado && (
                     <Badge intent="secundaria" variant="ghost"

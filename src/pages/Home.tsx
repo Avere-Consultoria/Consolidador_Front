@@ -61,7 +61,7 @@ export default function Home() {
       />
 
       {semDados ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 24px', gap: '16px', border: '2px dashed var(--color-borda)', borderRadius: '12px', opacity: 0.6 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 24px', gap: '16px', border: '2px dashed var(--color-border-default)', borderRadius: 'var(--radius-lg)', color: 'var(--color-text-secondary)' }}>
           <PieIcon size={48} />
           <Typography variant="h2">Aguardando Sincronização</Typography>
           <Typography variant="p" style={{ textAlign: 'center', maxWidth: 560 }}>
