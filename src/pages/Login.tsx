@@ -115,16 +115,16 @@ export default function Login() {
                     <form onSubmit={modoReset ? handleReset : handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
                         {modoReset && (
-                            <Typography variant="p" style={{ fontSize: '13px', color: '#374151', margin: 0, lineHeight: 1.5 }}>
+                            <Typography variant="p" style={{ fontSize: '13px', color: 'var(--color-text-primary)', margin: 0, lineHeight: 1.5 }}>
                                 Informe seu e-mail e enviaremos um link para redefinir a senha.
                             </Typography>
                         )}
 
                         {/* Input Email com Ícone */}
                         <div>
-                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: '#374151' }}>E-mail</label>
+                            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: 'var(--color-text-primary)' }}>E-mail</label>
                             <div style={{ position: 'relative' }}>
-                                <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '14px', color: '#9CA3AF' }}>
+                                <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '14px', color: 'var(--color-text-muted)' }}>
                                     <Mail size={18} />
                                 </div>
                                 <input
@@ -132,12 +132,12 @@ export default function Login() {
                                     placeholder="exemplo@avere.com"
                                     style={{
                                         width: '100%', padding: '12px 12px 12px 42px',
-                                        borderRadius: '8px', border: '1px solid #D1D5DB',
-                                        fontSize: '15px', color: '#111827', outline: 'none',
+                                        borderRadius: '8px', border: '1px solid var(--color-border-default)',
+                                        fontSize: '15px', color: 'var(--color-text-primary)', outline: 'none',
                                         transition: 'border-color 0.2s, box-shadow 0.2s'
                                     }}
-                                    onFocus={(e) => { e.target.style.borderColor = 'var(--color-primaria)'; e.target.style.boxShadow = '0 0 0 3px rgba(0, 131, 203, 0.1)'; }}
-                                    onBlur={(e) => { e.target.style.borderColor = '#D1D5DB'; e.target.style.boxShadow = 'none'; }}
+                                    onFocus={(e) => { e.target.style.borderColor = 'var(--color-primaria)'; e.target.style.boxShadow = '0 0 0 3px var(--color-accent-subtle)'; }}
+                                    onBlur={(e) => { e.target.style.borderColor = 'var(--color-border-default)'; e.target.style.boxShadow = 'none'; }}
                                 />
                             </div>
                         </div>
@@ -146,7 +146,7 @@ export default function Login() {
                         {!modoReset && (
                         <div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151' }}>Senha</label>
+                                <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)' }}>Senha</label>
                                 <button
                                     type="button"
                                     onClick={() => { setModoReset(true); setErrorMsg(''); setResetEnviado(false); }}
@@ -156,7 +156,7 @@ export default function Login() {
                                 </button>
                             </div>
                             <div style={{ position: 'relative' }}>
-                                <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '14px', color: '#9CA3AF' }}>
+                                <div style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', left: '14px', color: 'var(--color-text-muted)' }}>
                                     <Lock size={18} />
                                 </div>
                                 <input
@@ -164,12 +164,12 @@ export default function Login() {
                                     placeholder="••••••••"
                                     style={{
                                         width: '100%', padding: '12px 12px 12px 42px',
-                                        borderRadius: '8px', border: '1px solid #D1D5DB',
-                                        fontSize: '15px', color: '#111827', outline: 'none',
+                                        borderRadius: '8px', border: '1px solid var(--color-border-default)',
+                                        fontSize: '15px', color: 'var(--color-text-primary)', outline: 'none',
                                         transition: 'border-color 0.2s, box-shadow 0.2s'
                                     }}
-                                    onFocus={(e) => { e.target.style.borderColor = 'var(--color-primaria)'; e.target.style.boxShadow = '0 0 0 3px rgba(0, 131, 203, 0.1)'; }}
-                                    onBlur={(e) => { e.target.style.borderColor = '#D1D5DB'; e.target.style.boxShadow = 'none'; }}
+                                    onFocus={(e) => { e.target.style.borderColor = 'var(--color-primaria)'; e.target.style.boxShadow = '0 0 0 3px var(--color-accent-subtle)'; }}
+                                    onBlur={(e) => { e.target.style.borderColor = 'var(--color-border-default)'; e.target.style.boxShadow = 'none'; }}
                                 />
                             </div>
                         </div>
@@ -177,7 +177,7 @@ export default function Login() {
 
                         {modoReset && resetEnviado && (
                             <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '8px', padding: '10px 14px' }}>
-                                <Typography variant="p" style={{ fontSize: '13px', color: '#047857', fontWeight: 500 }}>
+                                <Typography variant="p" style={{ fontSize: '13px', color: 'var(--color-success-text)', fontWeight: 500 }}>
                                     Se este e-mail estiver cadastrado, um link de redefinição foi enviado. Confira também a caixa de spam.
                                 </Typography>
                             </div>
@@ -185,7 +185,7 @@ export default function Login() {
 
                         {errorMsg && (
                             <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: '8px', padding: '10px 14px' }}>
-                                <Typography variant="p" style={{ fontSize: '13px', color: '#DC2626', fontWeight: 500 }}>{errorMsg}</Typography>
+                                <Typography variant="p" style={{ fontSize: '13px', color: 'var(--color-danger-solid)', fontWeight: 500 }}>{errorMsg}</Typography>
                             </div>
                         )}
 
@@ -205,7 +205,7 @@ export default function Login() {
                             <button
                                 type="button"
                                 onClick={() => { setModoReset(false); setErrorMsg(''); setResetEnviado(false); }}
-                                style={{ fontSize: '13px', color: '#6B7280', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, padding: 0 }}
+                                style={{ fontSize: '13px', color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, padding: 0 }}
                             >
                                 ← Voltar ao login
                             </button>

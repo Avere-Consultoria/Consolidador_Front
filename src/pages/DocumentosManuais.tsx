@@ -57,13 +57,13 @@ const HORAS_TRAVADO = 48;
 type StatusTipo = 'processado' | 'processando' | 'quarentena' | 'descartado' | 'erro' | 'travado' | 'fila';
 
 function StatusEnvio({ tipo }: { tipo: StatusTipo }) {
-    if (tipo === 'processado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(16,185,129,0.1)', color: '#059669' }}>Processado</Badge>;
-    if (tipo === 'processando') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(37,99,235,0.1)', color: '#2563EB', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />Processando</Badge>;
-    if (tipo === 'quarentena') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(245,158,11,0.15)', color: '#92400E', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}><AlertTriangle size={11} />Quarentena</Badge>;
-    if (tipo === 'descartado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(107,114,128,0.12)', color: '#6B7280' }}>Descartado</Badge>;
-    if (tipo === 'erro') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(239,68,68,0.1)', color: '#DC2626' }}>Com erro</Badge>;
-    if (tipo === 'travado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(234,88,12,0.12)', color: '#C2410C' }}>Travado</Badge>;
-    return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(245,158,11,0.12)', color: '#B45309' }}>Na fila</Badge>;
+    if (tipo === 'processado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'var(--color-success-bg)', color: 'var(--color-success-text)' }}>Processado</Badge>;
+    if (tipo === 'processando') return <Badge variant="ghost" style={{ fontSize: 11, background: 'var(--color-info-bg)', color: '#2563EB', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />Processando</Badge>;
+    if (tipo === 'quarentena') return <Badge variant="ghost" style={{ fontSize: 11, background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}><AlertTriangle size={11} />Quarentena</Badge>;
+    if (tipo === 'descartado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(107,114,128,0.12)', color: 'var(--color-text-secondary)' }}>Descartado</Badge>;
+    if (tipo === 'erro') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger-solid)' }}>Com erro</Badge>;
+    if (tipo === 'travado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(234,88,12,0.12)', color: 'var(--color-warning-text)' }}>Travado</Badge>;
+    return <Badge variant="ghost" style={{ fontSize: 11, background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)' }}>Na fila</Badge>;
 }
 
 // Texto do selo de conflito: o que a IA reextraiu, diferente do que o master fixou.
@@ -86,10 +86,10 @@ function identidade(a: ManualAtivo): { label: string; ok: boolean } {
     return { label: 'sem identificador', ok: false };
 }
 
-const th: React.CSSProperties = { padding: '10px 12px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#9CA3AF', textAlign: 'left', whiteSpace: 'nowrap' };
-const td: React.CSSProperties = { padding: '11px 12px', fontSize: 13, color: '#374151', borderTop: '1px solid #F3F4F6' };
-const lbl: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, color: '#6B7280', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.03em' };
-const ctrl: React.CSSProperties = { width: '100%', height: 38, boxSizing: 'border-box', padding: '0 10px', borderRadius: 8, border: '1px solid rgba(0,0,0,0.12)', fontSize: 13, outline: 'none', background: '#fff' };
+const th: React.CSSProperties = { padding: '10px 12px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', textAlign: 'left', whiteSpace: 'nowrap' };
+const td: React.CSSProperties = { padding: '11px 12px', fontSize: 13, color: 'var(--color-text-primary)', borderTop: '1px solid var(--color-surface-sunken)' };
+const lbl: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.03em' };
+const ctrl: React.CSSProperties = { width: '100%', height: 38, boxSizing: 'border-box', padding: '0 10px', borderRadius: 8, border: '1px solid var(--color-border-default)', fontSize: 13, outline: 'none', background: '#fff' };
 
 // Lista padrão de subtipos (espelha o bibliotecaSchema) + construtor de taxa (DrawerCanonico).
 const SUBTIPOS = ['CDB', 'LCI', 'LCA', 'CRA', 'CRI', 'DEB', 'CDCA', 'LF', 'LFT', 'LTN', 'NTN-B', 'NTN-F', 'NTN-C', 'LCD', 'RDB', 'LIG', 'COMPROMISSADA', 'CAIXA', 'FUNDO', 'AÇÃO', 'ETF', 'FII', 'COE', 'ESTRUTURADA'];
@@ -118,20 +118,20 @@ function Combo({ value, onChange, options, placeholder }: { value: string; onCha
     return (
         <div style={{ position: 'relative' }}>
             <div style={{ ...ctrl, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setOpen(o => !o)}>
-                <span style={{ color: sel ? '#111827' : '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sel ? sel.label : (placeholder || 'Selecione...')}</span>
-                <ChevronDown size={16} color="#9CA3AF" style={{ flexShrink: 0, marginLeft: 6 }} />
+                <span style={{ color: sel ? 'var(--color-text-primary)' : 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sel ? sel.label : (placeholder || 'Selecione...')}</span>
+                <ChevronDown size={16} color="var(--color-text-muted)" style={{ flexShrink: 0, marginLeft: 6 }} />
             </div>
             {open && (
                 <>
                     <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 49 }} />
-                    <div style={{ position: 'absolute', top: 41, left: 0, right: 0, zIndex: 50, background: '#fff', border: '1px solid rgba(0,0,0,0.12)', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.15)', maxHeight: 240, overflowY: 'auto' }}>
-                        <input autoFocus value={q} onChange={e => setQ(e.target.value)} onClick={e => e.stopPropagation()} placeholder="Buscar..." style={{ width: '100%', height: 34, border: 'none', borderBottom: '1px solid #F3F4F6', padding: '0 10px', outline: 'none', fontSize: 13, boxSizing: 'border-box' }} />
-                        {filtered.length === 0 && <div style={{ padding: 10, fontSize: 12, color: '#9CA3AF' }}>Nenhum resultado</div>}
+                    <div style={{ position: 'absolute', top: 41, left: 0, right: 0, zIndex: 50, background: '#fff', border: '1px solid var(--color-border-default)', borderRadius: 8, boxShadow: '0 8px 24px var(--color-border-default)', maxHeight: 240, overflowY: 'auto' }}>
+                        <input autoFocus value={q} onChange={e => setQ(e.target.value)} onClick={e => e.stopPropagation()} placeholder="Buscar..." style={{ width: '100%', height: 34, border: 'none', borderBottom: '1px solid var(--color-surface-sunken)', padding: '0 10px', outline: 'none', fontSize: 13, boxSizing: 'border-box' }} />
+                        {filtered.length === 0 && <div style={{ padding: 10, fontSize: 12, color: 'var(--color-text-muted)' }}>Nenhum resultado</div>}
                         {filtered.slice(0, 200).map(o => (
                             <div key={o.value} onClick={() => { onChange(o.value); setOpen(false); setQ(''); }}
-                                style={{ padding: '8px 10px', fontSize: 13, cursor: 'pointer', background: o.value === value ? 'rgba(0,131,203,0.06)' : '#fff' }}
-                                onMouseEnter={ev => (ev.currentTarget.style.background = '#F3F4F6')}
-                                onMouseLeave={ev => (ev.currentTarget.style.background = o.value === value ? 'rgba(0,131,203,0.06)' : '#fff')}>
+                                style={{ padding: '8px 10px', fontSize: 13, cursor: 'pointer', background: o.value === value ? 'var(--color-accent-subtle)' : '#fff' }}
+                                onMouseEnter={ev => (ev.currentTarget.style.background = 'var(--color-surface-sunken)')}
+                                onMouseLeave={ev => (ev.currentTarget.style.background = o.value === value ? 'var(--color-accent-subtle)' : '#fff')}>
                                 {o.label}
                             </div>
                         ))}
@@ -404,7 +404,7 @@ export default function DocumentosManuais() {
                     <FileStack size={28} color="var(--color-secundaria)" />
                     <Typography variant="h1">{isMaster ? 'Documentos Manuais' : 'Meus Envios'}</Typography>
                 </div>
-                <Typography variant="p" style={{ opacity: 0.6 }}>
+                <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
                     {isMaster
                         ? 'Histórico dos envios processados sem API — auditar, corrigir o que a IA extraiu e promover ao global.'
                         : 'Acompanhe seus envios manuais: veja se já foram processados e corrija o que a IA extraiu.'}
@@ -414,9 +414,9 @@ export default function DocumentosManuais() {
             {/* ── Nível 1 — Histórico de documentos ── */}
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <TextField leftIcon={Search} placeholder="Buscar por cliente, instituição ou arquivo..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '320px' }} />
-                <div style={{ display: 'flex', gap: 4, background: 'rgba(0,0,0,0.05)', padding: 4, borderRadius: 8 }}>
+                <div style={{ display: 'flex', gap: 4, background: 'var(--color-surface-sunken)', padding: 4, borderRadius: 8 }}>
                     {(['todos', 'quarentena', 'processando', 'processado', 'descartado', 'erro'] as const).map(s => (
-                        <button key={s} onClick={() => setFiltroStatus(s)} style={{ height: 28, padding: '0 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: filtroStatus === s ? '#fff' : 'transparent', color: filtroStatus === s ? 'var(--color-primaria)' : '#6B7280', boxShadow: filtroStatus === s ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
+                        <button key={s} onClick={() => setFiltroStatus(s)} style={{ height: 28, padding: '0 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: filtroStatus === s ? '#fff' : 'transparent', color: filtroStatus === s ? 'var(--color-primaria)' : 'var(--color-text-secondary)', boxShadow: filtroStatus === s ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
                             {({ todos: 'Todos', quarentena: 'Quarentena', processando: 'Processando', processado: 'Processados', descartado: 'Descartados', erro: 'Com erro' } as const)[s]}
                         </button>
                     ))}
@@ -426,7 +426,7 @@ export default function DocumentosManuais() {
             <Card style={{ padding: 0, overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                        <tr style={{ background: '#F9FAFB' }}>
+                        <tr style={{ background: 'var(--gray-50)' }}>
                             <th style={th}>Enviado</th>
                             <th style={th}>Cliente</th>
                             <th style={th}>Instituição</th>
@@ -440,15 +440,15 @@ export default function DocumentosManuais() {
                             const sel = selecionado?.id === e.id;
                             const st = statusDe(e);
                             return (
-                                <tr key={e.id} onClick={() => abrirDoc(e)} style={{ cursor: 'pointer', background: sel ? 'rgba(0,131,203,0.06)' : undefined }}>
+                                <tr key={e.id} onClick={() => abrirDoc(e)} style={{ cursor: 'pointer', background: sel ? 'var(--color-accent-subtle)' : undefined }}>
                                     <td style={td}>{fmtEnvio(e.enviado_em)}</td>
                                     <td style={td}>
                                         <div style={{ fontWeight: 600 }}>{clientesMap.get(e.cliente_id) || '—'}</div>
-                                        {isMaster && <div style={{ fontSize: 11, color: '#9CA3AF' }}>enviado por {remetente(e.enviado_por)}</div>}
+                                        {isMaster && <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>enviado por {remetente(e.enviado_por)}</div>}
                                     </td>
-                                    <td style={td}><span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.12)' }}>{e.instituicao}</span></td>
+                                    <td style={td}><span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 6, border: '1px solid var(--color-border-default)' }}>{e.instituicao}</span></td>
                                     <td style={{ ...td, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        <FileText size={14} style={{ verticalAlign: -2, marginRight: 6, color: '#9CA3AF' }} />{e.arquivo_nome || '—'}
+                                        <FileText size={14} style={{ verticalAlign: -2, marginRight: 6, color: 'var(--color-text-muted)' }} />{e.arquivo_nome || '—'}
                                     </td>
                                     <td style={td}>{fmtDate(e.data_referencia)}</td>
                                     <td style={td}>
@@ -458,14 +458,14 @@ export default function DocumentosManuais() {
                                                 <button
                                                     title="Excluir envio"
                                                     onClick={(ev) => { ev.stopPropagation(); abrirExcluir(e); }}
-                                                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: '1px solid rgba(0,0,0,0.08)', background: '#fff', color: '#9CA3AF', cursor: 'pointer' }}
-                                                    onMouseEnter={ev => { ev.currentTarget.style.color = '#DC2626'; ev.currentTarget.style.borderColor = 'rgba(220,38,38,0.3)'; ev.currentTarget.style.background = 'rgba(220,38,38,0.04)'; }}
-                                                    onMouseLeave={ev => { ev.currentTarget.style.color = '#9CA3AF'; ev.currentTarget.style.borderColor = 'rgba(0,0,0,0.08)'; ev.currentTarget.style.background = '#fff'; }}>
+                                                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: '1px solid var(--color-border-subtle)', background: '#fff', color: 'var(--color-text-muted)', cursor: 'pointer' }}
+                                                    onMouseEnter={ev => { ev.currentTarget.style.color = 'var(--color-danger-solid)'; ev.currentTarget.style.borderColor = 'rgba(220,38,38,0.3)'; ev.currentTarget.style.background = 'rgba(220,38,38,0.04)'; }}
+                                                    onMouseLeave={ev => { ev.currentTarget.style.color = 'var(--color-text-muted)'; ev.currentTarget.style.borderColor = 'var(--color-border-subtle)'; ev.currentTarget.style.background = '#fff'; }}>
                                                     <Trash2 size={14} />
                                                 </button>
                                             </div>
                                             {(st === 'quarentena' || st === 'erro') && e.detalhe && (
-                                                <div style={{ fontSize: 11, color: st === 'quarentena' ? '#92400E' : '#DC2626', maxWidth: 320, lineHeight: 1.35 }}>{e.detalhe}</div>
+                                                <div style={{ fontSize: 11, color: st === 'quarentena' ? 'var(--color-warning-text)' : 'var(--color-danger-solid)', maxWidth: 320, lineHeight: 1.35 }}>{e.detalhe}</div>
                                             )}
                                             {isMaster && st === 'quarentena' && (
                                                 <div style={{ display: 'flex', gap: 6 }}>
@@ -474,7 +474,7 @@ export default function DocumentosManuais() {
                                                         <RotateCcw size={12} />Corrigir e reenviar
                                                     </button>
                                                     <button onClick={(ev) => { ev.stopPropagation(); setDescartarEnvio(e); }}
-                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 26, padding: '0 10px', borderRadius: 6, border: '1px solid rgba(0,0,0,0.12)', background: '#fff', color: '#6B7280', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 26, padding: '0 10px', borderRadius: 6, border: '1px solid var(--color-border-default)', background: '#fff', color: 'var(--color-text-secondary)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                                                         <Ban size={12} />Descartar
                                                     </button>
                                                 </div>
@@ -485,7 +485,7 @@ export default function DocumentosManuais() {
                             );
                         })}
                         {enviosFiltrados.length === 0 && (
-                            <tr><td colSpan={6} style={{ ...td, textAlign: 'center', color: '#9CA3AF', padding: '32px' }}>Nenhum documento manual encontrado.</td></tr>
+                            <tr><td colSpan={6} style={{ ...td, textAlign: 'center', color: 'var(--color-text-muted)', padding: '32px' }}>Nenhum documento manual encontrado.</td></tr>
                         )}
                     </tbody>
                 </table>
@@ -497,7 +497,7 @@ export default function DocumentosManuais() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <ArrowDownRight size={18} color="var(--color-primaria)" />
                         <Typography variant="p" style={{ fontWeight: 700 }}>Ativos do documento</Typography>
-                        <span style={{ fontSize: 12, color: '#9CA3AF' }}>
+                        <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
                             {selecionado.arquivo_nome || '—'} · {ativos.length} ativo{ativos.length === 1 ? '' : 's'}
                             {ativos.length > 0 && ` · ${fmt(ativos.reduce((s, a) => s + (a.valor_bruto || 0), 0))}`}
                         </span>
@@ -507,7 +507,7 @@ export default function DocumentosManuais() {
                         {loadingAtivos ? (
                             <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}><Spinner size="md" /></div>
                         ) : ativos.length === 0 ? (
-                            <div style={{ padding: '32px', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>
+                            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>
                                 Sem ativos importados para este cliente/instituição/data — o documento foi enviado mas ainda não há posição manual correspondente.
                             </div>
                         ) : (
@@ -515,19 +515,19 @@ export default function DocumentosManuais() {
                                 const id = identidade(a);
                                 const verificado = !!a.ativo_canonico_id;
                                 return (
-                                    <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderTop: '1px solid #F3F4F6' }}>
+                                    <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderTop: '1px solid var(--color-surface-sunken)' }}>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <div style={{ fontSize: 13, fontWeight: 600 }}>{a.emissor || a.ticker || '—'}</div>
-                                            <div style={{ fontSize: 11, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                                {a.sub_tipo && <span style={{ background: '#F3F4F6', padding: '1px 6px', borderRadius: 4 }}>{a.sub_tipo}</span>}
+                                            <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                                {a.sub_tipo && <span style={{ background: 'var(--color-surface-sunken)', padding: '1px 6px', borderRadius: 4 }}>{a.sub_tipo}</span>}
                                                 {a.benchmark && <span>{a.benchmark}</span>}
                                                 {a.data_vencimento && <span>venc. {fmtDate(a.data_vencimento)}</span>}
-                                                <span style={{ color: id.ok ? '#059669' : '#9CA3AF', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                                <span style={{ color: id.ok ? 'var(--color-success-text)' : 'var(--color-text-muted)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                                                     {id.ok ? <Fingerprint size={12} /> : null}{id.label}
                                                 </span>
-                                                {a.editado_em && <span style={{ background: 'rgba(99,102,241,0.1)', color: '#4F46E5', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>editado</span>}
+                                                {a.editado_em && <span style={{ background: 'var(--color-info-bg)', color: '#4F46E5', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>editado</span>}
                                                 {a.conflito_reimport && (
-                                                    <span title={conflitoTooltip(a)} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'rgba(245,158,11,0.14)', color: '#B45309', padding: '1px 6px', borderRadius: 4, fontWeight: 600, cursor: 'help' }}>
+                                                    <span title={conflitoTooltip(a)} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)', padding: '1px 6px', borderRadius: 4, fontWeight: 600, cursor: 'help' }}>
                                                         <AlertTriangle size={11} />a IA reextraiu diferente
                                                     </span>
                                                 )}
@@ -535,8 +535,8 @@ export default function DocumentosManuais() {
                                         </div>
                                         <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap' }}>{fmt(a.valor_bruto || 0)}</div>
                                         {verificado
-                                            ? <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(16,185,129,0.1)', color: '#059669' }}><Link2 size={11} style={{ verticalAlign: -1, marginRight: 3 }} />Verificado</Badge>
-                                            : <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(245,158,11,0.12)', color: '#B45309' }}>Classificar</Badge>}
+                                            ? <Badge variant="ghost" style={{ fontSize: 11, background: 'var(--color-success-bg)', color: 'var(--color-success-text)' }}><Link2 size={11} style={{ verticalAlign: -1, marginRight: 3 }} />Verificado</Badge>
+                                            : <Badge variant="ghost" style={{ fontSize: 11, background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)' }}>Classificar</Badge>}
                                         <Button variant="outline" onClick={() => openEditar(a)} style={{ fontSize: 12, padding: '5px 10px' }}><Pencil size={14} style={{ marginRight: 4 }} />Editar</Button>
                                         {isMaster && !verificado && id.ok && (
                                             <Button variant="outline" onClick={() => openPromover(a)} style={{ fontSize: 12, padding: '5px 10px', borderColor: 'var(--color-primaria)', color: 'var(--color-primaria)' }}><ArrowUp size={14} style={{ marginRight: 4 }} />Promover</Button>
@@ -558,7 +558,7 @@ export default function DocumentosManuais() {
                     <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
                         <div>
                             <div style={{ fontSize: 13, fontWeight: 600 }}>{promover?.emissor || promover?.ticker || '—'}</div>
-                            <div style={{ fontSize: 12, color: '#6B7280' }}>{promover ? identidade(promover).label : ''}</div>
+                            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{promover ? identidade(promover).label : ''}</div>
                         </div>
                         <div>
                             <label style={lbl}>Classe Avere *</label>
@@ -592,7 +592,7 @@ export default function DocumentosManuais() {
                                 </div>
                                 <div>
                                     <label style={lbl}>Taxa (saída)</label>
-                                    <input disabled value={derivarTaxa(form.benchmark, form.percentual, form.spread) || '—'} style={{ ...ctrl, background: '#F3F4F6', color: '#374151', fontWeight: 700 }} />
+                                    <input disabled value={derivarTaxa(form.benchmark, form.percentual, form.spread) || '—'} style={{ ...ctrl, background: 'var(--color-surface-sunken)', color: 'var(--color-text-primary)', fontWeight: 700 }} />
                                 </div>
                             </>
                         )}
@@ -621,7 +621,7 @@ export default function DocumentosManuais() {
                         <ModalDescription>Corrige os dados crus desta linha. Ao salvar com um identificador válido, religa a um canônico existente (se houver). A edição fica protegida de reimportações futuras.</ModalDescription>
                     </ModalHeader>
                     <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                        <div style={{ fontSize: 12, color: '#6B7280' }}>Valor da posição: <strong style={{ color: '#111827' }}>{fmt(editar?.valor_bruto || 0)}</strong> · não editável (vem do documento)</div>
+                        <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Valor da posição: <strong style={{ color: 'var(--color-text-primary)' }}>{fmt(editar?.valor_bruto || 0)}</strong> · não editável (vem do documento)</div>
                         <div>
                             <label style={lbl}>Emissor / nome</label>
                             <input style={ctrl} value={formEdit.emissor} onChange={e => setFormEdit(f => ({ ...f, emissor: e.target.value }))} placeholder="Nome do emissor ou ativo" />
@@ -640,8 +640,8 @@ export default function DocumentosManuais() {
                             <label style={lbl}>Vencimento</label>
                             <input type="date" style={ctrl} value={formEdit.vencimento} onChange={e => setFormEdit(f => ({ ...f, vencimento: e.target.value }))} />
                         </div>
-                        <div style={{ borderTop: '1px solid #F3F4F6', paddingTop: 12 }}>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: 8 }}>Identificadores (religam ao global)</div>
+                        <div style={{ borderTop: '1px solid var(--color-surface-sunken)', paddingTop: 12 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: 8 }}>Identificadores (religam ao global)</div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                                 <div>
                                     <label style={lbl}>CNPJ <span style={{ fontWeight: 400, textTransform: 'none' }}>(fundo)</span></label>
@@ -675,23 +675,23 @@ export default function DocumentosManuais() {
                     </ModalHeader>
                     <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
                         {!previewEx ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#6B7280', fontSize: 13 }}><Spinner size="sm" /> Analisando o que será removido…</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--color-text-secondary)', fontSize: 13 }}><Spinner size="sm" /> Analisando o que será removido…</div>
                         ) : !previewEx.tem_posicao ? (
-                            <div style={{ fontSize: 13, color: '#374151' }}>
+                            <div style={{ fontSize: 13, color: 'var(--color-text-primary)' }}>
                                 Este envio não gerou posição (ou ela já foi removida). Excluir remove <strong>apenas o registro do histórico</strong> — nenhuma carteira é afetada.
                             </div>
                         ) : (
                             <>
-                                <div style={{ fontSize: 13, color: '#374151' }}>
+                                <div style={{ fontSize: 13, color: 'var(--color-text-primary)' }}>
                                     Este envio importou uma posição: <strong>{previewEx.ativos} ativo{previewEx.ativos === 1 ? '' : 's'}</strong> · {fmt(previewEx.valor_total || 0)}.
                                 </div>
                                 {previewEx.compartilhado ? (
-                                    <div style={{ fontSize: 12, background: 'rgba(59,130,246,0.08)', color: '#1D4ED8', borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8 }}>
+                                    <div style={{ fontSize: 12, background: 'var(--color-info-bg)', color: '#1D4ED8', borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8 }}>
                                         <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
                                         <span>A posição é <strong>compartilhada</strong> por outros envios na mesma conta/data. Pra não derrubar o que os outros trouxeram, a posição é <strong>preservada</strong> — só o registro deste envio é removido.</span>
                                     </div>
                                 ) : (
-                                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#374151', cursor: 'pointer', background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8, padding: '12px 14px' }}>
+                                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: 'var(--color-text-primary)', cursor: 'pointer', background: 'var(--gray-50)', border: '1px solid var(--color-border-subtle)', borderRadius: 8, padding: '12px 14px' }}>
                                         <input type="checkbox" checked={removerPos} onChange={e => setRemoverPos(e.target.checked)} style={{ marginTop: 2 }} />
                                         <span>Remover <strong>também a posição</strong> da carteira do cliente (desfaz o import).</span>
                                     </label>
@@ -699,13 +699,13 @@ export default function DocumentosManuais() {
                                 {removerPos && !previewEx.compartilhado && (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                         {previewEx.afeta_home && (
-                                            <div style={{ fontSize: 12, color: '#B45309', display: 'flex', gap: 6 }}><AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />É a posição mais recente — a carteira do cliente na Home vai mudar.</div>
+                                            <div style={{ fontSize: 12, color: 'var(--color-warning-text)', display: 'flex', gap: 6 }}><AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />É a posição mais recente — a carteira do cliente na Home vai mudar.</div>
                                         )}
                                         {previewEx.editados > 0 && (
-                                            <div style={{ fontSize: 12, color: '#B45309', display: 'flex', gap: 6 }}><AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />{previewEx.editados} ativo{previewEx.editados === 1 ? '' : 's'} com correções suas — serão descartadas.</div>
+                                            <div style={{ fontSize: 12, color: 'var(--color-warning-text)', display: 'flex', gap: 6 }}><AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />{previewEx.editados} ativo{previewEx.editados === 1 ? '' : 's'} com correções suas — serão descartadas.</div>
                                         )}
                                         {previewEx.promovidos > 0 && (
-                                            <div style={{ fontSize: 12, color: '#6B7280', display: 'flex', gap: 6 }}><Link2 size={14} style={{ flexShrink: 0, marginTop: 1 }} />{previewEx.promovidos} já promovido{previewEx.promovidos === 1 ? '' : 's'} ao global — o canônico global permanece.</div>
+                                            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', display: 'flex', gap: 6 }}><Link2 size={14} style={{ flexShrink: 0, marginTop: 1 }} />{previewEx.promovidos} já promovido{previewEx.promovidos === 1 ? '' : 's'} ao global — o canônico global permanece.</div>
                                         )}
                                     </div>
                                 )}
@@ -714,7 +714,7 @@ export default function DocumentosManuais() {
                     </div>
                     <ModalFooter>
                         <Button variant="outline" onClick={() => setExcluir(null)}>Cancelar</Button>
-                        <Button variant="solid" onClick={confirmarExcluir} disabled={excluindo || !previewEx} style={{ background: '#DC2626', borderColor: '#DC2626' }}>
+                        <Button variant="solid" onClick={confirmarExcluir} disabled={excluindo || !previewEx} style={{ background: 'var(--color-danger-solid)', borderColor: 'var(--color-danger-solid)' }}>
                             {excluindo ? <Spinner size="sm" /> : (removerPos && previewEx?.tem_posicao && !previewEx?.compartilhado ? 'Excluir envio + posição' : 'Excluir envio')}
                         </Button>
                     </ModalFooter>
@@ -732,16 +732,16 @@ export default function DocumentosManuais() {
                     </ModalHeader>
                     <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
                         {corrigir?.detalhe && (
-                            <div style={{ fontSize: 12, background: 'rgba(245,158,11,0.1)', color: '#92400E', borderRadius: 8, padding: '10px 12px', lineHeight: 1.4 }}>
+                            <div style={{ fontSize: 12, background: 'rgba(245,158,11,0.1)', color: 'var(--color-warning-text)', borderRadius: 8, padding: '10px 12px', lineHeight: 1.4 }}>
                                 <strong>Motivo da quarentena:</strong> {corrigir.detalhe}
                             </div>
                         )}
                         <div>
-                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>Data de referência</label>
+                            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 6 }}>Data de referência</label>
                             <input type="date" value={corrigirData} onChange={ev => setCorrigirData(ev.target.value)}
-                                style={{ height: 40, padding: '0 12px', borderRadius: 8, border: '1px solid rgba(0,0,0,0.15)', fontSize: 14, width: '100%', boxSizing: 'border-box' }} />
+                                style={{ height: 40, padding: '0 12px', borderRadius: 8, border: '1px solid var(--color-border-default)', fontSize: 14, width: '100%', boxSizing: 'border-box' }} />
                         </div>
-                        <p style={{ margin: 0, fontSize: 11, color: '#9CA3AF' }}>Ao salvar, o envio volta pra fila e o worker reprocessa automaticamente.</p>
+                        <p style={{ margin: 0, fontSize: 11, color: 'var(--color-text-muted)' }}>Ao salvar, o envio volta pra fila e o worker reprocessa automaticamente.</p>
                     </div>
                     <ModalFooter>
                         <Button variant="outline" onClick={() => setCorrigir(null)}>Cancelar</Button>
@@ -761,12 +761,12 @@ export default function DocumentosManuais() {
                             {descartarEnvio ? `${clientesMap.get(descartarEnvio.cliente_id) || '—'} · ${descartarEnvio.instituicao} · ${fmtDate(descartarEnvio.data_referencia)}` : ''}
                         </ModalDescription>
                     </ModalHeader>
-                    <div style={{ padding: 24, fontSize: 13, color: '#374151', lineHeight: 1.5 }}>
+                    <div style={{ padding: 24, fontSize: 13, color: 'var(--color-text-primary)', lineHeight: 1.5 }}>
                         Marca este envio em quarentena como <strong>descartado</strong> — sai da fila e não será processado. Não afeta nenhuma carteira.
                     </div>
                     <ModalFooter>
                         <Button variant="outline" onClick={() => setDescartarEnvio(null)}>Cancelar</Button>
-                        <Button variant="solid" onClick={confirmarDescartar} disabled={descartando} style={{ background: '#6B7280', borderColor: '#6B7280' }}>
+                        <Button variant="solid" onClick={confirmarDescartar} disabled={descartando} style={{ background: 'var(--color-text-secondary)', borderColor: 'var(--color-text-secondary)' }}>
                             {descartando ? <Spinner size="sm" /> : 'Descartar'}
                         </Button>
                     </ModalFooter>

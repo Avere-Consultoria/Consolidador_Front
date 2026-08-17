@@ -110,16 +110,16 @@ export default function Manutencao() {
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <div style={{ background: 'rgba(0, 131, 203, 0.1)', padding: '8px', borderRadius: '8px' }}>
+                        <div style={{ background: 'var(--color-accent-subtle)', padding: '8px', borderRadius: '8px' }}>
                             <Wrench size={24} color="var(--color-primaria)" />
                         </div>
                         <Typography variant="h1" style={{ fontWeight: 700, fontSize: '24px' }}>Manutenção</Typography>
                     </div>
-                    <Typography variant="p" style={{ opacity: 0.6, fontSize: '14px' }}>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
                         Auto-fechamento de meses passados + poda de snapshots diários
                     </Typography>
                 </div>
-                <Typography variant="p" style={{ fontSize: '12px', color: '#6B7280' }}>
+                <Typography variant="p" style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
                     Mês corrente: <strong>{formatarMes(status.mes_corrente)}</strong> · Buffer: <strong>{status.dias_buffer} dias</strong>
                 </Typography>
             </header>
@@ -128,7 +128,7 @@ export default function Manutencao() {
             <Card style={{ padding: '20px', border: status.elegiveis_auto_fechamento.length > 0 ? '1px solid rgba(220, 38, 38, 0.2)' : undefined }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Lock size={20} color={status.elegiveis_auto_fechamento.length > 0 ? '#DC2626' : '#9CA3AF'} />
+                        <Lock size={20} color={status.elegiveis_auto_fechamento.length > 0 ? 'var(--color-danger-solid)' : 'var(--color-text-muted)'} />
                         <Typography variant="h2" style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>
                             Meses elegíveis para auto-fechamento
                         </Typography>
@@ -147,17 +147,17 @@ export default function Manutencao() {
                 </div>
 
                 {status.elegiveis_auto_fechamento.length === 0 ? (
-                    <Typography variant="p" style={{ fontSize: '13px', color: '#9CA3AF', fontStyle: 'italic' }}>
+                    <Typography variant="p" style={{ fontSize: '13px', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
                         Nenhum mês passou do buffer sem fechamento. Tudo em dia.
                     </Typography>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {status.elegiveis_auto_fechamento.map((m, i) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: 'rgba(220, 38, 38, 0.05)', borderRadius: '6px', fontSize: '13px' }}>
-                                <Typography variant="p" style={{ fontWeight: 700, color: '#111827', minWidth: '180px' }}>
+                                <Typography variant="p" style={{ fontWeight: 700, color: 'var(--color-text-primary)', minWidth: '180px' }}>
                                     {m.cliente_nome}
                                 </Typography>
-                                <Typography variant="p" style={{ color: '#4B5563', flex: 1 }}>
+                                <Typography variant="p" style={{ color: 'var(--color-text-secondary)', flex: 1 }}>
                                     {formatarMes(m.mes_referencia)} · {m.instituicoes_count} instituição(ões) · há {m.dias_desde_fim_mes} dias
                                 </Typography>
                             </div>
@@ -170,7 +170,7 @@ export default function Manutencao() {
             <Card style={{ padding: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Trash2 size={20} color={status.snapshots_a_podar.total > 0 ? '#D97706' : '#9CA3AF'} />
+                        <Trash2 size={20} color={status.snapshots_a_podar.total > 0 ? 'var(--color-warning-solid)' : 'var(--color-text-muted)'} />
                         <Typography variant="h2" style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>
                             Snapshots vivos para podar
                         </Typography>
@@ -188,18 +188,18 @@ export default function Manutencao() {
                     </Button>
                 </div>
 
-                <Typography variant="p" style={{ fontSize: '12px', color: '#6B7280', marginBottom: '10px' }}>
+                <Typography variant="p" style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginBottom: '10px' }}>
                     Apaga snapshots vivos de meses passados que <strong>não estão marcados como fim de mês</strong>.
                     O histórico em <code>snapshots_fechados</code> permanece intacto.
                 </Typography>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
                     {(['BTG', 'XP', 'AVENUE', 'AGORA', 'MANUAL'] as const).map(inst => (
-                        <div key={inst} style={{ background: '#F9FAFB', borderRadius: '6px', padding: '10px 14px', textAlign: 'center' }}>
-                            <Typography variant="p" style={{ fontSize: '10px', fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        <div key={inst} style={{ background: 'var(--gray-50)', borderRadius: '6px', padding: '10px 14px', textAlign: 'center' }}>
+                            <Typography variant="p" style={{ fontSize: '10px', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 {inst}
                             </Typography>
-                            <Typography variant="p" style={{ fontSize: '20px', fontWeight: 700, color: '#111827' }}>
+                            <Typography variant="p" style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
                                 {status.snapshots_a_podar[inst]}
                             </Typography>
                         </div>
@@ -210,7 +210,7 @@ export default function Manutencao() {
             {/* ── Card 3: Meses no buffer (informativo) ── */}
             <Card style={{ padding: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                    <Clock size={20} color="#6B7280" />
+                    <Clock size={20} color="var(--color-text-secondary)" />
                     <Typography variant="h2" style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>
                         Meses ainda no buffer
                     </Typography>
@@ -219,24 +219,24 @@ export default function Manutencao() {
                     </Badge>
                 </div>
 
-                <Typography variant="p" style={{ fontSize: '12px', color: '#6B7280', marginBottom: '10px' }}>
+                <Typography variant="p" style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginBottom: '10px' }}>
                     Meses sem fechamento manual mas ainda dentro do buffer de <strong>{status.dias_buffer} dias</strong>. O consultor responsável ainda tem tempo de fechar manualmente antes do auto-fechamento.
                 </Typography>
 
                 {status.no_buffer.length === 0 ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10B981' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-success-text)' }}>
                         <CheckCircle2 size={16} />
                         <Typography variant="p" style={{ fontSize: '13px' }}>Nenhum mês pendente no buffer.</Typography>
                     </div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {status.no_buffer.map((m, i) => (
-                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: '#F9FAFB', borderRadius: '6px', fontSize: '13px' }}>
-                                <AlertTriangle size={14} color="#D97706" />
-                                <Typography variant="p" style={{ fontWeight: 700, color: '#111827', minWidth: '180px' }}>
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', background: 'var(--gray-50)', borderRadius: '6px', fontSize: '13px' }}>
+                                <AlertTriangle size={14} color="var(--color-warning-solid)" />
+                                <Typography variant="p" style={{ fontWeight: 700, color: 'var(--color-text-primary)', minWidth: '180px' }}>
                                     {m.cliente_nome}
                                 </Typography>
-                                <Typography variant="p" style={{ color: '#4B5563', flex: 1 }}>
+                                <Typography variant="p" style={{ color: 'var(--color-text-secondary)', flex: 1 }}>
                                     {formatarMes(m.mes_referencia)} · {m.instituicoes_count} instituição(ões)
                                 </Typography>
                                 <Badge variant="ghost" style={{ fontSize: '10px' }}>

@@ -217,7 +217,7 @@ export default function SincronizacaoMassa() {
                         <div style={{ background: 'rgba(0,131,203,0.1)', padding: '8px', borderRadius: '8px' }}><RefreshCw size={24} color="var(--color-primaria)" /></div>
                         <Typography variant="h1" style={{ fontWeight: 700, fontSize: '24px' }}>Central de Sincronização</Typography>
                     </div>
-                    <Typography variant="p" style={{ opacity: 0.6, fontSize: '14px' }}>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
                         Estado e disparo da sincronização por conta. Mantenha a aba aberta durante execuções em massa.
                     </Typography>
                 </div>
@@ -234,11 +234,11 @@ export default function SincronizacaoMassa() {
                             <Clock size={18} color="var(--color-primaria)" />
                             <Typography variant="h2" style={{ fontSize: 15, fontWeight: 700 }}>Sincronização automática</Typography>
                             <button onClick={() => upCfg({ habilitado: !cfg.habilitado })}
-                                style={{ ...chipS, ...(cfg.habilitado ? { background: 'rgba(16,185,129,0.12)', color: '#047857', borderColor: 'rgba(16,185,129,0.4)', fontWeight: 700 } : {}) }}>
+                                style={{ ...chipS, ...(cfg.habilitado ? { background: 'rgba(16,185,129,0.12)', color: 'var(--color-success-text)', borderColor: 'rgba(16,185,129,0.4)', fontWeight: 700 } : {}) }}>
                                 {cfg.habilitado ? '● Ligada' : '○ Desligada'}
                             </button>
                         </div>
-                        <Typography variant="p" style={{ fontSize: 12, color: '#6B7280' }}>
+                        <Typography variant="p" style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
                             {ultimaAuto
                                 ? `Última: ${new Date(ultimaAuto.iniciado_em).toLocaleString('pt-BR')} — ${ultimaAuto.ok} OK, ${ultimaAuto.erro} erro (${ultimaAuto.origem})`
                                 : 'Ainda não executou.'}
@@ -249,7 +249,7 @@ export default function SincronizacaoMassa() {
                         <label style={lblS}>Janela (h)
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <input type="number" min={0} max={23} value={cfg.hora_inicio} onChange={e => upCfg({ hora_inicio: Number(e.target.value) })} style={numS} />
-                                <span style={{ color: '#9CA3AF' }}>às</span>
+                                <span style={{ color: 'var(--color-text-muted)' }}>às</span>
                                 <input type="number" min={1} max={24} value={cfg.hora_fim} onChange={e => upCfg({ hora_fim: Number(e.target.value) })} style={numS} />
                             </div>
                         </label>
@@ -260,7 +260,7 @@ export default function SincronizacaoMassa() {
                             {cfg.somente_dia_util ? '● Só dias úteis' : '○ Todos os dias'}
                         </button>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                            <span style={{ fontSize: 11, color: '#6B7280', fontWeight: 600 }}>Instituições</span>
+                            <span style={{ fontSize: 11, color: 'var(--color-text-secondary)', fontWeight: 600 }}>Instituições</span>
                             <div style={{ display: 'flex', gap: 6 }}>
                                 {INSTS_AUTO.map(code => {
                                     const on = cfg.instituicoes.includes(code);
@@ -303,20 +303,20 @@ export default function SincronizacaoMassa() {
                     </div>
                 </div>
                 <div style={{ position: 'relative', maxWidth: 320 }}>
-                    <Search size={14} style={{ position: 'absolute', left: 10, top: 9, color: '#9CA3AF' }} />
+                    <Search size={14} style={{ position: 'absolute', left: 10, top: 9, color: 'var(--color-text-muted)' }} />
                     <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="Buscar por cliente, código ou conta…"
                         style={{ width: '100%', padding: '7px 10px 7px 30px', border: '1px solid var(--color-borda)', borderRadius: 6, fontSize: 13 }} />
                 </div>
-                <div style={{ height: 8, background: '#F1F5F9', borderRadius: 6, overflow: 'hidden' }}>
+                <div style={{ height: 8, background: 'var(--color-surface-sunken)', borderRadius: 6, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${pct}%`, background: 'var(--color-primaria)', transition: 'width 0.3s ease' }} />
                 </div>
-                {rodando && <Typography variant="p" style={{ fontSize: 11, color: '#9CA3AF' }}>{run.feitos}/{run.total} nesta execução ({pct}%)</Typography>}
+                {rodando && <Typography variant="p" style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{run.feitos}/{run.total} nesta execução ({pct}%)</Typography>}
             </Card>
 
             {loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}><Spinner size="lg" /></div>
             ) : itens.length === 0 ? (
-                <Card style={{ padding: '40px', textAlign: 'center', color: '#9CA3AF' }}><Typography variant="p">Nenhuma conta {inst} encontrada.</Typography></Card>
+                <Card style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-muted)' }}><Typography variant="p">Nenhuma conta {inst} encontrada.</Typography></Card>
             ) : (
                 <Card style={{ padding: 0, overflow: 'hidden' }}>
                     <div style={{ maxHeight: 'calc(100vh - 380px)', overflow: 'auto' }}>
@@ -329,13 +329,13 @@ export default function SincronizacaoMassa() {
                             </thead>
                             <tbody>
                                 {itensVisiveis.map(it => (
-                                    <tr key={it.id} style={{ borderTop: '1px solid #F1F5F9', background: it.status === 'erro' ? '#FEF2F2' : it.status === 'ok' ? '#F0FDF4' : 'transparent' }}>
+                                    <tr key={it.id} style={{ borderTop: '1px solid var(--color-surface-sunken)', background: it.status === 'erro' ? 'var(--color-danger-bg)' : it.status === 'ok' ? '#F0FDF4' : 'transparent' }}>
                                         <td style={{ ...td, fontWeight: 600 }}>{it.nome}</td>
-                                        <td style={{ ...td, color: '#6B7280' }}>{it.codigoAvere}</td>
-                                        <td style={{ ...td, color: '#6B7280' }}>{it.conta ?? '—'}</td>
+                                        <td style={{ ...td, color: 'var(--color-text-secondary)' }}>{it.codigoAvere}</td>
+                                        <td style={{ ...td, color: 'var(--color-text-secondary)' }}>{it.conta ?? '—'}</td>
                                         <td style={td}>{badge(it.status)}</td>
-                                        <td style={{ ...td, color: it.ultimaSync ? '#374151' : '#9CA3AF' }} title={it.ultimaSync ? new Date(it.ultimaSync).toLocaleString('pt-BR') : ''}>{fmtSync(it.ultimaSync)}</td>
-                                        <td style={{ ...td, color: it.status === 'erro' ? '#DC2626' : '#9CA3AF', fontSize: 11, maxWidth: 280, whiteSpace: 'normal' }}>{it.msg}</td>
+                                        <td style={{ ...td, color: it.ultimaSync ? 'var(--color-text-primary)' : 'var(--color-text-muted)' }} title={it.ultimaSync ? new Date(it.ultimaSync).toLocaleString('pt-BR') : ''}>{fmtSync(it.ultimaSync)}</td>
+                                        <td style={{ ...td, color: it.status === 'erro' ? 'var(--color-danger-solid)' : 'var(--color-text-muted)', fontSize: 11, maxWidth: 280, whiteSpace: 'normal' }}>{it.msg}</td>
                                         <td style={td}>
                                             <Button variant="ghost" onClick={() => sincronizar([it])} disabled={rodando} title="Sincronizar esta conta">
                                                 <RefreshCw size={14} />
@@ -344,7 +344,7 @@ export default function SincronizacaoMassa() {
                                     </tr>
                                 ))}
                                 {itensVisiveis.length === 0 && (
-                                    <tr><td colSpan={7} style={{ padding: 28, textAlign: 'center', color: '#9CA3AF' }}>Nenhuma conta com esses filtros.</td></tr>
+                                    <tr><td colSpan={7} style={{ padding: 28, textAlign: 'center', color: 'var(--color-text-muted)' }}>Nenhuma conta com esses filtros.</td></tr>
                                 )}
                             </tbody>
                         </table>
@@ -355,10 +355,10 @@ export default function SincronizacaoMassa() {
     );
 }
 
-const th: React.CSSProperties = { position: 'sticky', top: 0, background: '#F8FAFC', textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '1px solid var(--color-borda)' };
+const th: React.CSSProperties = { position: 'sticky', top: 0, background: 'var(--gray-50)', textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '1px solid var(--color-borda)' };
 const td: React.CSSProperties = { padding: '8px 14px', whiteSpace: 'nowrap', verticalAlign: 'middle' };
 const pill: React.CSSProperties = { fontSize: 10, display: 'inline-flex', alignItems: 'center', gap: 4 };
-const chipS: React.CSSProperties = { padding: '5px 12px', fontSize: 12, border: '1px solid var(--color-borda)', borderRadius: 16, background: '#fff', color: '#6B7280', cursor: 'pointer' };
+const chipS: React.CSSProperties = { padding: '5px 12px', fontSize: 12, border: '1px solid var(--color-borda)', borderRadius: 16, background: '#fff', color: 'var(--color-text-secondary)', cursor: 'pointer' };
 const chipA: React.CSSProperties = { background: 'var(--color-primaria)', color: '#fff', borderColor: 'var(--color-primaria)', fontWeight: 700 };
-const lblS: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11, color: '#6B7280', fontWeight: 600 };
+const lblS: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11, color: 'var(--color-text-secondary)', fontWeight: 600 };
 const numS: React.CSSProperties = { width: 56, padding: '6px 8px', border: '1px solid var(--color-borda)', borderRadius: 6, fontSize: 13 };

@@ -76,7 +76,7 @@ export default function ClienteWorkspace() {
                 {tabs.map(t => (
                     <NavLink key={t.to} to={t.to} style={({ isActive }) => ({
                         padding: '10px 16px', fontSize: 14, fontWeight: 600, textDecoration: 'none',
-                        color: isActive ? 'var(--color-primaria)' : '#6B7280',
+                        color: isActive ? 'var(--color-primaria)' : 'var(--color-text-secondary)',
                         borderBottom: isActive ? '2px solid var(--color-primaria)' : '2px solid transparent',
                         marginBottom: -1,
                     })}>{t.label}</NavLink>

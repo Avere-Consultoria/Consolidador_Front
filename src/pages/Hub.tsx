@@ -56,7 +56,7 @@ function Marca({ link }: { link: HubLink }) {
                 width: 40, height: 40, borderRadius: 8, flexShrink: 0,
                 background: link.badge.bg, color: link.badge.fg ?? '#fff',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, fontSize: link.badge.texto.length > 2 ? 12 : 14, letterSpacing: '0.02em',
+                fontWeight: 700, fontSize: link.badge.texto.length > 2 ? 12 : 14, letterSpacing: '0.02em',
             }}>
                 {link.badge.texto}
             </div>
@@ -97,12 +97,12 @@ function Card({ link }: { link: HubLink }) {
                     <Typography variant="p" style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--color-secundaria)', lineHeight: 1.3 }}>
                         {link.titulo}
                     </Typography>
-                    <ExternalLink size={13} style={{ color: '#9CA3AF', flexShrink: 0 }} />
+                    <ExternalLink size={13} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
                 </div>
                 {link.descricao && (
                     <Typography variant="p" style={{
                         margin: '2px 0 0', fontSize: 12, lineHeight: 1.4,
-                        color: link.atencao ? 'var(--color-alerta)' : '#6B7280',
+                        color: link.atencao ? 'var(--color-alerta)' : 'var(--color-text-secondary)',
                         fontWeight: link.atencao ? 600 : 400,
                     }}>
                         {link.descricao}
@@ -116,11 +116,11 @@ function Card({ link }: { link: HubLink }) {
 export default function Hub() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-            <style>{`.hub-card:hover{border-color:var(--color-primaria)!important;box-shadow:0 4px 12px rgba(0,0,0,0.06);transform:translateY(-1px);}`}</style>
+            <style>{`.hub-card:hover{border-color:var(--color-primaria)!important;box-shadow:0 4px 12px var(--color-border-subtle);transform:translateY(-1px);}`}</style>
 
             <header>
                 <Typography variant="h1" style={{ margin: 0 }}>Hub Avere</Typography>
-                <Typography variant="p" style={{ margin: '6px 0 0', color: '#6B7280', fontSize: 14 }}>
+                <Typography variant="p" style={{ margin: '6px 0 0', color: 'var(--color-text-secondary)', fontSize: 14 }}>
                     Atalhos e links úteis da casa, reunidos num lugar só.
                 </Typography>
             </header>
