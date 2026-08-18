@@ -77,7 +77,13 @@ export function ResumoCards({ metrics }: ResumoCardsProps) {
                     {fmt(metrics.patrimonioTotal)}
                 </Typography>
             </div>
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ overflowX: 'auto' }} className="tabela-composicao">
+            <style>{`
+                /* Typography p tem margin-bottom 1rem de fábrica — dentro de tabela
+                   isso desalinha as células (baseline) e a borda corta o conteúdo. */
+                .tabela-composicao td { vertical-align: middle; }
+                .tabela-composicao td p { margin: 0; }
+            `}</style>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                     <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--color-border-subtle)' }}>
