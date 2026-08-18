@@ -30,7 +30,17 @@ const RASCUNHO_ID = '__rascunho__';
 // (ativo travado via `regraEdicao` semente). Se o ativo não tem canônico, cria
 // um rascunho no ato de salvar e pendura a exceção nele.
 export function DrawerPersonalizarInline({ canonicoId, rascunho, onClose, onSaved, onSavedRascunho }: Props) {
-    const { selectedClient, consultorPerfilId } = useClient();
+    const { selectedClient, consultorPerfilId, consultorSelecionado } = useClient();
+
+    // Personalização é ATRELADA ao perfil (login) do consultor da lente.
+    // Dois motivos distintos para não haver dono — mensagens distintas:
+    // lente em 'Todos' vs. consultor selecionado mas sem login vinculado.
+    const lenteEmTodos = !consultorSelecionado || consultorSelecionado === 'todos';
+    const motivoSemDono = !consultorPerfilId
+        ? (lenteEmTodos
+            ? 'Selecione um consultor específico no seletor do topo — a personalização fica atrelada ao consultor e vale só para os clientes dele.'
+            : 'O consultor selecionado ainda não tem login vinculado no sistema. Personalizações ficam atreladas ao perfil do consultor — vincule o acesso dele em Cadastros → Equipe (ou selecione um consultor com login).')
+        : null;
 
     const [carregando, setCarregando] = useState(true);
     const [salvando, setSalvando] = useState(false);
@@ -103,8 +113,8 @@ export function DrawerPersonalizarInline({ canonicoId, rascunho, onClose, onSave
     }, [canonicoId, rascunho, consultorPerfilId]);
 
     const handleSave = async (payload: any, editId: string | null) => {
-        if (!consultorPerfilId) {
-            toast.error('Selecione um consultor no topo para personalizar.');
+        if (motivoSemDono) {
+            toast.error(motivoSemDono);
             return;
         }
         setSalvando(true);
@@ -182,9 +192,10 @@ export function DrawerPersonalizarInline({ canonicoId, rascunho, onClose, onSave
             emissores={emissores}
             classesDisponiveis={classes}
             clientes={selectedClient ? [{ id: selectedClient.id, nome: selectedClient.nome }] : []}
-            aviso={rascunho
-                ? 'Este ativo ainda não tem cadastro canônico. Ao salvar, criamos um rascunho provisório (só pra você, marcado para curadoria do master) e aplicamos sua personalização. O master finaliza depois em Pendências.'
-                : undefined}
+            aviso={motivoSemDono
+                ?? (rascunho
+                    ? 'Este ativo ainda não tem cadastro canônico. Ao salvar, criamos um rascunho provisório (só pra você, marcado para curadoria do master) e aplicamos sua personalização. O master finaliza depois em Pendências.'
+                    : undefined)}
         />
     );
 }
