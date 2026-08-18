@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Typography, Card, Button, Spinner, Badge, TextField, toast } from 'avere-ui';
 import { SlidersHorizontal, Plus, Search } from 'lucide-react';
+import { EstadoVazio } from '../components/shared/EstadoVazio';
 import { supabase } from '../services/supabase';
 import { padronizarTaxaExibicao } from '../utils/formatters';
 import { useAuth } from '../contexts/AuthContext';
@@ -300,16 +301,22 @@ export default function PersonalizarAtivos() {
             </header>
 
             {!consultorContextoId && (
-                <Card style={{ padding: '16px', background: 'rgba(245,158,11,0.06)', border: '1px solid var(--color-warning-border)' }}>
+                <Card style={{ padding: '16px', background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)' }}>
                     <Typography variant="p" style={{ fontSize: '13px', color: 'var(--color-warning-text)', margin: 0 }}>
                         Selecione um <strong>consultor específico</strong> no seletor do topo para ver e criar personalizações. As exceções ficam atreladas ao consultor e refletem apenas nos clientes dele.
                     </Typography>
                 </Card>
             )}
 
-            <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--color-border-subtle)', paddingBottom: '12px' }}>
-                <Button variant={aba === 'REGRAS' ? 'solid' : 'ghost'} onClick={() => setAba('REGRAS')}>Personalizações</Button>
-                <Button variant={aba === 'LIQUIDEZ' ? 'solid' : 'ghost'} onClick={() => setAba('LIQUIDEZ')}>Liquidez por Subtipo</Button>
+            <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--color-borda)', flexWrap: 'wrap' }}>
+                {([['REGRAS', 'Personalizações'], ['LIQUIDEZ', 'Liquidez por Subtipo']] as const).map(([key, label]) => (
+                    <button key={key} onClick={() => setAba(key)} style={{
+                        padding: '10px 16px', fontSize: 14, fontWeight: 600, border: 'none', background: 'transparent', cursor: 'pointer',
+                        color: aba === key ? 'var(--color-primaria)' : 'var(--color-text-secondary)',
+                        borderBottom: aba === key ? '2px solid var(--color-primaria)' : '2px solid transparent',
+                        marginBottom: -1,
+                    }}>{label}</button>
+                ))}
             </div>
 
             {aba === 'LIQUIDEZ' && consultorContextoId && (
@@ -355,15 +362,15 @@ export default function PersonalizarAtivos() {
                                         <div style={{ display: 'flex', gap: '4px', marginTop: '5px', flexWrap: 'wrap', alignItems: 'center' }}>
                                             {(c?.instituicoes_visoes ?? []).map(inst => {
                                                 const cor = CORES_INST[inst] ?? { bg: 'var(--color-border-subtle)', fg: 'var(--color-text-primary)' };
-                                                return <span key={inst} style={{ background: cor.bg, color: cor.fg, fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>{inst}</span>;
+                                                return <span key={inst} style={{ background: cor.bg, color: cor.fg, fontSize: 'var(--text-2xs)', fontWeight: 600, padding: '2px 6px', borderRadius: 'var(--radius-sm)' }}>{inst}</span>;
                                             })}
-                                            {taxa && <Badge variant="ghost" style={{ fontSize: '9px' }}>{taxa}</Badge>}
+                                            {taxa && <Badge variant="ghost" style={{ fontSize: 'var(--text-2xs)' }}>{taxa}</Badge>}
                                         </div>
                                     </td>
 
                                     {/* Classe (orig → custom) */}
                                     <td style={tdPA}>
-                                        <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>{item.canonico_classe || '—'}</div>
+                                        <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{item.canonico_classe || '—'}</div>
                                         <div style={{ fontSize: '13px', color: item.classe_customizada ? 'var(--color-secundaria)' : 'var(--color-text-muted)', fontWeight: 600 }}>
                                             {item.classe_customizada || 'Sem alteração'}
                                         </div>
@@ -371,7 +378,7 @@ export default function PersonalizarAtivos() {
 
                                     {/* Vencimento / Liquidez (orig → custom, modelo Home) */}
                                     <td style={tdPA}>
-                                        <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 600 }}>{vlOrig || '—'}</div>
+                                        <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)', fontWeight: 500 }}>{vlOrig || '—'}</div>
                                         <div style={{ fontSize: '13px', color: vlCustom ? 'var(--color-secundaria)' : 'var(--color-text-muted)', fontWeight: 700 }}>
                                             {vlCustom || 'Sem alteração'}
                                         </div>
@@ -379,7 +386,7 @@ export default function PersonalizarAtivos() {
 
                                     {/* Emissor (orig → custom) */}
                                     <td style={tdPA}>
-                                        <div style={{ fontSize: '10px', color: 'var(--color-text-muted)', fontWeight: 600 }}>{emissorOriginal || '—'}</div>
+                                        <div style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)', fontWeight: 500 }}>{emissorOriginal || '—'}</div>
                                         <div style={{ fontSize: '13px', color: emissorCustom ? 'var(--color-secundaria)' : 'var(--color-text-muted)', fontWeight: 700 }}>
                                             {emissorCustom || '—'}
                                         </div>
@@ -389,18 +396,27 @@ export default function PersonalizarAtivos() {
                                     <td style={tdPA}>
                                         {item.cliente_id ? (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                <Badge variant="ghost" style={{ background: '#FFF7ED', color: 'var(--color-warning-text)', fontSize: '10px', border: 'none' }}>Cliente Específico</Badge>
+                                                <Badge variant="ghost" style={{ background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)', fontSize: 'var(--text-2xs)', border: 'none' }}>Cliente Específico</Badge>
                                                 <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--color-text-secondary)', paddingLeft: '4px' }}>{clienteNome}</span>
                                             </div>
                                         ) : (
-                                            <Badge variant="ghost" style={{ background: '#ECFDF5', color: 'var(--color-success-text)', fontSize: '10px', border: 'none' }}>Carteira Global</Badge>
+                                            <Badge variant="ghost" style={{ background: 'var(--color-success-bg)', color: 'var(--color-success-text)', fontSize: 'var(--text-2xs)', border: 'none' }}>Carteira Global</Badge>
                                         )}
                                     </td>
                                 </tr>
                             );
                         })}
                         {regrasFiltradas.length === 0 && (
-                            <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', opacity: 0.4 }}>Nenhuma personalização encontrada.</td></tr>
+                            <tr><td colSpan={5}>
+                                <EstadoVazio
+                                    compacto
+                                    icon={SlidersHorizontal}
+                                    titulo={busca ? 'Nada encontrado para essa busca' : 'Nenhuma personalização ainda'}
+                                    dica={busca
+                                        ? 'Tente outro termo — a busca cobre ativo, apelido e cliente.'
+                                        : 'Personalizações renomeiam ou reclassificam ativos para os clientes deste consultor. Crie a primeira pela ação acima.'}
+                                />
+                            </td></tr>
                         )}
                     </tbody>
                 </table>

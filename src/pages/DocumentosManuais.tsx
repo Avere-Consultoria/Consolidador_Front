@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Typography, Card, Spinner, Badge, Button, TextField, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, toast } from 'avere-ui';
+import { EstadoVazio } from '../components/shared/EstadoVazio';
 import { FileText, Search, FileStack, ArrowDownRight, Pencil, ArrowUp, Fingerprint, Link2, ChevronDown, AlertTriangle, Trash2, Loader2, RotateCcw, Ban } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -58,11 +59,11 @@ type StatusTipo = 'processado' | 'processando' | 'quarentena' | 'descartado' | '
 
 function StatusEnvio({ tipo }: { tipo: StatusTipo }) {
     if (tipo === 'processado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'var(--color-success-bg)', color: 'var(--color-success-text)' }}>Processado</Badge>;
-    if (tipo === 'processando') return <Badge variant="ghost" style={{ fontSize: 11, background: 'var(--color-info-bg)', color: '#2563EB', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />Processando</Badge>;
+    if (tipo === 'processando') return <Badge variant="ghost" style={{ fontSize: 11, background: 'var(--color-info-bg)', color: 'var(--color-info-text)', display: 'inline-flex', alignItems: 'center', gap: 5 }}><Loader2 size={11} style={{ animation: 'spin 1s linear infinite' }} />Processando</Badge>;
     if (tipo === 'quarentena') return <Badge variant="ghost" style={{ fontSize: 11, background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}><AlertTriangle size={11} />Quarentena</Badge>;
-    if (tipo === 'descartado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(107,114,128,0.12)', color: 'var(--color-text-secondary)' }}>Descartado</Badge>;
-    if (tipo === 'erro') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger-solid)' }}>Com erro</Badge>;
-    if (tipo === 'travado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'rgba(234,88,12,0.12)', color: 'var(--color-warning-text)' }}>Travado</Badge>;
+    if (tipo === 'descartado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'var(--color-surface-sunken)', color: 'var(--color-text-secondary)' }}>Descartado</Badge>;
+    if (tipo === 'erro') return <Badge variant="ghost" style={{ fontSize: 11, background: 'var(--color-danger-bg)', color: 'var(--color-danger-text)' }}>Com erro</Badge>;
+    if (tipo === 'travado') return <Badge variant="ghost" style={{ fontSize: 11, background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)' }}>Travado</Badge>;
     return <Badge variant="ghost" style={{ fontSize: 11, background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)' }}>Na fila</Badge>;
 }
 
@@ -86,7 +87,7 @@ function identidade(a: ManualAtivo): { label: string; ok: boolean } {
     return { label: 'sem identificador', ok: false };
 }
 
-const th: React.CSSProperties = { padding: '10px 12px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', textAlign: 'left', whiteSpace: 'nowrap' };
+const th: React.CSSProperties = { padding: '10px 12px', fontSize: 'var(--text-2xs)' as any, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', textAlign: 'left', whiteSpace: 'nowrap' };
 const td: React.CSSProperties = { padding: '11px 12px', fontSize: 13, color: 'var(--color-text-primary)', borderTop: '1px solid var(--color-surface-sunken)' };
 const lbl: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.03em' };
 const ctrl: React.CSSProperties = { width: '100%', height: 38, boxSizing: 'border-box', padding: '0 10px', borderRadius: 8, border: '1px solid var(--color-border-default)', fontSize: 13, outline: 'none', background: '#fff' };
@@ -399,34 +400,41 @@ export default function DocumentosManuais() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <header style={{ borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                    <FileStack size={28} color="var(--color-secundaria)" />
-                    <Typography variant="h1">{isMaster ? 'Documentos Manuais' : 'Meus Envios'}</Typography>
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px', flexWrap: 'wrap', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
+                <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                        <FileStack size={28} color="var(--color-secundaria)" />
+                        <Typography variant="h1">{isMaster ? 'Documentos Manuais' : 'Meus Envios'}</Typography>
+                    </div>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
+                        {isMaster
+                            ? 'Histórico dos envios processados sem API — auditar, corrigir o que a IA extraiu e promover ao global.'
+                            : 'Acompanhe seus envios manuais: veja se já foram processados e corrija o que a IA extraiu.'}
+                    </Typography>
                 </div>
-                <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
-                    {isMaster
-                        ? 'Histórico dos envios processados sem API — auditar, corrigir o que a IA extraiu e promover ao global.'
-                        : 'Acompanhe seus envios manuais: veja se já foram processados e corrija o que a IA extraiu.'}
-                </Typography>
+                <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                    <TextField leftIcon={Search} placeholder="Buscar por cliente, instituição ou arquivo..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '320px' }} />
+                </div>
             </header>
 
-            {/* ── Nível 1 — Histórico de documentos ── */}
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <TextField leftIcon={Search} placeholder="Buscar por cliente, instituição ou arquivo..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '320px' }} />
-                <div style={{ display: 'flex', gap: 4, background: 'var(--color-surface-sunken)', padding: 4, borderRadius: 8 }}>
-                    {(['todos', 'quarentena', 'processando', 'processado', 'descartado', 'erro'] as const).map(s => (
-                        <button key={s} onClick={() => setFiltroStatus(s)} style={{ height: 28, padding: '0 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer', background: filtroStatus === s ? '#fff' : 'transparent', color: filtroStatus === s ? 'var(--color-primaria)' : 'var(--color-text-secondary)', boxShadow: filtroStatus === s ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
-                            {({ todos: 'Todos', quarentena: 'Quarentena', processando: 'Processando', processado: 'Processados', descartado: 'Descartados', erro: 'Com erro' } as const)[s]}
-                        </button>
-                    ))}
-                </div>
+            {/* ── Nível 1 — Histórico de documentos (filtro de status em abas) ── */}
+            <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--color-borda)', flexWrap: 'wrap' }}>
+                {(['todos', 'quarentena', 'processando', 'processado', 'descartado', 'erro'] as const).map(s => (
+                    <button key={s} onClick={() => setFiltroStatus(s)} style={{
+                        padding: '10px 16px', fontSize: 14, fontWeight: 600, border: 'none', background: 'transparent', cursor: 'pointer',
+                        color: filtroStatus === s ? 'var(--color-primaria)' : 'var(--color-text-secondary)',
+                        borderBottom: filtroStatus === s ? '2px solid var(--color-primaria)' : '2px solid transparent',
+                        marginBottom: -1,
+                    }}>
+                        {({ todos: 'Todos', quarentena: 'Quarentena', processando: 'Processando', processado: 'Processados', descartado: 'Descartados', erro: 'Com erro' } as const)[s]}
+                    </button>
+                ))}
             </div>
 
             <Card style={{ padding: 0, overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                        <tr style={{ background: 'var(--gray-50)' }}>
+                        <tr style={{ background: 'var(--gray-50)', borderBottom: '1px solid var(--color-border-subtle)' }}>
                             <th style={th}>Enviado</th>
                             <th style={th}>Cliente</th>
                             <th style={th}>Instituição</th>
@@ -485,7 +493,16 @@ export default function DocumentosManuais() {
                             );
                         })}
                         {enviosFiltrados.length === 0 && (
-                            <tr><td colSpan={6} style={{ ...td, textAlign: 'center', color: 'var(--color-text-muted)', padding: '32px' }}>Nenhum documento manual encontrado.</td></tr>
+                            <tr><td colSpan={6} style={{ borderTop: '1px solid var(--color-surface-sunken)' }}>
+                                <EstadoVazio
+                                    compacto
+                                    icon={FileStack}
+                                    titulo={busca || filtroStatus !== 'todos' ? 'Nada encontrado com esses filtros' : 'Nenhum envio manual ainda'}
+                                    dica={busca || filtroStatus !== 'todos'
+                                        ? 'Ajuste a busca ou o filtro de status acima.'
+                                        : 'Envios de PDF feitos no workspace do cliente aparecem aqui com o status do processamento.'}
+                                />
+                            </td></tr>
                         )}
                     </tbody>
                 </table>
@@ -503,7 +520,7 @@ export default function DocumentosManuais() {
                         </span>
                     </div>
 
-                    <Card style={{ padding: 0, overflow: 'hidden', border: '1px solid rgba(0,131,203,0.25)' }}>
+                    <Card style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--primary-200)' }}>
                         {loadingAtivos ? (
                             <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}><Spinner size="md" /></div>
                         ) : ativos.length === 0 ? (
