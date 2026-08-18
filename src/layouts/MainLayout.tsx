@@ -1,6 +1,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, ClipboardCheck, LayoutGrid, ListTodo } from 'lucide-react';
+import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, ClipboardCheck, LayoutGrid, ListTodo, Search } from 'lucide-react';
+import { CommandPalette } from '../components/shared/CommandPalette';
 import { SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
@@ -25,6 +26,7 @@ export default function MainLayout() {
   const { perfil, signOut } = useAuth();
 
   const isMaster = perfil?.role === 'MASTER';
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const isConsultor = perfil?.role === 'CONSULTOR_INTERNO';
 
   // 1. Carrega a lista de Consultores (Apenas para Master)
@@ -94,6 +96,17 @@ export default function MainLayout() {
     setConsultorPerfilId(pid);
   }, [consultorSelecionado, consultores, isMaster, perfil?.id, setConsultorPerfilId]);
 
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen(v => !v);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   // Navegação SPA em links reais: clique simples navega client-side;
   // Ctrl/Cmd/Shift/botão-do-meio seguem o comportamento nativo (nova aba).
@@ -189,6 +202,15 @@ export default function MainLayout() {
   return (
     <div className={styles.shell}>
       <Toaster position="top-right" richColors />
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        clientes={clientes}
+        onSelectCliente={handleSelectCliente}
+        onNavigate={navigate}
+        isMaster={isMaster}
+        isConsultor={isConsultor}
+      />
       <SideBar
         userName={perfil?.nome || 'Utilizador'}
         userRole={perfil?.role === 'MASTER' ? 'Administrador' : 'Consultor'}
@@ -209,6 +231,11 @@ export default function MainLayout() {
         isOpenMobile={false}
         onCloseMobile={() => { }}
       >
+        <SideBarItem
+          icon={Search} label="Busca rápida"
+          badge="Ctrl K"
+          onClick={() => setPaletteOpen(true)}
+        />
         {(isMaster || isConsultor) && (
           <SideBarItem
             icon={LayoutDashboard} label="Dashboard"
