@@ -25,6 +25,16 @@ interface HomeHeaderProps {
 }
 
 
+// Rótulo lateral compacto dos seletores do cabeçalho (overline ao lado, não em cima)
+const rotuloSeletor: React.CSSProperties = {
+    fontSize: 'var(--text-2xs)',
+    fontWeight: 'var(--weight-semibold)' as any,
+    textTransform: 'uppercase',
+    letterSpacing: 'var(--tracking-caps)',
+    color: 'var(--color-text-muted)',
+    whiteSpace: 'nowrap',
+};
+
 export function HomeHeader({
     cliente,
     carteiraAtiva,
@@ -56,26 +66,37 @@ export function HomeHeader({
 
     return (
         <header>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Typography variant="h1">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    {/* Linha única, tudo centrado verticalmente: título · divisor · seletores.
+                        Rótulo dos seletores AO LADO (overline compacta), nunca em cima —
+                        rótulo em cima desalinha o conjunto do baseline do h1.
+                        Se faltar espaço, quem desce é o bloco de ações (flexWrap do pai). */}
+                    <Typography variant="h1" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
                         Carteira {cliente?.codigoAvere ?? '—'}
                     </Typography>
+                    <div style={{ width: 1, height: 28, background: 'var(--color-border-default)', flexShrink: 0 }} />
                     {mesesFechados.length > 0 && (
-                        <Select
-                            label="Período"
-                            value={periodo}
-                            onChange={setPeriodo}
-                            options={opcoesPeriodo}
-                        />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={rotuloSeletor}>Período</span>
+                            <Select
+                                fitOptions
+                                value={periodo}
+                                onChange={setPeriodo}
+                                options={opcoesPeriodo}
+                            />
+                        </div>
                     )}
-                    <Select
-                        label="Visão da Carteira"
-                        placeholder="Selecione uma visão..."
-                        value={carteiraAtiva}
-                        onChange={setCarteiraAtiva}
-                        options={opcoesCarteira}
-                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={rotuloSeletor}>Visão</span>
+                        <Select
+                            fitOptions
+                            placeholder="Selecione uma visão..."
+                            value={carteiraAtiva}
+                            onChange={setCarteiraAtiva}
+                            options={opcoesCarteira}
+                        />
+                    </div>
                     {fechado && (
                         <Badge intent="secundaria" variant="ghost" style={{ fontSize: 'var(--text-xs)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                             <Lock size={11} /> Relatório fechado · somente leitura

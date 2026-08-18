@@ -329,6 +329,10 @@ export declare interface SelectProps {
     value?: string;
     onChange?: (value: string) => void;
     label?: string;
+    /** Gatilho reserva a largura da opção mais longa (para selects de cabeçalho
+     *  fora de formulário). Off por padrão — em containers estreitos com opções
+     *  longas isso estouraria o layout. */
+    fitOptions?: boolean;
     error?: string;
     placeholder?: string;
     className?: string;

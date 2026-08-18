@@ -10022,80 +10022,86 @@ var v_ = e.forwardRef(({ date: t, onSelect: n, label: r, error: i, placeholder: 
 });
 v_.displayName = "DatePicker";
 var y_ = {
-	container: "_container_1mqdk_1",
-	label: "_label_1mqdk_19",
-	trigger: "_trigger_1mqdk_31",
-	triggerActive: "_triggerActive_1mqdk_65",
-	triggerError: "_triggerError_1mqdk_75",
-	placeholder: "_placeholder_1mqdk_83",
-	icon: "_icon_1mqdk_91",
-	iconOpen: "_iconOpen_1mqdk_101",
-	dropdown: "_dropdown_1mqdk_109",
-	slideDown: "_slideDown_1mqdk_1",
-	option: "_option_1mqdk_141",
-	optionSelected: "_optionSelected_1mqdk_173",
-	checkIcon: "_checkIcon_1mqdk_185",
-	errorMessage: "_errorMessage_1mqdk_193"
-}, b_ = ({ options: e, value: t, onChange: n, label: r, error: i, placeholder: a = "Selecione...", className: o }) => {
-	let [l, f] = d(!1), [h, _] = d({
+	container: "_container_pq162_1",
+	label: "_label_pq162_19",
+	trigger: "_trigger_pq162_31",
+	triggerActive: "_triggerActive_pq162_65",
+	triggerError: "_triggerError_pq162_75",
+	value: "_value_pq162_83",
+	sizer: "_sizer_pq162_101",
+	placeholder: "_placeholder_pq162_125",
+	icon: "_icon_pq162_133",
+	iconOpen: "_iconOpen_pq162_143",
+	dropdown: "_dropdown_pq162_151",
+	slideDown: "_slideDown_pq162_1",
+	option: "_option_pq162_183",
+	optionSelected: "_optionSelected_pq162_215",
+	checkIcon: "_checkIcon_pq162_227",
+	errorMessage: "_errorMessage_pq162_235"
+}, b_ = ({ options: e, value: t, onChange: n, label: r, fitOptions: i, error: a, placeholder: o = "Selecione...", className: l }) => {
+	let [f, h] = d(!1), [_, v] = d({
 		top: 0,
 		left: 0,
 		width: 0
-	}), v = u(null), y = u(null), b = e.find((e) => e.value === t), S = (e, t) => {
+	}), y = u(null), b = u(null), S = e.find((e) => e.value === t), C = (e, t) => {
 		t.preventDefault(), t.stopPropagation(), n && n(e.value), setTimeout(() => {
-			f(!1);
+			h(!1);
 		}, 0);
 	};
 	return c(() => {
-		if (l && y.current) {
-			let e = y.current.getBoundingClientRect();
-			_({
+		if (f && b.current) {
+			let e = b.current.getBoundingClientRect();
+			v({
 				top: e.bottom + window.scrollY,
 				left: e.left + window.scrollX,
 				width: e.width
 			});
 		}
-	}, [l]), s(() => {
+	}, [f]), s(() => {
 		let e = (e) => {
-			y.current?.contains(e.target) || document.getElementById("avere-select-portal")?.contains(e.target) || f(!1);
+			b.current?.contains(e.target) || document.getElementById("avere-select-portal")?.contains(e.target) || h(!1);
 		};
-		return l && document.addEventListener("mousedown", e), () => document.removeEventListener("mousedown", e);
-	}, [l]), /* @__PURE__ */ m("div", {
-		className: x(y_.container, o),
-		ref: v,
+		return f && document.addEventListener("mousedown", e), () => document.removeEventListener("mousedown", e);
+	}, [f]), /* @__PURE__ */ m("div", {
+		className: x(y_.container, l),
+		ref: y,
 		children: [
 			r && /* @__PURE__ */ p("label", {
 				className: y_.label,
 				children: r
 			}),
 			/* @__PURE__ */ m("div", {
-				ref: y,
-				className: x(y_.trigger, l && y_.triggerActive, i && y_.triggerError),
+				ref: b,
+				className: x(y_.trigger, f && y_.triggerActive, a && y_.triggerError),
 				onClick: (e) => {
-					e.stopPropagation(), f(!l);
+					e.stopPropagation(), h(!f);
 				},
-				children: [/* @__PURE__ */ p("span", {
-					className: x(!b && y_.placeholder),
-					children: b ? b.label : a
+				children: [/* @__PURE__ */ m("span", {
+					className: x(y_.value, !S && y_.placeholder),
+					children: [S ? S.label : o, i && /* @__PURE__ */ m("span", {
+						"aria-hidden": "true",
+						className: y_.sizer,
+						children: [e.map((e) => /* @__PURE__ */ p("span", { children: e.label }, String(e.value))), o && /* @__PURE__ */ p("span", { children: o })]
+					})]
 				}), /* @__PURE__ */ p(te, {
 					size: 18,
-					className: x(y_.icon, l && y_.iconOpen)
+					className: x(y_.icon, f && y_.iconOpen)
 				})]
 			}),
-			l && g.createPortal(/* @__PURE__ */ p("div", {
+			f && g.createPortal(/* @__PURE__ */ p("div", {
 				id: "avere-select-portal",
 				className: y_.dropdown,
 				style: {
 					position: "absolute",
-					top: `${h.top}px`,
-					left: `${h.left}px`,
-					width: `${h.width}px`,
+					top: `${_.top}px`,
+					left: `${_.left}px`,
+					width: `${_.width}px`,
 					zIndex: 99999,
 					fontFamily: "Montserrat, sans-serif"
 				},
 				children: e.map((e) => /* @__PURE__ */ m("div", {
 					className: x(y_.option, t === e.value && y_.optionSelected),
-					onMouseDown: (t) => S(e, t),
+					onMouseDown: (t) => C(e, t),
 					children: [/* @__PURE__ */ p("span", {
 						style: { pointerEvents: "none" },
 						children: e.label
@@ -10105,9 +10111,9 @@ var y_ = {
 					})]
 				}, e.value))
 			}), document.body),
-			i && /* @__PURE__ */ p("span", {
+			a && /* @__PURE__ */ p("span", {
 				className: y_.errorMessage,
-				children: i
+				children: a
 			})
 		]
 	});
