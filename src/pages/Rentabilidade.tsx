@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Typography, Card, Select, Spinner, Badge, toast } from 'avere-ui';
 import { Sparkles, PenLine, AlertTriangle, Check, X, Trash2 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
@@ -108,58 +109,96 @@ function parseNumBR(s: string): number | null {
 
 export default function Rentabilidade() {
     const { selectedClient } = useClient();
+    const queryClient = useQueryClient();
+    const clienteId = selectedClient?.id ?? null;
 
     const opcoesMes = useMemo(mesesFechados, []);
     const [mesRef, setMesRef] = useState(opcoesMes[0].value);
 
-    const [universo, setUniverso] = useState<Contrato | null>(null);   // sempre sem bloco (todas as linhas)
-    const [consBloco, setConsBloco] = useState<Contrato['consolidado'] | null>(null);
-    const [avisosBloco, setAvisosBloco] = useState<string[]>([]);
     const [desmarcadas, setDesmarcadas] = useState<Set<string>>(new Set());
-    const [loading, setLoading] = useState(true);
-    const [serie, setSerie] = useState<SerieData | null>(null);
-    const [coresDb, setCoresDb] = useState<Record<string, string>>({});      // upper(nome) → cor_primaria
     const [linhasOcultas, setLinhasOcultas] = useState<Set<string>>(new Set());
 
     // Edição manual (célula do MÊS — o tijolo; as janelas derivam)
     const [editando, setEditando] = useState<string | null>(null);
     const [formNet, setFormNet] = useState('');
     const [formRent, setFormRent] = useState('');
-    const [salvando, setSalvando] = useState(false);
 
-    const carregar = useCallback(async (bloco: string[] | null) => {
-        if (!selectedClient?.id) return null;
+    // Troca de cliente/mês limpa seleção e edição
+    useEffect(() => { setDesmarcadas(new Set()); setEditando(null); }, [clienteId, mesRef]);
+
+    // ── Consultas (cache do TanStack: voltar à aba dentro do staleTime = instantâneo) ──
+
+    const fetchJanelas = async (bloco: string[] | null): Promise<Contrato> => {
         const { data, error } = await supabase.rpc('rentabilidade_cliente_janelas', {
-            p_cliente_id: selectedClient.id,
+            p_cliente_id: clienteId,
             p_mes_ref: mesRef,
             p_bloco: bloco,
         });
-        if (error) { toast.error('Erro ao carregar a rentabilidade.'); console.error(error); return null; }
+        if (error) throw error;
         return data as Contrato;
-    }, [selectedClient?.id, mesRef]);
+    };
 
-    useEffect(() => {
-        (async () => {
-            setLoading(true);
-            setDesmarcadas(new Set());
-            setEditando(null);
-            const d = await carregar(null);
-            setUniverso(d);
-            setConsBloco(d?.consolidado ?? null);
-            setAvisosBloco(d?.avisos ?? []);
-            setLoading(false);
-        })();
-    }, [carregar]);
+    // Universo: sempre sem bloco (todas as linhas)
+    const universoQ = useQuery({
+        queryKey: ['rentabilidade', 'janelas', clienteId, mesRef],
+        queryFn: () => fetchJanelas(null),
+        enabled: !!clienteId,
+    });
+    const universo = universoQ.data ?? null;
 
-    // Cores oficiais das instituições (as mesmas do resto do sistema)
-    useEffect(() => {
-        (async () => {
-            const { data } = await supabase.from('instituicoes').select('nome, cor_primaria');
+    // Consolidado do bloco — o engine recalcula; o front nunca pondera nada.
+    // Só há consulta própria quando existe conta desmarcada; a chave inclui a
+    // seleção, então marcar/desmarcar de volta reaproveita o cache.
+    const marcadas = useMemo(
+        () => (universo?.linhas ?? []).map(l => l.chave).filter(c => !desmarcadas.has(c)),
+        [universo, desmarcadas],
+    );
+    const blocoQ = useQuery({
+        queryKey: ['rentabilidade', 'janelas', clienteId, mesRef, [...desmarcadas].sort().join('|')],
+        queryFn: () => fetchJanelas(marcadas.length ? marcadas : ['__nenhuma__']),
+        enabled: !!clienteId && desmarcadas.size > 0 && !!universo,
+    });
+
+    const consBloco = desmarcadas.size === 0 ? (universo?.consolidado ?? null) : (blocoQ.data?.consolidado ?? null);
+    const avisosBloco = desmarcadas.size === 0 ? (universo?.avisos ?? []) : (blocoQ.data?.avisos ?? []);
+
+    // Série do gráfico (acumulado 12m por conta + CDI) — independente do bloco
+    const serieQ = useQuery({
+        queryKey: ['rentabilidade', 'serie', clienteId, mesRef],
+        queryFn: async () => {
+            const { data, error } = await supabase.rpc('rentabilidade_cliente_serie', {
+                p_cliente_id: clienteId,
+                p_mes_ref: mesRef,
+                p_meses: 12,
+            });
+            if (error) throw error;
+            return data as SerieData;
+        },
+        enabled: !!clienteId,
+    });
+    const serie = serieQ.data ?? null;
+
+    // Cores oficiais das instituições (as mesmas do resto do sistema) — quase estáticas
+    const coresQ = useQuery({
+        queryKey: ['instituicoes', 'cores'],
+        queryFn: async () => {
+            const { data, error } = await supabase.from('instituicoes').select('nome, cor_primaria');
+            if (error) throw error;
             const mapa: Record<string, string> = {};
             for (const i of data ?? []) if (i.cor_primaria) mapa[String(i.nome).toUpperCase()] = i.cor_primaria;
-            setCoresDb(mapa);
-        })();
-    }, []);
+            return mapa;
+        },
+        staleTime: 60 * 60 * 1000,
+    });
+    const coresDb: Record<string, string> = coresQ.data ?? {};
+
+    // Erros de leitura: nunca engolir em silêncio
+    useEffect(() => {
+        if (universoQ.error) { console.error(universoQ.error); toast.error('Erro ao carregar a rentabilidade.'); }
+    }, [universoQ.error]);
+    useEffect(() => {
+        if (serieQ.error) console.error('Rentabilidade: série do gráfico falhou', serieQ.error);
+    }, [serieQ.error]);
 
     const alternarLinha = (nome: string) => {
         setLinhasOcultas(prev => {
@@ -168,20 +207,6 @@ export default function Rentabilidade() {
             return novo;
         });
     };
-
-    // Série do gráfico (acumulado 12m por conta + CDI) — independente do bloco
-    useEffect(() => {
-        (async () => {
-            if (!selectedClient?.id) return;
-            const { data, error } = await supabase.rpc('rentabilidade_cliente_serie', {
-                p_cliente_id: selectedClient.id,
-                p_mes_ref: mesRef,
-                p_meses: 12,
-            });
-            if (error) { console.error('Rentabilidade: série do gráfico falhou', error); setSerie(null); return; }
-            setSerie(data as SerieData);
-        })();
-    }, [selectedClient?.id, mesRef]);
 
     // Dados do gráfico: uma linha por mês, colunas = contas + CDI (em %)
     const chartData = useMemo(() => {
@@ -200,32 +225,13 @@ export default function Rentabilidade() {
         });
     }, [serie]);
 
-    // Recarrega universo E consolidado respeitando o bloco marcado atual
-    const recarregarTudo = useCallback(async (desm: Set<string>) => {
-        const d = await carregar(null);
-        setUniverso(d);
-        if (!d) return;
-        if (desm.size === 0) {
-            setConsBloco(d.consolidado);
-            setAvisosBloco(d.avisos);
-        } else {
-            const marcadas = d.linhas.map(l => l.chave).filter(c => !desm.has(c));
-            const b = await carregar(marcadas.length ? marcadas : ['__nenhuma__']);
-            setConsBloco(b?.consolidado ?? null);
-            setAvisosBloco(b?.avisos ?? []);
-        }
-    }, [carregar]);
-
-    // Consolidado do bloco — o engine recalcula; o front nunca pondera nada
-    const alternarConta = async (chave: string) => {
-        if (!universo) return;
-        const novo = new Set(desmarcadas);
-        if (novo.has(chave)) novo.delete(chave); else novo.add(chave);
-        setDesmarcadas(novo);
-        const marcadas = universo.linhas.map(l => l.chave).filter(c => !novo.has(c));
-        const d = await carregar(marcadas.length ? marcadas : ['__nenhuma__']);
-        setConsBloco(d?.consolidado ?? null);
-        setAvisosBloco(d?.avisos ?? []);
+    // Marcar/desmarcar conta: só muda o estado — a consulta do bloco reage sozinha
+    const alternarConta = (chave: string) => {
+        setDesmarcadas(prev => {
+            const novo = new Set(prev);
+            if (novo.has(chave)) novo.delete(chave); else novo.add(chave);
+            return novo;
+        });
     };
 
     const iniciarEdicao = (l: Linha) => {
@@ -235,43 +241,57 @@ export default function Rentabilidade() {
         setFormRent(rm !== null && rm !== undefined ? (rm * 100).toFixed(4).replace('.', ',') : '');
     };
 
-    const salvarManual = async (l: Linha) => {
-        if (!selectedClient?.id) return;
-        const net = parseNumBR(formNet);
-        const rentPct = parseNumBR(formRent);
-        if (net === null && rentPct === null) { toast.error('Informe ao menos a NET ou a rentabilidade.'); return; }
-        setSalvando(true);
-        const { error } = await supabase.from('rentabilidade_mensal').upsert([{
-            cliente_id: selectedClient.id,
-            instituicao: l.instituicao,
-            conta_codigo: l.conta_codigo ?? '',
-            mes_referencia: mesRef,
-            net_fechamento: net,
-            rentabilidade_mes: rentPct === null ? null : rentPct / 100,   // digitado em %, guardado em fração
-            origem: 'manual',
-            fonte_detalhe: 'manual',
-        }], { onConflict: 'cliente_id,instituicao,conta_codigo,mes_referencia' });
-        setSalvando(false);
-        if (error) { console.error(error); toast.error('Não foi possível salvar (linha automática não é editável).'); return; }
-        toast.success('Lançamento manual salvo.');
-        setEditando(null);
-        recarregarTudo(desmarcadas);
-    };
+    // Escritas invalidam as chaves de rentabilidade → rebusca IMEDIATA (nunca espera o staleTime)
+    const salvarMut = useMutation({
+        mutationFn: async (l: Linha) => {
+            const net = parseNumBR(formNet);
+            const rentPct = parseNumBR(formRent);
+            if (net === null && rentPct === null) throw new Error('VALIDACAO');
+            const { error } = await supabase.from('rentabilidade_mensal').upsert([{
+                cliente_id: clienteId,
+                instituicao: l.instituicao,
+                conta_codigo: l.conta_codigo ?? '',
+                mes_referencia: mesRef,
+                net_fechamento: net,
+                rentabilidade_mes: rentPct === null ? null : rentPct / 100,   // digitado em %, guardado em fração
+                origem: 'manual',
+                fonte_detalhe: 'manual',
+            }], { onConflict: 'cliente_id,instituicao,conta_codigo,mes_referencia' });
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            toast.success('Lançamento manual salvo.');
+            setEditando(null);
+            queryClient.invalidateQueries({ queryKey: ['rentabilidade'] });
+        },
+        onError: (err: any) => {
+            if (err?.message === 'VALIDACAO') { toast.error('Informe ao menos a NET ou a rentabilidade.'); return; }
+            console.error(err);
+            toast.error('Não foi possível salvar (linha automática não é editável).');
+        },
+    });
 
-    const apagarManual = async (l: Linha) => {
-        if (!selectedClient?.id) return;
-        const { error } = await supabase.from('rentabilidade_mensal').delete().match({
-            cliente_id: selectedClient.id,
-            instituicao: l.instituicao,
-            conta_codigo: l.conta_codigo ?? '',
-            mes_referencia: mesRef,
-            origem: 'manual',
-        });
-        if (error) { console.error(error); toast.error('Não foi possível apagar.'); return; }
-        toast.success('Lançamento manual removido.');
-        setEditando(null);
-        recarregarTudo(desmarcadas);
-    };
+    const apagarMut = useMutation({
+        mutationFn: async (l: Linha) => {
+            const { error } = await supabase.from('rentabilidade_mensal').delete().match({
+                cliente_id: clienteId,
+                instituicao: l.instituicao,
+                conta_codigo: l.conta_codigo ?? '',
+                mes_referencia: mesRef,
+                origem: 'manual',
+            });
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            toast.success('Lançamento manual removido.');
+            setEditando(null);
+            queryClient.invalidateQueries({ queryKey: ['rentabilidade'] });
+        },
+        onError: (err: any) => { console.error(err); toast.error('Não foi possível apagar.'); },
+    });
+
+    const salvando = salvarMut.isPending;
+    const loading = !!clienteId && universoQ.isPending;
 
     if (!selectedClient) return <NenhumClienteSelecionado />;
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
@@ -352,10 +372,10 @@ export default function Rentabilidade() {
                                     <td style={{ ...td, textAlign: 'center', whiteSpace: 'nowrap' }}>
                                         {emEdicao ? (
                                             <>
-                                                <button title="Salvar" disabled={salvando} onClick={() => salvarManual(l)} style={{ ...btnCel, color: 'var(--color-success-text)' }}><Check size={16} /></button>
+                                                <button title="Salvar" disabled={salvando} onClick={() => salvarMut.mutate(l)} style={{ ...btnCel, color: 'var(--color-success-text)' }}><Check size={16} /></button>
                                                 <button title="Cancelar" onClick={() => setEditando(null)} style={btnCel}><X size={16} /></button>
                                                 {l.origem === 'manual' && (
-                                                    <button title="Apagar lançamento" onClick={() => apagarManual(l)} style={{ ...btnCel, color: 'var(--color-danger-solid)' }}><Trash2 size={15} /></button>
+                                                    <button title="Apagar lançamento" onClick={() => apagarMut.mutate(l)} style={{ ...btnCel, color: 'var(--color-danger-solid)' }}><Trash2 size={15} /></button>
                                                 )}
                                             </>
                                         ) : (

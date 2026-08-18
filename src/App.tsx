@@ -1,6 +1,8 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Spinner } from 'avere-ui';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/queryClient';
 import { AuthProvider } from './contexts/AuthContext';
 import { ClientProvider } from './contexts/ClientContext';
 
@@ -43,6 +45,7 @@ const fallback = (
 export default function App() {
   return (
     // O AuthProvider envolve tudo para que a app saiba quem está logado
+    <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <ClientProvider>
         <BrowserRouter>
@@ -141,5 +144,6 @@ export default function App() {
         </BrowserRouter>
       </ClientProvider>
     </AuthProvider>
+    </QueryClientProvider>
   );
 }
