@@ -231,11 +231,6 @@ export default function MainLayout() {
         isOpenMobile={false}
         onCloseMobile={() => { }}
       >
-        <SideBarItem
-          icon={Search} label="Busca rápida"
-          badge="Ctrl K"
-          onClick={() => setPaletteOpen(true)}
-        />
         {(isMaster || isConsultor) && (
           <SideBarItem
             icon={LayoutDashboard} label="Dashboard"
@@ -306,7 +301,33 @@ export default function MainLayout() {
           style={{ padding: '16px 32px', borderBottom: '1px solid var(--color-borda)', background: 'white' }}
           onToggleMobile={() => { }}
         >
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+            <button
+              onClick={() => setPaletteOpen(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                padding: '8px 14px', minWidth: '220px',
+                background: 'var(--color-surface-sunken)',
+                border: '1px solid var(--color-border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--color-text-muted)',
+                fontSize: 'var(--text-sm)', fontFamily: 'inherit',
+                cursor: 'pointer', transition: 'border-color 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-strong)'; e.currentTarget.style.color = 'var(--color-text-secondary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border-subtle)'; e.currentTarget.style.color = 'var(--color-text-muted)'; }}
+              aria-label="Busca rápida (Ctrl+K)"
+            >
+              <Search size={15} />
+              <span>Buscar…</span>
+              <kbd style={{
+                marginLeft: 'auto', fontFamily: 'inherit',
+                fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)',
+                background: 'var(--color-surface)',
+                border: '1px solid var(--color-border-default)',
+                borderRadius: 'var(--radius-sm)', padding: '1px 6px',
+              }}>Ctrl K</kbd>
+            </button>
             <HierarchicalCombobox levels={comboboxLevels} />
           </div>
         </TopBar>
