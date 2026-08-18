@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Typography, Card, Badge, Button, DataTable, Spinner, toast } from 'avere-ui';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Typography, Card, Badge, Button, DataTable, Spinner } from 'avere-ui';
 import { History, Eye, AlertCircle } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 import { supabase } from '../services/supabase';
@@ -41,27 +42,29 @@ const CORES_INST: Record<string, string> = {
     BTG: '#0369A1', XP: 'var(--color-warning-text)', AVENUE: 'var(--color-warning-text)', AGORA: 'var(--color-success-text)',
 };
 const PALETA_INST = ['#0083CB', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316', '#6366F1', '#84CC16', '#06B6D4'];
+const VAZIO_SNAPS: SnapshotFechado[] = [];
+const VAZIO_POS: PosicaoFechadaDrawer[] = [];
+const VAZIO_CORES = new Map<string, string>();
+
 const PALETA_CLASSES = ['#0083CB', '#00B4D8', '#F59E0B', '#8B5CF6', '#10B981', '#EF4444', '#EC4899', '#6366F1', '#F97316', '#84CC16'];
 
 // ── Página principal ─────────────────────────────────────────────────────────
 export default function HistoricoMensal() {
     const { selectedClient } = useClient();
 
-    const [loading, setLoading]           = useState(false);
-    const [snapshots, setSnapshots]       = useState<SnapshotFechado[]>([]);
-    const [posicoes, setPosicoes]         = useState<PosicaoFechadaDrawer[]>([]);
-    const [coresClasses, setCoresClasses] = useState<Map<string, string>>(new Map());
     const [drawerMes, setDrawerMes]       = useState<string | null>(null);
+    const clienteId = selectedClient?.id ?? null;
 
-    const fetchData = async () => {
-        if (!selectedClient?.id) return;
-        setLoading(true);
-        try {
+    // Snapshots fechados + posições + cores de classe — cache por cliente.
+    const historicoQ = useQuery({
+        queryKey: ['historico', clienteId],
+        enabled: !!clienteId,
+        queryFn: async () => {
             const [snapsRes, classesRes] = await Promise.all([
                 supabase
                     .from('snapshots_fechados')
                     .select('id, cliente_id, instituicao, mes_referencia, data_referencia, patrimonio_total, frozen_at')
-                    .eq('cliente_id', selectedClient.id)
+                    .eq('cliente_id', clienteId!)
                     .order('mes_referencia', { ascending: true }),
                 supabase.from('dicionario_classes').select('nome, cor_hex').order('ordem_exibicao'),
             ]);
@@ -69,14 +72,13 @@ export default function HistoricoMensal() {
             if (classesRes.error) throw classesRes.error;
 
             const snaps = (snapsRes.data ?? []) as SnapshotFechado[];
-            setSnapshots(snaps);
 
             const corMap = new Map<string, string>();
             (classesRes.data ?? []).forEach((c: any, i: number) => {
                 corMap.set(c.nome, c.cor_hex || PALETA_CLASSES[i % PALETA_CLASSES.length]);
             });
-            setCoresClasses(corMap);
 
+            let pos: PosicaoFechadaDrawer[] = [];
             if (snaps.length > 0) {
                 const snapIds = snaps.map(s => s.id);
                 const { data: posRes, error: posErr } = await supabase
@@ -84,19 +86,19 @@ export default function HistoricoMensal() {
                     .select('id, snapshot_fechado_id, instituicao, nome_exibicao, classe_avere, liquidez_avere, emissor_nome, data_vencimento, taxa, valor_bruto, valor_liquido, quantidade')
                     .in('snapshot_fechado_id', snapIds);
                 if (posErr) throw posErr;
-                setPosicoes((posRes ?? []) as PosicaoFechadaDrawer[]);
-            } else {
-                setPosicoes([]);
+                pos = (posRes ?? []) as PosicaoFechadaDrawer[];
             }
-        } catch (err: any) {
-            console.error(err);
-            toast.error('Erro ao carregar histórico');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { fetchData(); }, [selectedClient?.id]);
+            return { snapshots: snaps, posicoes: pos, coresClasses: corMap };
+        },
+    });
+    const snapshots = historicoQ.data?.snapshots ?? VAZIO_SNAPS;
+    const posicoes = historicoQ.data?.posicoes ?? VAZIO_POS;
+    const coresClasses = historicoQ.data?.coresClasses ?? VAZIO_CORES;
+    const loading = !!clienteId && historicoQ.isPending;
+    if (historicoQ.error && !historicoQ.isFetching) {
+        // toast fora de efeito geraria loop; log basta — a tela mostra o vazio
+        console.error(historicoQ.error);
+    }
 
     // ── Agregações (instituições dinâmicas: 4 APIs + manuais) ─────────────────
     const { mesesUnicos, evolucaoData, alocacaoData, classesAtivas, resumoPorMes, instituicoesPresentes, corInst } = useMemo(() => {

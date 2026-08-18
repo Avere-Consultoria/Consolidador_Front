@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Typography, Card, Button, Badge, Spinner, toast } from 'avere-ui';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Typography, Card, Button, Badge, Spinner } from 'avere-ui';
 import { Calendar, CheckCircle2, AlertCircle, Lock, GitCompareArrows } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../services/supabase';
@@ -146,37 +147,34 @@ function CardMes({ mes, apelidoMap, onRevisar }: {
 }
 
 // ── Página principal ─────────────────────────────────────────────────────────
+const VAZIO_MESES: MesFechamento[] = [];
+const VAZIO_APELIDOS = new Map<string, string>();
+
 export default function FechamentoMes() {
     const { selectedClient } = useClient();
     const { clienteId } = useParams();
     const navigate = useNavigate();
 
-    const [loading, setLoading] = useState(false);
-    const [meses, setMeses] = useState<MesFechamento[]>([]);
-    const [apelidoMap, setApelidoMap] = useState<Map<string, string>>(new Map());
-
-    const fetchMeses = async () => {
-        if (!selectedClient?.id) return;
-        setLoading(true);
-        try {
+    // Meses de fechamento + apelidos de conta — cache por cliente; a chave
+    // compartilhada com MovimentacoesMes garante invalidação após fechar_mes.
+    const fechamentoQ = useQuery({
+        queryKey: ['fechamento', 'meses', selectedClient?.id ?? null],
+        enabled: !!selectedClient?.id,
+        queryFn: async () => {
             const [{ data, error }, { data: contas }] = await Promise.all([
-                supabase.rpc('listar_meses_fechamento', { p_cliente_id: selectedClient.id }),
-                supabase.from('cliente_contas').select('id, apelido').eq('cliente_id', selectedClient.id),
+                supabase.rpc('listar_meses_fechamento', { p_cliente_id: selectedClient!.id }),
+                supabase.from('cliente_contas').select('id, apelido').eq('cliente_id', selectedClient!.id),
             ]);
             if (error) throw error;
-            setMeses((data ?? []) as MesFechamento[]);
             const m = new Map<string, string>();
             (contas ?? []).forEach((c: any) => { if (c.apelido && c.apelido.trim()) m.set(c.id, c.apelido.trim()); });
-            setApelidoMap(m);
-        } catch (err: any) {
-            console.error(err);
-            toast.error('Erro ao carregar meses');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => { fetchMeses(); }, [selectedClient?.id]);
+            return { meses: (data ?? []) as MesFechamento[], apelidoMap: m };
+        },
+    });
+    const meses = fechamentoQ.data?.meses ?? VAZIO_MESES;
+    const apelidoMap = fechamentoQ.data?.apelidoMap ?? VAZIO_APELIDOS;
+    const loading = !!selectedClient?.id && fechamentoQ.isPending;
+    if (fechamentoQ.error && !fechamentoQ.isFetching) console.error(fechamentoQ.error);
 
     if (!selectedClient?.id) {
         return (

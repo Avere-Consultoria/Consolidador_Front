@@ -1,4 +1,5 @@
-import { Spinner, Typography } from 'avere-ui';
+import { Typography } from 'avere-ui';
+import { HomeSkeleton } from '../components/home/HomeSkeleton';
 import { PieChart as PieIcon } from 'lucide-react';
 
 import { useHomeMetrics } from '../hooks/useHomeMetrics';
@@ -33,12 +34,8 @@ export default function Home() {
     return <NenhumClienteSelecionado />;
   }
 
-  // 2. Loading State
-  if (loading) return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}>
-      <Spinner size="lg" />
-    </div>
-  );
+  // 2. Loading State — skeleton espelha o layout (primeira carga; com cache nem aparece)
+  if (loading) return <HomeSkeleton />;
 
   // 3. Render Principal — a barra de ações (Enviar arquivos / Gerir Carteiras) fica
   // SEMPRE visível. Sem dados, o corpo vira o aviso "Aguardando Sincronização" — mas o

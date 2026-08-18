@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Typography, Button, Spinner, toast } from 'avere-ui';
 import { ArrowLeft, GitCompareArrows, AlertCircle, Lock, RefreshCw } from 'lucide-react';
@@ -13,30 +14,37 @@ function formatarMesReferencia(mes: string): string {
     return `${MESES_PT[parseInt(m, 10) - 1]} ${ano}`;
 }
 
+const VAZIO_APELIDOS = new Map<string, string>();
+
 export default function MovimentacoesMes() {
     const { clienteId, mes } = useParams<{ clienteId: string; mes: string }>();
     const navigate = useNavigate();
     const { selectedClient } = useClient();
     const { perfil } = useAuth();
-    const [apelidoMap, setApelidoMap] = useState<Map<string, string>>(new Map());
-    const [fechado, setFechado] = useState(false);
+    const queryClient = useQueryClient();
     const [fechando, setFechando] = useState(false);
 
-    useEffect(() => {
-        if (!selectedClient?.id) return;
-        supabase.from('cliente_contas').select('id, apelido').eq('cliente_id', selectedClient.id).then(({ data }) => {
+    const apelidosQ = useQuery({
+        queryKey: ['fechamento', 'apelidos', selectedClient?.id ?? null],
+        enabled: !!selectedClient?.id,
+        queryFn: async () => {
+            const { data } = await supabase.from('cliente_contas').select('id, apelido').eq('cliente_id', selectedClient!.id);
             const m = new Map<string, string>();
             (data ?? []).forEach((c: any) => { if (c.apelido && c.apelido.trim()) m.set(c.id, c.apelido.trim()); });
-            setApelidoMap(m);
-        });
-    }, [selectedClient?.id]);
+            return m;
+        },
+    });
+    const apelidoMap = apelidosQ.data ?? VAZIO_APELIDOS;
 
-    const fetchStatus = async () => {
-        if (!selectedClient?.id || !mes) return;
-        const { data } = await supabase.from('snapshots_fechados').select('id').eq('cliente_id', selectedClient.id).eq('mes_referencia', mes).limit(1);
-        setFechado((data?.length ?? 0) > 0);
-    };
-    useEffect(() => { fetchStatus(); }, [selectedClient?.id, mes]);
+    const statusQ = useQuery({
+        queryKey: ['fechamento', 'status', selectedClient?.id ?? null, mes ?? null],
+        enabled: !!selectedClient?.id && !!mes,
+        queryFn: async () => {
+            const { data } = await supabase.from('snapshots_fechados').select('id').eq('cliente_id', selectedClient!.id).eq('mes_referencia', mes!).limit(1);
+            return (data?.length ?? 0) > 0;
+        },
+    });
+    const fechado = statusQ.data ?? false;
 
     const handleFechar = async () => {
         if (!selectedClient?.id || !mes) return;
@@ -51,7 +59,10 @@ export default function MovimentacoesMes() {
             if (error) throw error;
             const n = (data as any)?.contas_fechadas ?? 0;
             toast.success(`${formatarMesReferencia(mes)} fechado — ${n} conta(s) materializada(s).`);
-            await fetchStatus();
+            queryClient.invalidateQueries({ queryKey: ['fechamento'] });
+            queryClient.invalidateQueries({ queryKey: ['historico'] });
+            queryClient.invalidateQueries({ queryKey: ['home', 'meses-fechados'] });
+            queryClient.invalidateQueries({ queryKey: ['home', 'fechado'] });
         } catch (err: any) {
             console.error(err);
             toast.error(`Falha ao fechar mês: ${err.message ?? 'erro desconhecido'}`);
