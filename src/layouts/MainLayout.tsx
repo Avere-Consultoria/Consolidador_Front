@@ -2,6 +2,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, ClipboardCheck, LayoutGrid, ListTodo, Search } from 'lucide-react';
 import { CommandPalette } from '../components/shared/CommandPalette';
+import { ErrorBoundary } from '../components/shared/ErrorBoundary';
 import { SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
@@ -333,9 +334,11 @@ export default function MainLayout() {
         </TopBar>
         <div style={{ padding: '32px', flex: 1, overflowY: 'auto' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', maxWidth: '1760px', margin: '0 auto', width: '100%' }}>
-            <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>}>
-              <Outlet />
-            </Suspense>
+            <ErrorBoundary key={location.pathname}>
+              <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>}>
+                <Outlet />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </div>
       </main>

@@ -1,5 +1,6 @@
 import { Typography } from 'avere-ui';
 import { HomeSkeleton } from '../components/home/HomeSkeleton';
+import { EstadoErro } from '../components/shared/EstadoErro';
 import { PieChart as PieIcon } from 'lucide-react';
 
 import { useHomeMetrics } from '../hooks/useHomeMetrics';
@@ -19,6 +20,8 @@ export default function Home() {
   const {
     selectedClient,
     loading,
+    erroCarga,
+    semRede,
     metrics,
     diasVencimento, setDiasVencimento,
     drawerCarteirasAberto, setDrawerCarteirasAberto,
@@ -34,8 +37,27 @@ export default function Home() {
     return <NenhumClienteSelecionado />;
   }
 
-  // 2. Loading State — skeleton espelha o layout (primeira carga; com cache nem aparece)
+  // 2. Sem rede — o TanStack pausa a consulta e retoma sozinho quando a conexão
+  // volta; skeleton mudo aqui viraria espera infinita sem explicação.
+  if (semRede) return (
+    <EstadoErro
+      offline
+      titulo="Sem conexão"
+      dica="Aguardando a rede voltar — a posição carrega sozinha assim que reconectar."
+    />
+  );
+
+  // 3. Loading State — skeleton espelha o layout (primeira carga; com cache nem aparece)
   if (loading) return <HomeSkeleton />;
+
+  // 2b. Erro de carga — na tela, com saída (toast some e deixaria a tela órfã)
+  if (erroCarga) return (
+    <EstadoErro
+      titulo="Não conseguimos carregar a posição"
+      dica="A consulta às posições falhou. Os dados não foram perdidos — tente recarregar."
+      onRetry={recarregarTudo}
+    />
+  );
 
   // 3. Render Principal — a barra de ações (Enviar arquivos / Gerir Carteiras) fica
   // SEMPRE visível. Sem dados, o corpo vira o aviso "Aguardando Sincronização" — mas o

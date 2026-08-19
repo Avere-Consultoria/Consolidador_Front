@@ -1066,5 +1066,5 @@ export function useHomeMetrics() {
         queryClient.invalidateQueries({ queryKey: ['home'] });
     }
 
-    return { selectedClient, loading, metrics, snapshotData, diasVencimento, setDiasVencimento, drawerCarteirasAberto, setDrawerCarteirasAberto, carteiraAtiva, setCarteiraAtiva, opcoesCarteira, instituicoesManuais, periodo, setPeriodo, mesesFechados, recarregar, recarregarTudo };
+    return { selectedClient, loading, erroCarga: !!dadosQ.error, semRede: dadosQ.fetchStatus === 'paused' && dadosQ.isPending, metrics, snapshotData, diasVencimento, setDiasVencimento, drawerCarteirasAberto, setDrawerCarteirasAberto, carteiraAtiva, setCarteiraAtiva, opcoesCarteira, instituicoesManuais, periodo, setPeriodo, mesesFechados, recarregar, recarregarTudo };
 }

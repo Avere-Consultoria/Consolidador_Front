@@ -9,6 +9,7 @@ import { useClient } from '../contexts/ClientContext';
 import { fmt } from '../utils/formatters';
 import { CORES, isValidHex } from '../utils/colors';
 import { NenhumClienteSelecionado } from '../components/home/NenhumClienteSelecionado';
+import { EstadoErro } from '../components/shared/EstadoErro';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Rentabilidade — matriz de janelas (Mês · Ano · 12m · 24m · 36m nas colunas).
@@ -192,9 +193,9 @@ export default function Rentabilidade() {
     });
     const coresDb: Record<string, string> = coresQ.data ?? {};
 
-    // Erros de leitura: nunca engolir em silêncio
+    // Erro da carga principal vira estado de tela (abaixo, no render) — não toast.
     useEffect(() => {
-        if (universoQ.error) { console.error(universoQ.error); toast.error('Erro ao carregar a rentabilidade.'); }
+        if (universoQ.error) console.error(universoQ.error);
     }, [universoQ.error]);
     useEffect(() => {
         if (serieQ.error) console.error('Rentabilidade: série do gráfico falhou', serieQ.error);
@@ -294,7 +295,17 @@ export default function Rentabilidade() {
     const loading = !!clienteId && universoQ.isPending;
 
     if (!selectedClient) return <NenhumClienteSelecionado />;
+    if (universoQ.fetchStatus === 'paused' && universoQ.isPending) return (
+        <EstadoErro offline titulo="Sem conexão" dica="Aguardando a rede voltar — a rentabilidade carrega sozinha assim que reconectar." />
+    );
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
+    if (universoQ.error) return (
+        <EstadoErro
+            titulo="Não conseguimos carregar a rentabilidade"
+            dica="A consulta das janelas falhou. Tente de novo — se persistir, o engine pode estar reprocessando."
+            onRetry={() => universoQ.refetch()}
+        />
+    );
 
     const linhas = universo?.linhas ?? [];
     const cons = consBloco;

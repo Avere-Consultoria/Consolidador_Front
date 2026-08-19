@@ -4,6 +4,7 @@ import { Typography, Card, Button, Badge, Spinner } from 'avere-ui';
 import { Calendar, CheckCircle2, AlertCircle, Lock, GitCompareArrows } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../services/supabase';
+import { EstadoErro } from '../components/shared/EstadoErro';
 import { useClient } from '../contexts/ClientContext';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -174,7 +175,6 @@ export default function FechamentoMes() {
     const meses = fechamentoQ.data?.meses ?? VAZIO_MESES;
     const apelidoMap = fechamentoQ.data?.apelidoMap ?? VAZIO_APELIDOS;
     const loading = !!selectedClient?.id && fechamentoQ.isPending;
-    if (fechamentoQ.error && !fechamentoQ.isFetching) console.error(fechamentoQ.error);
 
     if (!selectedClient?.id) {
         return (
@@ -203,7 +203,16 @@ export default function FechamentoMes() {
                 </div>
             </header>
 
-            {loading ? (
+            {fechamentoQ.fetchStatus === 'paused' && fechamentoQ.isPending ? (
+                <EstadoErro compacto offline titulo="Sem conexão" dica="Aguardando a rede voltar." />
+            ) : fechamentoQ.error ? (
+                <EstadoErro
+                    compacto
+                    titulo="Não conseguimos carregar os meses"
+                    dica="A consulta de fechamentos falhou — tente de novo."
+                    onRetry={() => fechamentoQ.refetch()}
+                />
+            ) : loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}><Spinner size="lg" /></div>
             ) : meses.length === 0 ? (
                 <Card style={{ padding: '40px', textAlign: 'center' }}>

@@ -4,6 +4,7 @@ import { Typography, Card, Badge, Button, DataTable, Spinner } from 'avere-ui';
 import { History, Eye, AlertCircle } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 import { supabase } from '../services/supabase';
+import { EstadoErro } from '../components/shared/EstadoErro';
 import { useClient } from '../contexts/ClientContext';
 import { DrawerAtivosFechados, type PosicaoFechadaDrawer } from '../components/historicoMensal/DrawerAtivosFechados';
 
@@ -95,10 +96,6 @@ export default function HistoricoMensal() {
     const posicoes = historicoQ.data?.posicoes ?? VAZIO_POS;
     const coresClasses = historicoQ.data?.coresClasses ?? VAZIO_CORES;
     const loading = !!clienteId && historicoQ.isPending;
-    if (historicoQ.error && !historicoQ.isFetching) {
-        // toast fora de efeito geraria loop; log basta — a tela mostra o vazio
-        console.error(historicoQ.error);
-    }
 
     // ── Agregações (instituições dinâmicas: 4 APIs + manuais) ─────────────────
     const { mesesUnicos, evolucaoData, alocacaoData, classesAtivas, resumoPorMes, instituicoesPresentes, corInst } = useMemo(() => {
@@ -177,8 +174,21 @@ export default function HistoricoMensal() {
             </div>
         );
     }
+    if (historicoQ.fetchStatus === 'paused' && historicoQ.isPending) {
+        return <EstadoErro offline titulo="Sem conexão" dica="Aguardando a rede voltar — o histórico carrega sozinho assim que reconectar." />;
+    }
     if (loading) {
         return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
+    }
+    if (historicoQ.error) {
+        console.error(historicoQ.error);
+        return (
+            <EstadoErro
+                titulo="Não conseguimos carregar o histórico"
+                dica="A consulta dos fechamentos falhou. Os fechamentos são imutáveis — nada foi perdido."
+                onRetry={() => historicoQ.refetch()}
+            />
+        );
     }
 
     return (
