@@ -122,7 +122,7 @@ export function ModalFundirCanonicos({ isOpen, onClose, origem, candidatosDestin
         >
             <div
                 style={{
-                    background: '#fff', borderRadius: '14px',
+                    background: 'var(--color-white)', borderRadius: '14px',
                     width: '100%', maxWidth: '560px', maxHeight: '90vh',
                     display: 'flex', flexDirection: 'column',
                     boxShadow: '0 24px 48px rgba(0,0,0,0.2)',

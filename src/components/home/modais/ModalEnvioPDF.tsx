@@ -16,7 +16,7 @@ interface Props {
 }
 
 const lbl: React.CSSProperties = { fontSize: 11, fontWeight: 600, textTransform: 'uppercase', color: 'var(--color-text-muted)', letterSpacing: 'var(--tracking-caps)', display: 'block', marginBottom: 6 };
-const ctrl: React.CSSProperties = { width: '100%', boxSizing: 'border-box', height: 40, padding: '0 12px', fontSize: 14, fontFamily: 'inherit', border: '1.5px solid var(--color-border-default)', borderRadius: 8, outline: 'none', background: '#fff' };
+const ctrl: React.CSSProperties = { width: '100%', boxSizing: 'border-box', height: 40, padding: '0 12px', fontSize: 14, fontFamily: 'inherit', border: '1.5px solid var(--color-border-default)', borderRadius: 8, outline: 'none', background: 'var(--color-white)' };
 const ro: React.CSSProperties = { ...ctrl, background: 'var(--color-surface-sunken)', color: 'var(--color-text-secondary)' };
 
 export function ModalEnvioPDF({ aberto, onClose, cliente }: Props) {

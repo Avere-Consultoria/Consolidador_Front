@@ -204,7 +204,7 @@ export function ModalNovaRegra({
                                 type="date"
                                 value={formVencimento}
                                 onChange={e => setFormVencimento(e.target.value)}
-                                style={{ ...inputStyle, background: formVencimento ? '#fff' : 'transparent' }}
+                                style={{ ...inputStyle, background: formVencimento ? 'var(--color-white)' : 'transparent' }}
                                 onFocus={e => e.currentTarget.style.borderColor = 'var(--color-primaria)'}
                                 onBlur={e => e.currentTarget.style.borderColor = 'var(--color-border-subtle)'}
                             />

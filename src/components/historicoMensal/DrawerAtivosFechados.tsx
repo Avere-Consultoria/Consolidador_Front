@@ -44,7 +44,7 @@ function formatarMoeda(v: number | null | undefined): string {
 }
 
 const CORES_INST: Record<Instituicao, { bg: string; fg: string }> = {
-    BTG:    { bg: '#E0F2FE', fg: '#0369A1' },
+    BTG:    { bg: 'var(--color-info-bg)', fg: 'var(--color-info-text)' },
     XP:     { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)' },
     AVENUE: { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)' },
     AGORA:  { bg: 'var(--color-success-bg)', fg: 'var(--color-success-text)' },
@@ -91,7 +91,7 @@ export function DrawerAtivosFechados({ isOpen, onClose, mesReferencia, posicoes 
         >
             <div
                 style={{
-                    background: '#fff', borderRadius: '14px',
+                    background: 'var(--color-white)', borderRadius: '14px',
                     width: '100%', maxWidth: '1100px', maxHeight: '90vh',
                     display: 'flex', flexDirection: 'column',
                     boxShadow: '0 24px 48px rgba(0,0,0,0.15)',
@@ -143,7 +143,7 @@ export function DrawerAtivosFechados({ isOpen, onClose, mesReferencia, posicoes 
                         style={{
                             padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.1)',
                             fontSize: '12px', fontFamily: 'var(--font-family)', outline: 'none',
-                            background: '#fff',
+                            background: 'var(--color-white)',
                         }}
                     >
                         <option value="TODAS">Todas as classes</option>

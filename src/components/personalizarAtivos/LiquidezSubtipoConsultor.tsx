@@ -91,7 +91,7 @@ export function LiquidezSubtipoConsultor({ consultorId }: { consultorId: string 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', background: 'var(--color-accent-subtle)', border: '1px solid var(--primary-100)', borderRadius: '8px', padding: '12px 14px' }}>
-                <Info size={16} color="#0083CB" style={{ marginTop: 1, flexShrink: 0 }} />
+                <Info size={16} color="var(--color-primaria)" style={{ marginTop: 1, flexShrink: 0 }} />
                 <Typography variant="p" style={{ fontSize: '12px', color: 'var(--color-secundaria)', opacity: 0.85, margin: 0, lineHeight: 1.4 }}>
                     Override da liquidez por subtipo <strong>só para os clientes deste consultor</strong>. <strong>Herdar global</strong> = usa o padrão da Gestão Master;
                     <strong> Padronizar</strong> = força a sua liquidez (D+N); <strong>Desligar</strong> = mantém o vencimento (visão mais longa), mesmo que o global esteja padronizado.

@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint:tokens": "eslint --config eslint.tokens.config.js src",
+    "prebuild": "npm run lint:tokens"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

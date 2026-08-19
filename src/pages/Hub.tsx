@@ -34,7 +34,7 @@ function Marca({ link }: { link: HubLink }) {
         return (
             <div style={{
                 width: 40, height: 40, borderRadius: 8, flexShrink: 0,
-                background: '#fff', border: '1px solid var(--color-borda)',
+                background: 'var(--color-white)', border: '1px solid var(--color-borda)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
             }}>
                 <img
@@ -54,7 +54,7 @@ function Marca({ link }: { link: HubLink }) {
         return (
             <div style={{
                 width: 40, height: 40, borderRadius: 8, flexShrink: 0,
-                background: link.badge.bg, color: link.badge.fg ?? '#fff',
+                background: link.badge.bg, color: link.badge.fg ?? 'var(--color-white)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontWeight: 700, fontSize: link.badge.texto.length > 2 ? 12 : 14, letterSpacing: '0.02em',
             }}>
@@ -87,7 +87,7 @@ function Card({ link }: { link: HubLink }) {
             style={{
                 display: 'flex', alignItems: 'flex-start', gap: 12,
                 padding: '14px 16px', borderRadius: 10, textDecoration: 'none',
-                border: '1px solid var(--color-borda)', background: '#fff',
+                border: '1px solid var(--color-borda)', background: 'var(--color-white)',
                 transition: 'border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease',
             }}
         >

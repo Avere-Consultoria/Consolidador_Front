@@ -329,7 +329,7 @@ export default function SincronizacaoMassa() {
                             </thead>
                             <tbody>
                                 {itensVisiveis.map(it => (
-                                    <tr key={it.id} style={{ borderTop: '1px solid var(--color-surface-sunken)', background: it.status === 'erro' ? 'var(--color-danger-bg)' : it.status === 'ok' ? '#F0FDF4' : 'transparent' }}>
+                                    <tr key={it.id} style={{ borderTop: '1px solid var(--color-surface-sunken)', background: it.status === 'erro' ? 'var(--color-danger-bg)' : it.status === 'ok' ? 'var(--color-success-bg)' : 'transparent' }}>
                                         <td style={{ ...td, fontWeight: 600 }}>{it.nome}</td>
                                         <td style={{ ...td, color: 'var(--color-text-secondary)' }}>{it.codigoAvere}</td>
                                         <td style={{ ...td, color: 'var(--color-text-secondary)' }}>{it.conta ?? '—'}</td>
@@ -358,7 +358,7 @@ export default function SincronizacaoMassa() {
 const th: React.CSSProperties = { position: 'sticky', top: 0, background: 'var(--gray-50)', textAlign: 'left', padding: '10px 14px', fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '1px solid var(--color-borda)' };
 const td: React.CSSProperties = { padding: '8px 14px', whiteSpace: 'nowrap', verticalAlign: 'middle' };
 const pill: React.CSSProperties = { fontSize: 10, display: 'inline-flex', alignItems: 'center', gap: 4 };
-const chipS: React.CSSProperties = { padding: '5px 12px', fontSize: 12, border: '1px solid var(--color-borda)', borderRadius: 16, background: '#fff', color: 'var(--color-text-secondary)', cursor: 'pointer' };
-const chipA: React.CSSProperties = { background: 'var(--color-primaria)', color: '#fff', borderColor: 'var(--color-primaria)', fontWeight: 700 };
+const chipS: React.CSSProperties = { padding: '5px 12px', fontSize: 12, border: '1px solid var(--color-borda)', borderRadius: 16, background: 'var(--color-white)', color: 'var(--color-text-secondary)', cursor: 'pointer' };
+const chipA: React.CSSProperties = { background: 'var(--color-primaria)', color: 'var(--color-white)', borderColor: 'var(--color-primaria)', fontWeight: 700 };
 const lblS: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11, color: 'var(--color-text-secondary)', fontWeight: 600 };
 const numS: React.CSSProperties = { width: 56, padding: '6px 8px', border: '1px solid var(--color-borda)', borderRadius: 6, fontSize: 13 };

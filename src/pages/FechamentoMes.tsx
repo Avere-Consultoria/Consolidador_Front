@@ -46,10 +46,10 @@ function formatarMoeda(v: number | null | undefined): string {
 }
 
 const CORES_INST: Record<string, { bg: string; fg: string; border: string }> = {
-    BTG:    { bg: '#E0F2FE', fg: '#0369A1', border: '#7DD3FC' },
+    BTG:    { bg: 'var(--color-info-bg)', fg: 'var(--color-info-text)', border: 'var(--color-info-border)' },
     XP:     { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)', border: 'var(--color-warning-border)' },
     AVENUE: { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)', border: 'var(--color-warning-border)' },
-    AGORA:  { bg: 'var(--color-success-bg)', fg: 'var(--color-success-text)', border: '#86EFAC' },
+    AGORA:  { bg: 'var(--color-success-bg)', fg: 'var(--color-success-text)', border: 'var(--color-success-border)' },
 };
 const COR_MANUAL = { bg: 'var(--color-surface-sunken)', fg: 'var(--color-text-secondary)', border: 'var(--color-border-default)' };
 const corDe = (inst: string) => CORES_INST[inst] ?? COR_MANUAL;
@@ -61,7 +61,7 @@ function CardConta({ status, label }: { status: ContaStatus; label: string }) {
     return (
         <div style={{ background: cor.bg, border: `1px solid ${cor.border}`, borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ background: '#fff', color: cor.fg, fontSize: '10px', fontWeight: 700, padding: '3px 7px', borderRadius: '4px', letterSpacing: '0.04em' }}>
+                <span style={{ background: 'var(--color-white)', color: cor.fg, fontSize: '10px', fontWeight: 700, padding: '3px 7px', borderRadius: '4px', letterSpacing: '0.04em' }}>
                     {label}
                 </span>
                 {isFechado ? <Lock size={12} color={cor.fg} /> : <CheckCircle2 size={12} color={cor.fg} opacity={0.5} />}

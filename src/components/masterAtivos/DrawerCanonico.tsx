@@ -51,7 +51,7 @@ const SUBTIPOS_BANCARIO = new Set(['CDB', 'LCI', 'LCA', 'LF', 'LIG', 'RDB', 'LH'
 const isBancario = (subTipo: string) => SUBTIPOS_BANCARIO.has((subTipo || '').toUpperCase().trim());
 
 const CORES_INST: Record<string, { bg: string; fg: string; border: string }> = {
-    BTG:    { bg: 'var(--color-info-bg)', fg: 'var(--color-info-text)', border: '#7DD3FC' },
+    BTG:    { bg: 'var(--color-info-bg)', fg: 'var(--color-info-text)', border: 'var(--color-info-border)' },
     XP:     { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)', border: 'var(--color-warning-border)' },
     AVENUE: { bg: 'var(--color-warning-bg)', fg: 'var(--color-warning-text)', border: 'var(--color-warning-border)' },
     AGORA:  { bg: 'var(--color-success-bg)', fg: 'var(--color-success-text)', border: 'var(--color-success-border)' },
@@ -60,7 +60,7 @@ const CORES_INST: Record<string, { bg: string; fg: string; border: string }> = {
 const ctrlStyle: React.CSSProperties = {
     width: '100%', height: '38px', boxSizing: 'border-box',
     padding: '0 10px', borderRadius: '8px', border: '1px solid var(--color-border-default)',
-    fontSize: '13px', fontFamily: 'var(--font-family)', outline: 'none', background: '#fff',
+    fontSize: '13px', fontFamily: 'var(--font-family)', outline: 'none', background: 'var(--color-white)',
 };
 const labelStyle: React.CSSProperties = {
     display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--color-text-secondary)',
@@ -137,7 +137,7 @@ function CardVisaoInstitucional({ visao }: { visao: VisaoInstitucionalDetalhe })
     return (
         <div style={{ background: cor.bg, border: `1px solid ${cor.border}`, borderRadius: '8px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ background: '#fff', color: cor.fg, fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', letterSpacing: '0.05em' }}>
+                <span style={{ background: 'var(--color-white)', color: cor.fg, fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', letterSpacing: '0.05em' }}>
                     {visao.instituicao_origem}
                 </span>
                 <Typography variant="p" style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, color: cor.fg }}>
@@ -246,7 +246,7 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
             onClick={onClose}
         >
             <div
-                style={{ background: '#fff', borderRadius: '14px', width: '100%', maxWidth: '720px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 48px var(--color-border-default)' }}
+                style={{ background: 'var(--color-white)', borderRadius: '14px', width: '100%', maxWidth: '720px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 48px var(--color-border-default)' }}
                 onClick={e => e.stopPropagation()}
             >
                 {/* ── Cabeçalho ── */}
@@ -270,7 +270,7 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
                                 const cor = CORES_INST[inst] ?? { bg: 'var(--color-border-subtle)', fg: 'var(--color-text-primary)' };
                                 return <span key={inst} style={{ background: cor.bg, color: cor.fg, fontSize: '9px', fontWeight: 700, padding: '3px 7px', borderRadius: '4px' }}>{inst}</span>;
                             })}
-                            <Badge variant="ghost" style={{ fontSize: '9px', background: bancario ? 'rgba(16,185,129,0.1)' : 'rgba(124,58,237,0.1)', color: bancario ? 'var(--color-success-text)' : '#7C3AED' }}>
+                            <Badge variant="ghost" style={{ fontSize: '9px', background: bancario ? 'rgba(16,185,129,0.1)' : 'rgba(124,58,237,0.1)', color: bancario ? 'var(--color-success-text)' : 'var(--color-primaria)' }}>
                                 {bancario ? '🏦 Bancário/FGC' : '🏭 Privado'}
                             </Badge>
                             {canonico.is_fii && <Badge intent="primaria" variant="ghost" style={{ fontSize: '9px' }}>FII</Badge>}
@@ -293,7 +293,7 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
                             <div>
                                 <label style={labelStyle}>{bancario ? 'Conglomerado (FGC)' : 'Emissor (risco)'}</label>
                                 <select
-                                    style={{ ...ctrlStyle, background: (bancario ? form.conglomerado_id : form.emissor_id) ? '#fff' : 'rgba(239,68,68,0.05)' }}
+                                    style={{ ...ctrlStyle, background: (bancario ? form.conglomerado_id : form.emissor_id) ? 'var(--color-white)' : 'rgba(239,68,68,0.05)' }}
                                     value={bancario ? form.conglomerado_id : form.emissor_id}
                                     onChange={e => setForm(p => bancario ? { ...p, conglomerado_id: e.target.value } : { ...p, emissor_id: e.target.value })}
                                 >
@@ -308,7 +308,7 @@ export function DrawerCanonico({ isOpen, onClose, canonico, emissores, conglomer
                             <div>
                                 <label style={labelStyle}>Classe Avere</label>
                                 <select
-                                    style={{ ...ctrlStyle, background: form.classe_avere ? '#fff' : 'var(--color-warning-bg)' }}
+                                    style={{ ...ctrlStyle, background: form.classe_avere ? 'var(--color-white)' : 'var(--color-warning-bg)' }}
                                     value={form.classe_avere}
                                     onChange={e => setForm(p => ({ ...p, classe_avere: e.target.value }))}
                                 >

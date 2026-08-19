@@ -52,12 +52,12 @@ export default function Login() {
     };
 
     return (
-        <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: '#FFFFFF' }}>
+        <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--color-white)' }}>
 
             {/* LADO ESQUERDO: Branding (Oculto em ecrãs muito pequenos) */}
             <div style={{
                 flex: 1.2,
-                background: 'linear-gradient(135deg, var(--color-secundaria) 0%, #004D7A 100%)',
+                background: 'linear-gradient(135deg, var(--color-secundaria) 0%, var(--primary-900) 100%)',
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
@@ -67,19 +67,19 @@ export default function Login() {
             }}>
                 {/* Elementos Gráficos Decorativos (Círculos desfocados) */}
                 <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '400px', height: '400px', background: 'var(--color-primaria)', borderRadius: '50%', filter: 'blur(100px)', opacity: 0.4 }} />
-                <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '400px', height: '400px', background: '#00B4D8', borderRadius: '50%', filter: 'blur(120px)', opacity: 0.3 }} />
+                <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '400px', height: '400px', background: 'var(--color-primaria)', borderRadius: '50%', filter: 'blur(120px)', opacity: 0.3 }} />
 
                 {/* Topo do lado esquerdo */}
                 <div style={{ position: 'relative', zIndex: 10 }}>
-                    <Typography variant="h1" style={{ color: '#FFF', fontSize: '32px', letterSpacing: '-1px' }}>
+                    <Typography variant="h1" style={{ color: 'var(--color-white)', fontSize: '32px', letterSpacing: '-1px' }}>
                         Avere Consultoria de Investimentos
                     </Typography>
-                    <div style={{ width: '40px', height: '4px', background: '#00B4D8', marginTop: '16px', borderRadius: '2px' }} />
+                    <div style={{ width: '40px', height: '4px', background: 'var(--color-primaria)', marginTop: '16px', borderRadius: '2px' }} />
                 </div>
 
                 {/* Centro do lado esquerdo */}
                 <div style={{ position: 'relative', zIndex: 10, maxWidth: '480px' }}>
-                    <Typography variant="h1" style={{ color: '#FFF', fontSize: '48px', lineHeight: '1.1', marginBottom: '24px' }}>
+                    <Typography variant="h1" style={{ color: 'var(--color-white)', fontSize: '48px', lineHeight: '1.1', marginBottom: '24px' }}>
                         A evolução da Gestão de Património.
                     </Typography>
                     <Typography variant="p" style={{ color: 'rgba(255,255,255,0.7)', fontSize: '18px', lineHeight: '1.6' }}>
@@ -101,7 +101,7 @@ export default function Login() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: '#FFFFFF',
+                background: 'var(--color-white)',
                 position: 'relative'
             }}>
                 <div style={{ width: '100%', maxWidth: '380px', padding: '0 24px' }}>

@@ -202,14 +202,14 @@ export default function Tarefas() {
 
             {semPrazo.length > 0 && (
                 <BlocoDia
-                    titulo="Sem prazo definido" rotulo={null} cor="#94A3B8" itens={semPrazo}
+                    titulo="Sem prazo definido" rotulo={null} cor="var(--gray-400)" itens={semPrazo}
                     onConcluir={concluir} onAdiar={adiar} onExcluir={excluir}
                 />
             )}
 
             {modal && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(8,31,40,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 24 }}>
-                    <div style={{ background: '#fff', borderRadius: 14, width: '100%', maxWidth: 520, boxShadow: 'var(--shadow-modal)', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ background: 'var(--color-white)', borderRadius: 14, width: '100%', maxWidth: 520, boxShadow: 'var(--shadow-modal)', display: 'flex', flexDirection: 'column' }}>
                         <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <Typography variant="h2" style={{ fontSize: 18, margin: 0, fontWeight: 700, color: 'var(--color-secundaria)' }}>Nova tarefa</Typography>
                             <X size={20} color="var(--color-text-muted)" style={{ cursor: 'pointer' }} onClick={() => setModal(false)} />
@@ -270,7 +270,7 @@ function BlocoDia({ titulo, rotulo, cor, itens, onConcluir, onAdiar, onExcluir }
     onExcluir: (t: Tarefa) => void;
 }) {
     return (
-        <section style={{ border: '1px solid var(--color-borda)', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
+        <section style={{ border: '1px solid var(--color-borda)', borderRadius: 12, overflow: 'hidden', background: 'var(--color-white)' }}>
             <div style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
                 background: `color-mix(in srgb, ${cor}, transparent 94%)`,
@@ -283,7 +283,7 @@ function BlocoDia({ titulo, rotulo, cor, itens, onConcluir, onAdiar, onExcluir }
                     {titulo}
                 </Typography>
                 {rotulo && (
-                    <Badge variant="ghost" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.05em', background: cor, color: '#fff' }}>
+                    <Badge variant="ghost" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.05em', background: cor, color: 'var(--color-white)' }}>
                         {rotulo.toUpperCase()}
                     </Badge>
                 )}
@@ -303,8 +303,8 @@ function BlocoDia({ titulo, rotulo, cor, itens, onConcluir, onAdiar, onExcluir }
                         style={{
                             width: 20, height: 20, marginTop: 2, flexShrink: 0, cursor: 'pointer',
                             borderRadius: 5, border: `1.5px solid ${t.status === 'CONCLUIDA' ? 'var(--color-primaria)' : 'var(--color-border-default)'}`,
-                            background: t.status === 'CONCLUIDA' ? 'var(--color-primaria)' : '#fff',
-                            color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+                            background: t.status === 'CONCLUIDA' ? 'var(--color-primaria)' : 'var(--color-white)',
+                            color: 'var(--color-white)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
                         }}
                     >
                         {t.status === 'CONCLUIDA' && <Check size={13} strokeWidth={3} />}

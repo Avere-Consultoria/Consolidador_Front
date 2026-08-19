@@ -61,7 +61,7 @@ export default function RedefinirSenha() {
 
     return (
         <div style={{ display: 'flex', height: '100vh', width: '100vw', alignItems: 'center', justifyContent: 'center', background: 'var(--gray-50)' }}>
-            <div style={{ width: '100%', maxWidth: '400px', background: '#FFF', borderRadius: '14px', padding: '40px 32px', boxShadow: '0 10px 30px var(--color-border-subtle)' }}>
+            <div style={{ width: '100%', maxWidth: '400px', background: 'var(--color-white)', borderRadius: '14px', padding: '40px 32px', boxShadow: '0 10px 30px var(--color-border-subtle)' }}>
                 <div style={{ textAlign: 'center', marginBottom: '28px' }}>
                     <img src={LogoAvere} alt="Logo" height="80" />
                     <Typography variant="h2" style={{ fontSize: '20px', marginTop: '12px', color: 'var(--color-secundaria)' }}>

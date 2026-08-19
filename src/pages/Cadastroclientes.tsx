@@ -57,7 +57,7 @@ const tdStyle: React.CSSProperties = { padding: '12px 16px', verticalAlign: 'mid
 const selectNativo: React.CSSProperties = {
     width: '100%', height: '40px', padding: '0 32px 0 12px', borderRadius: '8px',
     border: '1px solid var(--color-border-default)', fontSize: '14px', fontFamily: 'var(--font-family)',
-    background: '#fff', outline: 'none', cursor: 'pointer', appearance: 'none',
+    background: 'var(--color-white)', outline: 'none', cursor: 'pointer', appearance: 'none',
 };
 
 // Card de conta arrastável (a ordem é persistida em cliente_contas.ordem)
@@ -76,7 +76,7 @@ function ContaSortable({ conta, instituicoes, tipoDoc, onChange, onRemove }: {
         zIndex: isDragging ? 10 : 1,
         opacity: isDragging ? 0.7 : 1,
         border: '1px solid var(--color-border-subtle)', borderRadius: '10px', padding: '12px',
-        background: isDragging ? '#fff' : (agora ? 'var(--color-accent-subtle)' : 'rgba(0,0,0,0.015)'),
+        background: isDragging ? 'var(--color-white)' : (agora ? 'var(--color-accent-subtle)' : 'rgba(0,0,0,0.015)'),
         boxShadow: isDragging ? '0 6px 16px var(--color-border-default)' : 'none',
     };
     return (
@@ -331,7 +331,7 @@ export default function CadastroClientes() {
                     <select
                         value={filtroConsultor}
                         onChange={e => setFiltroConsultor(e.target.value)}
-                        style={{ height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--color-border-default)', fontSize: '13px', fontFamily: 'var(--font-family)', color: filtroConsultor ? 'var(--color-secundaria)' : 'var(--color-text-muted)', background: '#fff', outline: 'none', cursor: 'pointer', minWidth: '200px', appearance: 'auto' }}
+                        style={{ height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--color-border-default)', fontSize: '13px', fontFamily: 'var(--font-family)', color: filtroConsultor ? 'var(--color-secundaria)' : 'var(--color-text-muted)', background: 'var(--color-white)', outline: 'none', cursor: 'pointer', minWidth: '200px', appearance: 'auto' }}
                     >
                         <option value="">Todos os consultores</option>
                         {consultores.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
@@ -339,7 +339,7 @@ export default function CadastroClientes() {
                     <select
                         value={filtroInstituicao}
                         onChange={e => setFiltroInstituicao(e.target.value)}
-                        style={{ height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--color-border-default)', fontSize: '13px', fontFamily: 'var(--font-family)', color: filtroInstituicao ? 'var(--color-secundaria)' : 'var(--color-text-muted)', background: '#fff', outline: 'none', cursor: 'pointer', minWidth: '180px', appearance: 'auto' }}
+                        style={{ height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--color-border-default)', fontSize: '13px', fontFamily: 'var(--font-family)', color: filtroInstituicao ? 'var(--color-secundaria)' : 'var(--color-text-muted)', background: 'var(--color-white)', outline: 'none', cursor: 'pointer', minWidth: '180px', appearance: 'auto' }}
                     >
                         <option value="">Todas as instituições</option>
                         {instituicoes.map(i => <option key={i.id} value={i.id}>{i.tipo === 'API' ? i.nome : `${i.nome} (manual)`}</option>)}
@@ -436,7 +436,7 @@ export default function CadastroClientes() {
                                         style={{
                                             border: 'none', cursor: 'pointer', height: '26px', padding: '0 14px', borderRadius: '6px',
                                             fontSize: '11px', fontWeight: 700,
-                                            background: tipoDoc === t ? '#fff' : 'transparent',
+                                            background: tipoDoc === t ? 'var(--color-white)' : 'transparent',
                                             color: tipoDoc === t ? 'var(--color-secundaria)' : 'var(--color-text-muted)',
                                             boxShadow: tipoDoc === t ? '0 1px 3px var(--color-border-default)' : 'none',
                                         }}>

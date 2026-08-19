@@ -317,8 +317,8 @@ export default function MasterAtivos() {
                                 display: 'flex', alignItems: 'center', gap: '7px', whiteSpace: 'nowrap',
                                 padding: '8px 14px', borderRadius: '999px', cursor: 'pointer',
                                 border: `1px solid ${ativa ? 'transparent' : 'var(--color-borda)'}`,
-                                background: ativa ? (fila ? 'var(--color-warning-solid)' : 'var(--color-secundaria)') : '#fff',
-                                color: ativa ? '#fff' : (fila && n > 0 ? 'var(--color-warning-solid)' : 'var(--color-text-secondary)'),
+                                background: ativa ? (fila ? 'var(--color-warning-solid)' : 'var(--color-secundaria)') : 'var(--color-white)',
+                                color: ativa ? 'var(--color-white)' : (fila && n > 0 ? 'var(--color-warning-solid)' : 'var(--color-text-secondary)'),
                                 fontSize: '12px', fontWeight: 700,
                             }}
                         >
@@ -326,7 +326,7 @@ export default function MasterAtivos() {
                             <span style={{
                                 fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: '999px',
                                 background: ativa ? 'rgba(255,255,255,0.25)' : (fila && n > 0 ? 'rgba(217,119,6,0.12)' : 'var(--color-surface-sunken)'),
-                                color: ativa ? '#fff' : (fila && n > 0 ? 'var(--color-warning-solid)' : 'var(--color-text-secondary)'),
+                                color: ativa ? 'var(--color-white)' : (fila && n > 0 ? 'var(--color-warning-solid)' : 'var(--color-text-secondary)'),
                             }}>{n}</span>
                         </button>
                     );
@@ -364,7 +364,7 @@ export default function MasterAtivos() {
                                         <Typography variant="p" title={item.nome_canonico} style={{ fontWeight: 700, fontSize: '13px', color: 'var(--color-text-primary)' }}>
                                             {item.nome_canonico}
                                             {emissorOriginal && <span style={{ fontWeight: 500, fontSize: '11px', color: 'var(--color-text-secondary)', marginLeft: '8px' }}>· {emissorOriginal}</span>}
-                                            {item.is_fii && <span style={{ fontSize: '9px', marginLeft: '6px', color: '#7C3AED', fontWeight: 700 }}>FII</span>}
+                                            {item.is_fii && <span style={{ fontSize: '9px', marginLeft: '6px', color: 'var(--color-primaria)', fontWeight: 700 }}>FII</span>}
                                             {item.is_coe && <span style={{ fontSize: '9px', marginLeft: '6px', color: 'var(--color-danger-solid)', fontWeight: 700 }}>COE</span>}
                                         </Typography>
                                         {principal && (

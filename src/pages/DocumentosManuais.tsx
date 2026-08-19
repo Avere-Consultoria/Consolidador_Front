@@ -90,7 +90,7 @@ function identidade(a: ManualAtivo): { label: string; ok: boolean } {
 const th: React.CSSProperties = { padding: '10px 12px', fontSize: 'var(--text-2xs)' as any, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', textAlign: 'left', whiteSpace: 'nowrap' };
 const td: React.CSSProperties = { padding: '11px 12px', fontSize: 13, color: 'var(--color-text-primary)', borderTop: '1px solid var(--color-surface-sunken)' };
 const lbl: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.03em' };
-const ctrl: React.CSSProperties = { width: '100%', height: 38, boxSizing: 'border-box', padding: '0 10px', borderRadius: 8, border: '1px solid var(--color-border-default)', fontSize: 13, outline: 'none', background: '#fff' };
+const ctrl: React.CSSProperties = { width: '100%', height: 38, boxSizing: 'border-box', padding: '0 10px', borderRadius: 8, border: '1px solid var(--color-border-default)', fontSize: 13, outline: 'none', background: 'var(--color-white)' };
 
 // Lista padrão de subtipos (espelha o bibliotecaSchema) + construtor de taxa (DrawerCanonico).
 const SUBTIPOS = ['CDB', 'LCI', 'LCA', 'CRA', 'CRI', 'DEB', 'CDCA', 'LF', 'LFT', 'LTN', 'NTN-B', 'NTN-F', 'NTN-C', 'LCD', 'RDB', 'LIG', 'COMPROMISSADA', 'CAIXA', 'FUNDO', 'AÇÃO', 'ETF', 'FII', 'COE', 'ESTRUTURADA'];
@@ -125,14 +125,14 @@ function Combo({ value, onChange, options, placeholder }: { value: string; onCha
             {open && (
                 <>
                     <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 49 }} />
-                    <div style={{ position: 'absolute', top: 41, left: 0, right: 0, zIndex: 50, background: '#fff', border: '1px solid var(--color-border-default)', borderRadius: 8, boxShadow: '0 8px 24px var(--color-border-default)', maxHeight: 240, overflowY: 'auto' }}>
+                    <div style={{ position: 'absolute', top: 41, left: 0, right: 0, zIndex: 50, background: 'var(--color-white)', border: '1px solid var(--color-border-default)', borderRadius: 8, boxShadow: '0 8px 24px var(--color-border-default)', maxHeight: 240, overflowY: 'auto' }}>
                         <input autoFocus value={q} onChange={e => setQ(e.target.value)} onClick={e => e.stopPropagation()} placeholder="Buscar..." style={{ width: '100%', height: 34, border: 'none', borderBottom: '1px solid var(--color-surface-sunken)', padding: '0 10px', outline: 'none', fontSize: 13, boxSizing: 'border-box' }} />
                         {filtered.length === 0 && <div style={{ padding: 10, fontSize: 12, color: 'var(--color-text-muted)' }}>Nenhum resultado</div>}
                         {filtered.slice(0, 200).map(o => (
                             <div key={o.value} onClick={() => { onChange(o.value); setOpen(false); setQ(''); }}
-                                style={{ padding: '8px 10px', fontSize: 13, cursor: 'pointer', background: o.value === value ? 'var(--color-accent-subtle)' : '#fff' }}
+                                style={{ padding: '8px 10px', fontSize: 13, cursor: 'pointer', background: o.value === value ? 'var(--color-accent-subtle)' : 'var(--color-white)' }}
                                 onMouseEnter={ev => (ev.currentTarget.style.background = 'var(--color-surface-sunken)')}
-                                onMouseLeave={ev => (ev.currentTarget.style.background = o.value === value ? 'var(--color-accent-subtle)' : '#fff')}>
+                                onMouseLeave={ev => (ev.currentTarget.style.background = o.value === value ? 'var(--color-accent-subtle)' : 'var(--color-white)')}>
                                 {o.label}
                             </div>
                         ))}
@@ -466,9 +466,9 @@ export default function DocumentosManuais() {
                                                 <button
                                                     title="Excluir envio"
                                                     onClick={(ev) => { ev.stopPropagation(); abrirExcluir(e); }}
-                                                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: '1px solid var(--color-border-subtle)', background: '#fff', color: 'var(--color-text-muted)', cursor: 'pointer' }}
+                                                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6, border: '1px solid var(--color-border-subtle)', background: 'var(--color-white)', color: 'var(--color-text-muted)', cursor: 'pointer' }}
                                                     onMouseEnter={ev => { ev.currentTarget.style.color = 'var(--color-danger-solid)'; ev.currentTarget.style.borderColor = 'rgba(220,38,38,0.3)'; ev.currentTarget.style.background = 'rgba(220,38,38,0.04)'; }}
-                                                    onMouseLeave={ev => { ev.currentTarget.style.color = 'var(--color-text-muted)'; ev.currentTarget.style.borderColor = 'var(--color-border-subtle)'; ev.currentTarget.style.background = '#fff'; }}>
+                                                    onMouseLeave={ev => { ev.currentTarget.style.color = 'var(--color-text-muted)'; ev.currentTarget.style.borderColor = 'var(--color-border-subtle)'; ev.currentTarget.style.background = 'var(--color-white)'; }}>
                                                     <Trash2 size={14} />
                                                 </button>
                                             </div>
@@ -478,11 +478,11 @@ export default function DocumentosManuais() {
                                             {isMaster && st === 'quarentena' && (
                                                 <div style={{ display: 'flex', gap: 6 }}>
                                                     <button onClick={(ev) => { ev.stopPropagation(); abrirCorrigir(e); }}
-                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 26, padding: '0 10px', borderRadius: 6, border: '1px solid var(--color-primaria)', background: '#fff', color: 'var(--color-primaria)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 26, padding: '0 10px', borderRadius: 6, border: '1px solid var(--color-primaria)', background: 'var(--color-white)', color: 'var(--color-primaria)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                                                         <RotateCcw size={12} />Corrigir e reenviar
                                                     </button>
                                                     <button onClick={(ev) => { ev.stopPropagation(); setDescartarEnvio(e); }}
-                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 26, padding: '0 10px', borderRadius: 6, border: '1px solid var(--color-border-default)', background: '#fff', color: 'var(--color-text-secondary)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, height: 26, padding: '0 10px', borderRadius: 6, border: '1px solid var(--color-border-default)', background: 'var(--color-white)', color: 'var(--color-text-secondary)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                                                         <Ban size={12} />Descartar
                                                     </button>
                                                 </div>
@@ -542,7 +542,7 @@ export default function DocumentosManuais() {
                                                 <span style={{ color: id.ok ? 'var(--color-success-text)' : 'var(--color-text-muted)', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                                                     {id.ok ? <Fingerprint size={12} /> : null}{id.label}
                                                 </span>
-                                                {a.editado_em && <span style={{ background: 'var(--color-info-bg)', color: '#4F46E5', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>editado</span>}
+                                                {a.editado_em && <span style={{ background: 'var(--color-info-bg)', color: 'var(--color-info-text)', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>editado</span>}
                                                 {a.conflito_reimport && (
                                                     <span title={conflitoTooltip(a)} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)', padding: '1px 6px', borderRadius: 4, fontWeight: 600, cursor: 'help' }}>
                                                         <AlertTriangle size={11} />a IA reextraiu diferente
@@ -703,7 +703,7 @@ export default function DocumentosManuais() {
                                     Este envio importou uma posição: <strong>{previewEx.ativos} ativo{previewEx.ativos === 1 ? '' : 's'}</strong> · {fmt(previewEx.valor_total || 0)}.
                                 </div>
                                 {previewEx.compartilhado ? (
-                                    <div style={{ fontSize: 12, background: 'var(--color-info-bg)', color: '#1D4ED8', borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8 }}>
+                                    <div style={{ fontSize: 12, background: 'var(--color-info-bg)', color: 'var(--color-info-text)', borderRadius: 8, padding: '10px 12px', display: 'flex', gap: 8 }}>
                                         <AlertTriangle size={15} style={{ flexShrink: 0, marginTop: 1 }} />
                                         <span>A posição é <strong>compartilhada</strong> por outros envios na mesma conta/data. Pra não derrubar o que os outros trouxeram, a posição é <strong>preservada</strong> — só o registro deste envio é removido.</span>
                                     </div>

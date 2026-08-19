@@ -51,7 +51,7 @@ function TabBar({ tabs, active, onChange }: {
                         border: 'none', cursor: 'pointer', fontSize: '12px',
                         fontWeight: 600, fontFamily: 'var(--font-family)',
                         transition: 'all 0.15s',
-                        background: active === t.id ? '#fff' : 'transparent',
+                        background: active === t.id ? 'var(--color-white)' : 'transparent',
                         color: active === t.id ? 'var(--color-secundaria)' : 'var(--color-text-muted)',
                         boxShadow: active === t.id ? '0 1px 4px rgba(0,0,0,0.10)' : 'none',
                     }}
