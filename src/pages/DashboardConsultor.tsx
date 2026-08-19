@@ -167,12 +167,15 @@ export default function DashboardConsultor() {
                 })}
             </div>
 
-            {/* ── Base de clientes ── */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                <Typography variant="p" style={{ fontWeight: 700 }}>Base de clientes</Typography>
+            {/* ── Base de clientes — controles integrados no cabeçalho do card ── */}
+            <Card style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '14px 16px', borderBottom: '1px solid var(--color-border-subtle)' }}>
+                    <Typography variant="p" style={{ fontWeight: 700, margin: 0 }}>Base de clientes</Typography>
                 <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{clientesFiltrados.length} de {clientes.length}</span>
                 <div style={{ flex: 1 }} />
-                <TextField leftIcon={Search} placeholder="Buscar por nome ou código..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '260px' }} />
+                <div style={{ display: 'flex', flexShrink: 0 }}>
+                    <TextField leftIcon={Search} placeholder="Buscar por nome ou código..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '260px' }} />
+                </div>
                 <div style={{ display: 'flex', flexShrink: 0 }}><Select fitOptions value={filtroPlataforma} onChange={setFiltroPlataforma} options={[
                     { value: 'todas', label: 'Todas as plataformas' },
                     { value: 'xp', label: 'XP' },
@@ -192,9 +195,7 @@ export default function DashboardConsultor() {
                     { value: 'nome', label: 'Ordenar por nome (A–Z)' },
                     { value: 'codigo', label: 'Ordenar por código Avere' },
                 ]} /></div>
-            </div>
-
-            <Card style={{ padding: 0, overflow: 'hidden' }}>
+                </div>
                 <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 318 }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
                         <thead>
