@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Typography, Card, Spinner, Button, Combobox, Badge, toast } from 'avere-ui';
 import { Plus, Sparkles, Trash2, CalendarPlus, Check, X, RotateCcw } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { EstadoVazio } from '../components/shared/EstadoVazio';
+import { CheckCircle2, ListChecks } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
 
@@ -179,9 +181,11 @@ export default function Tarefas() {
                 </div>
             </header>
 
-            {visiveis.length === 0 && (
-                <Card style={{ padding: 40, textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>
-                    {verConcluidas ? 'Nenhuma tarefa concluída.' : 'Nenhuma tarefa aberta. 🎉'}
+                        {visiveis.length === 0 && (
+                <Card style={{ padding: 0 }}>
+                    {verConcluidas
+                        ? <EstadoVazio compacto icon={ListChecks} titulo="Nenhuma tarefa concluída" dica="As tarefas que você concluir aparecem aqui." />
+                        : <EstadoVazio compacto positivo icon={CheckCircle2} titulo="Tudo em dia" dica="Nenhuma tarefa aberta — os geradores criam novas quando surgirem vencimentos ou aniversários." />}
                 </Card>
             )}
 

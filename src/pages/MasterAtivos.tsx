@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { Typography, Card, Badge, Button, Spinner, TextField, toast } from 'avere-ui';
 import { Wand2, Search } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { EstadoVazio } from '../components/shared/EstadoVazio';
+import { Database as DbIcon } from 'lucide-react';
 import { padronizarTaxaExibicao } from '../utils/formatters';
 import { DrawerCanonico, type CanonicoDetalhe } from '../components/masterAtivos/DrawerCanonico';
 import { ModalFundirCanonicos, type CanonicoOpcaoDestino } from '../components/masterAtivos/ModalFundirCanonicos';
@@ -416,7 +418,7 @@ export default function MasterAtivos() {
                             );
                         })}
                         {canonicosFiltrados.length === 0 && (
-                            <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', opacity: 0.4 }}>Nenhum ativo encontrado.</td></tr>
+                            <tr><td colSpan={5}><EstadoVazio compacto icon={DbIcon} titulo="Nenhum ativo encontrado" dica="Ajuste a busca ou o filtro de classe — a biblioteca cobre os ativos canônicos curados." /></td></tr>
                         )}
                     </tbody>
                 </table>

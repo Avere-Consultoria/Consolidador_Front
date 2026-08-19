@@ -8,11 +8,14 @@ interface EstadoVazioProps {
     acao?: ReactNode;
     /** Compacto para dentro de tabelas/cards; padrão ocupa mais respiro. */
     compacto?: boolean;
+    /** Vazio POSITIVO (ficha estados-nao-ideais): 'nenhuma pendência' é
+     *  conquista, não ausência — círculo verde no lugar do azul. */
+    positivo?: boolean;
 }
 
 // Estado vazio padrão do sistema (ficha estados-nao-ideais: vazio informa
 // o que é a área e como sair dele — nunca só "nenhum registro").
-export function EstadoVazio({ icon: Icon, titulo, dica, acao, compacto }: EstadoVazioProps) {
+export function EstadoVazio({ icon: Icon, titulo, dica, acao, compacto, positivo }: EstadoVazioProps) {
     return (
         <div style={{
             display: 'flex',
@@ -27,8 +30,8 @@ export function EstadoVazio({ icon: Icon, titulo, dica, acao, compacto }: Estado
                 width: '48px',
                 height: '48px',
                 borderRadius: 'var(--radius-full)',
-                background: 'var(--color-accent-subtle)',
-                color: 'var(--color-accent)',
+                background: positivo ? 'var(--color-success-bg)' : 'var(--color-accent-subtle)',
+                color: positivo ? 'var(--color-success-text)' : 'var(--color-accent)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

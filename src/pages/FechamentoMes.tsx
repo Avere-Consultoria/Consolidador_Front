@@ -5,6 +5,7 @@ import { Calendar, CheckCircle2, AlertCircle, Lock, GitCompareArrows } from 'luc
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../services/supabase';
 import { EstadoErro } from '../components/shared/EstadoErro';
+import { EstadoVazio } from '../components/shared/EstadoVazio';
 import { useClient } from '../contexts/ClientContext';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -215,8 +216,12 @@ export default function FechamentoMes() {
             ) : loading ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}><Spinner size="lg" /></div>
             ) : meses.length === 0 ? (
-                <Card style={{ padding: '40px', textAlign: 'center' }}>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>Nenhum mês com dados de posição encontrado para este cliente.</Typography>
+                <Card style={{ padding: 0 }}>
+                    <EstadoVazio
+                        icon={Calendar}
+                        titulo="Nenhum mês com posição ainda"
+                        dica="Assim que este cliente tiver posições sincronizadas (ou enviadas por PDF), os meses aparecem aqui para fechamento."
+                    />
                 </Card>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

@@ -5,6 +5,8 @@ import {
 } from 'avere-ui';
 import { Plus, Trash2, Pencil, Search, ChevronDown, GripVertical } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { EstadoVazio } from '../components/shared/EstadoVazio';
+import { Users as UsersIcon2 } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -406,7 +408,7 @@ export default function CadastroClientes() {
                             );
                         })}
                         {linhasFiltradas.length === 0 && (
-                            <tr><td colSpan={5} style={{ padding: '40px', textAlign: 'center', opacity: 0.4 }}>Nenhum cliente encontrado.</td></tr>
+                            <tr><td colSpan={5}><EstadoVazio compacto icon={UsersIcon2} titulo="Nenhum cliente encontrado" dica="Ajuste a busca — ou cadastre um cliente novo pela ação acima." /></td></tr>
                         )}
                     </tbody>
                 </table>

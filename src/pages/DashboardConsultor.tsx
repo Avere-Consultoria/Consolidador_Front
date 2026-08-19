@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Typography, Card, Spinner, TextField } from 'avere-ui';
 import { Search, Users, Wallet, ChevronRight, LayoutDashboard } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { EstadoVazio } from '../components/shared/EstadoVazio';
+import { Users as UsersIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
 import { fmt } from '../utils/formatters';
@@ -227,7 +229,7 @@ export default function DashboardConsultor() {
                                 </tr>
                             ))}
                             {enviosFiltrados.length === 0 && (
-                                <tr><td colSpan={8} style={{ ...td, textAlign: 'center', color: 'var(--color-text-muted)', padding: '32px' }}>Nenhum cliente encontrado.</td></tr>
+                                <tr><td colSpan={8}><EstadoVazio compacto icon={UsersIcon} titulo="Nenhum cliente encontrado" dica="Ajuste a busca ou o filtro de consultor no topo." /></td></tr>
                             )}
                         </tbody>
                     </table>

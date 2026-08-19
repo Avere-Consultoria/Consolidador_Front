@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Typography, Card, Spinner } from 'avere-ui';
 import { CalendarClock, ChevronRight, ShieldAlert, Landmark } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { EstadoVazio } from '../components/shared/EstadoVazio';
+import { CalendarCheck2, ShieldCheck, PieChart as PieIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
 import { fmt, fmtDate } from '../utils/formatters';
@@ -140,7 +142,7 @@ export default function AlertasConsultor() {
                 </div>
 
                 {porMes.length === 0 && (
-                    <Card style={{ padding: '32px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>Nenhum vencimento futuro encontrado.</Card>
+                    <Card style={{ padding: 0 }}><EstadoVazio compacto icon={CalendarCheck2} titulo="Nenhum vencimento no radar" dica="Não há títulos vencendo no horizonte monitorado." /></Card>
                 )}
 
                 {porMes.map(g => (
@@ -203,7 +205,7 @@ export default function AlertasConsultor() {
                 </div>
 
                 {fgcF.length === 0 ? (
-                    <Card style={{ padding: '28px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>Nenhuma exposição FGC acima de 70% do limite. 👍</Card>
+                    <Card style={{ padding: 0 }}><EstadoVazio compacto positivo icon={ShieldCheck} titulo="Cobertura FGC em dia" dica="Nenhuma exposição acima de 70% do limite por conglomerado." /></Card>
                 ) : (
                     <Card style={{ padding: 0, overflow: 'hidden' }}>
                         <div style={{ overflowX: 'auto' }}>
@@ -274,7 +276,7 @@ export default function AlertasConsultor() {
                 </div>
 
                 {creditoF.length === 0 ? (
-                    <Card style={{ padding: '28px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>Nenhuma concentração de crédito privado acima de 5% do PL. 👍</Card>
+                    <Card style={{ padding: 0 }}><EstadoVazio compacto positivo icon={PieIcon} titulo="Concentrações sob controle" dica="Nenhum emissor de crédito privado acima de 5% do PL." /></Card>
                 ) : (
                     <Card style={{ padding: 0, overflow: 'hidden' }}>
                         <div style={{ overflowX: 'auto' }}>

@@ -5,6 +5,8 @@ import { History, Eye, AlertCircle } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 import { supabase } from '../services/supabase';
 import { EstadoErro } from '../components/shared/EstadoErro';
+import { EstadoVazio } from '../components/shared/EstadoVazio';
+import { Archive } from 'lucide-react';
 import { useClient } from '../contexts/ClientContext';
 import { DrawerAtivosFechados, type PosicaoFechadaDrawer } from '../components/historicoMensal/DrawerAtivosFechados';
 
@@ -208,10 +210,12 @@ export default function HistoricoMensal() {
             </header>
 
             {mesesUnicos.length === 0 ? (
-                <Card style={{ padding: '40px', textAlign: 'center' }}>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
-                        Nenhum mês fechado ainda. Use a tela de <strong>Fechamento de Mês</strong> para materializar o primeiro.
-                    </Typography>
+                <Card style={{ padding: 0 }}>
+                    <EstadoVazio
+                        icon={Archive}
+                        titulo="Nenhum mês fechado ainda"
+                        dica="O histórico nasce dos fechamentos: feche o primeiro mês na aba Fechamento e a evolução patrimonial aparece aqui."
+                    />
                 </Card>
             ) : (
                 <>
