@@ -611,14 +611,15 @@ export function useHomeMetrics() {
             // statement_timeout (8s) via RLS por linha — o BTG (o único com
             // aquisições/janelas aninhadas) sumia da tela silenciosamente.
             // Passo 1 leve (3 colunas) escolhe os ids; o pesado busca só eles.
-            const idsMaisRecentes = async (tabela: string): Promise<string[]> => {
+            const falhaIds = new Set<number>();
+            const idsMaisRecentes = async (tabela: string, idx: number): Promise<string[]> => {
                 const { data, error } = await supabase
                     .from(tabela)
                     .select('id, conta_id, data_referencia')
                     .eq('cliente_id', clienteId!)
                     .order('data_referencia', { ascending: false })
                     .limit(400);
-                if (error) { console.error(`Home: falha ao listar ${tabela}`, error); return []; }
+                if (error) { console.error(`Home: falha ao listar ${tabela}`, error); falhaIds.add(idx); return []; }
                 const vistos = new Set<string>();
                 const ids: string[] = [];
                 for (const s of data ?? []) {
@@ -628,10 +629,10 @@ export function useHomeMetrics() {
                 return ids;
             };
             const [idsBtg, idsXp, idsAvenue, idsAgora] = await Promise.all([
-                idsMaisRecentes('posicao_btg_snapshots'),
-                idsMaisRecentes('posicao_xp_snapshots'),
-                idsMaisRecentes('posicao_avenue_snapshots'),
-                idsMaisRecentes('posicao_agora_snapshots'),
+                idsMaisRecentes('posicao_btg_snapshots', 0),
+                idsMaisRecentes('posicao_xp_snapshots', 1),
+                idsMaisRecentes('posicao_avenue_snapshots', 2),
+                idsMaisRecentes('posicao_agora_snapshots', 3),
             ]);
 
             // Índices fixos: 0=BTG, 1=XP, 2=Avenue, 3=Ágora, 4=canonicos, 5=emissores,
@@ -747,9 +748,14 @@ export function useHomeMetrics() {
             const results = await Promise.all(queries);
 
             // Erro em fonte de posição NUNCA pode ser silencioso — sem isto,
-            // uma query que falha vira "instituição sumiu da tela".
-            (['BTG', 'XP', 'Avenue', 'Ágora'] as const).forEach((nome, i) => {
-                if (results[i]?.error) console.error(`Home: snapshots ${nome} falharam`, results[i].error);
+            // uma query que falha vira "instituição sumiu da tela" com total menor
+            // e cara de completo (o pior estado possível de um consolidador).
+            const fontesComFalha: string[] = [];
+            (['BTG Pactual', 'XP Investimentos', 'Avenue', 'Ágora'] as const).forEach((nome, i) => {
+                if (results[i]?.error || falhaIds.has(i)) {
+                    console.error(`Home: snapshots ${nome} falharam`, results[i]?.error);
+                    fontesComFalha.push(nome);
+                }
             });
 
             // Contas do cliente (para rotular as fontes: XP 1 / XP 2, apelidos…)
@@ -784,6 +790,7 @@ export function useHomeMetrics() {
                 manualSnapshots: (results[9].data ?? []) as any[],
                 contas: contasData ?? [],
                 liquidezSubtipo: liqSubData ?? [],
+                fontesComFalha,
             };
         },
     });
@@ -1066,5 +1073,5 @@ export function useHomeMetrics() {
         queryClient.invalidateQueries({ queryKey: ['home'] });
     }
 
-    return { selectedClient, loading, erroCarga: !!dadosQ.error, semRede: dadosQ.fetchStatus === 'paused' && dadosQ.isPending, metrics, snapshotData, diasVencimento, setDiasVencimento, drawerCarteirasAberto, setDrawerCarteirasAberto, carteiraAtiva, setCarteiraAtiva, opcoesCarteira, instituicoesManuais, periodo, setPeriodo, mesesFechados, recarregar, recarregarTudo };
+    return { selectedClient, loading, erroCarga: !!dadosQ.error, semRede: dadosQ.fetchStatus === 'paused' && dadosQ.isPending, fontesComFalha: d?.fontesComFalha ?? (ARR_VAZIO as string[]), metrics, snapshotData, diasVencimento, setDiasVencimento, drawerCarteirasAberto, setDrawerCarteirasAberto, carteiraAtiva, setCarteiraAtiva, opcoesCarteira, instituicoesManuais, periodo, setPeriodo, mesesFechados, recarregar, recarregarTudo };
 }

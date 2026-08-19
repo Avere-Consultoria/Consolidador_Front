@@ -1,7 +1,7 @@
 import { Typography } from 'avere-ui';
 import { HomeSkeleton } from '../components/home/HomeSkeleton';
 import { EstadoErro } from '../components/shared/EstadoErro';
-import { PieChart as PieIcon } from 'lucide-react';
+import { PieChart as PieIcon, AlertTriangle, RotateCw } from 'lucide-react';
 
 import { useHomeMetrics } from '../hooks/useHomeMetrics';
 import { HomeHeader } from '../components/home/HomeHeader';
@@ -22,6 +22,7 @@ export default function Home() {
     loading,
     erroCarga,
     semRede,
+    fontesComFalha,
     metrics,
     diasVencimento, setDiasVencimento,
     drawerCarteirasAberto, setDrawerCarteirasAberto,
@@ -67,6 +68,31 @@ export default function Home() {
   const semDados = !metrics.hasData;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      {/* DADO PARCIAL: fonte falhou mas o resto veio — a tela continua útil,
+          desde que AVISE. Total menor com cara de completo é mentira por omissão. */}
+      {periodo === 'LIVE' && fontesComFalha.length > 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '10px',
+          background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)',
+          borderRadius: 'var(--radius-md)', padding: '10px 16px',
+        }} role="alert">
+          <AlertTriangle size={16} style={{ color: 'var(--color-warning-text)', flexShrink: 0 }} />
+          <Typography variant="p" style={{ margin: 0, fontSize: 'var(--text-sm)', color: 'var(--color-warning-text)' }}>
+            <strong>{fontesComFalha.join(' e ')}</strong> não {fontesComFalha.length > 1 ? 'responderam' : 'respondeu'} —
+            os totais desta tela podem não incluir {fontesComFalha.length > 1 ? 'essas instituições' : 'essa instituição'}.
+          </Typography>
+          <button onClick={recarregarTudo} style={{
+            marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6,
+            background: 'transparent', border: '1px solid var(--color-warning-border)',
+            borderRadius: 'var(--radius-sm)', padding: '4px 10px', cursor: 'pointer',
+            color: 'var(--color-warning-text)', fontSize: 'var(--text-xs)', fontWeight: 600, fontFamily: 'inherit',
+            whiteSpace: 'nowrap',
+          }}>
+            <RotateCw size={12} /> Recarregar
+          </button>
+        </div>
+      )}
+
       <HomeHeader
         cliente={selectedClient}
         carteiraAtiva={carteiraAtiva}
