@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Card, Spinner, TextField } from 'avere-ui';
+import { Typography, Card, Spinner, TextField, Select } from 'avere-ui';
 import { Search, Users, Wallet, ChevronRight, LayoutDashboard } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
@@ -54,6 +54,9 @@ export default function DashboardConsultor() {
     const [kpis, setKpis] = useState<Kpis | null>(null);
     const [clientes, setClientes] = useState<ClienteRow[]>([]);
     const [busca, setBusca] = useState('');
+    const [filtroPlataforma, setFiltroPlataforma] = useState('todas');
+    const [filtroStatus, setFiltroStatus] = useState('todos');
+    const [ordenacao, setOrdenacao] = useState('pl_desc');
     const [coresInst, setCoresInst] = useState<Map<string, string>>(new Map());   // nome inst. (upper) → cor_primaria
 
     // Master foca 1 consultor pelo seletor da TopBar; consultor sempre null (a RLS corta).
@@ -80,11 +83,25 @@ export default function DashboardConsultor() {
     // Cor oficial da plataforma = cor_primaria da instituição (Gestão Master); fallback = colors.ts.
     const corPlat = (label: string, fallback: string) => coresInst.get(label.toUpperCase()) || fallback;
 
-    const enviosFiltrados = useMemo(() => {
+    // Busca + filtros combinam em E; ordenação por último.
+    // Ativo = tem posição (pl_total > 0) — mesma régua do KPI "com posição".
+    const clientesFiltrados = useMemo(() => {
         const q = busca.trim().toLowerCase();
-        const base = q ? clientes.filter(c => c.nome.toLowerCase().includes(q) || (c.codigo_avere || '').includes(q)) : clientes;
-        return [...base].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-    }, [clientes, busca]);
+        let base = clientes;
+        if (q) base = base.filter(c => c.nome.toLowerCase().includes(q) || (c.codigo_avere || '').includes(q));
+        if (filtroStatus === 'ativos') base = base.filter(c => c.pl_total > 0);
+        if (filtroStatus === 'inativos') base = base.filter(c => !(c.pl_total > 0));
+        if (filtroPlataforma !== 'todas') {
+            const key = `pl_${filtroPlataforma}` as keyof ClienteRow;
+            base = base.filter(c => ((c[key] as number) ?? 0) > 0);
+        }
+        const orden = [...base];
+        if (ordenacao === 'pl_desc') orden.sort((a, b) => b.pl_total - a.pl_total);
+        else if (ordenacao === 'pl_asc') orden.sort((a, b) => a.pl_total - b.pl_total);
+        else if (ordenacao === 'nome') orden.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+        else if (ordenacao === 'codigo') orden.sort((a, b) => String(a.codigo_avere || '').localeCompare(String(b.codigo_avere || ''), 'pt-BR', { numeric: true }));
+        return orden;
+    }, [clientes, busca, filtroStatus, filtroPlataforma, ordenacao]);
 
     const top10 = useMemo(() => clientes.filter(c => c.pl_total > 0).slice(0, 10), [clientes]);
 
@@ -150,41 +167,35 @@ export default function DashboardConsultor() {
                 })}
             </div>
 
-            {/* ── Top 10 ── */}
-            {top10.length > 0 && (
-                <Card style={{ padding: 0, overflow: 'hidden' }}>
-                    <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--color-surface-sunken)', fontWeight: 700, fontSize: 13 }}>Top 10 clientes por PL</div>
-                    <div style={{ padding: '8px 0' }}>
-                        {top10.map((c, i) => {
-                            const pct = kpis && kpis.pl_total > 0 ? (c.pl_total / kpis.pl_total) * 100 : 0;
-                            return (
-                                <div key={c.cliente_id} onClick={() => abrirCliente(c)}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 16px', cursor: 'pointer', borderTop: i === 0 ? 'none' : '1px solid var(--color-surface-sunken)' }}
-                                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--gray-50)')}
-                                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                                    <span style={{ width: 22, fontSize: 13, fontWeight: 700, color: i < 3 ? 'var(--color-primaria)' : 'var(--color-text-muted)', textAlign: 'right' }}>{i + 1}</span>
-                                    <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome}</div>
-                                    <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                        <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{v(c.pl_total)}</div>
-                                        <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{pct.toFixed(1)}% da base</div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </Card>
-            )}
-
             {/* ── Base de clientes ── */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                 <Typography variant="p" style={{ fontWeight: 700 }}>Base de clientes</Typography>
-                <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{enviosFiltrados.length} de {clientes.length}</span>
+                <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{clientesFiltrados.length} de {clientes.length}</span>
                 <div style={{ flex: 1 }} />
-                <TextField leftIcon={Search} placeholder="Buscar por nome ou código..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '300px' }} />
+                <TextField leftIcon={Search} placeholder="Buscar por nome ou código..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '260px' }} />
+                <div style={{ display: 'flex', flexShrink: 0 }}><Select fitOptions value={filtroPlataforma} onChange={setFiltroPlataforma} options={[
+                    { value: 'todas', label: 'Todas as plataformas' },
+                    { value: 'xp', label: 'XP' },
+                    { value: 'btg', label: 'BTG' },
+                    { value: 'avenue', label: 'Avenue' },
+                    { value: 'agora', label: 'Ágora' },
+                    { value: 'manual', label: 'Manual (PDF)' },
+                ]} /></div>
+                <div style={{ display: 'flex', flexShrink: 0 }}><Select fitOptions value={filtroStatus} onChange={setFiltroStatus} options={[
+                    { value: 'todos', label: 'Ativos + Inativos' },
+                    { value: 'ativos', label: 'Só ativos' },
+                    { value: 'inativos', label: 'Só inativos' },
+                ]} /></div>
+                <div style={{ display: 'flex', flexShrink: 0 }}><Select fitOptions value={ordenacao} onChange={setOrdenacao} options={[
+                    { value: 'pl_desc', label: 'Ordenar por PL (maior)' },
+                    { value: 'pl_asc', label: 'Ordenar por PL (menor)' },
+                    { value: 'nome', label: 'Ordenar por nome (A–Z)' },
+                    { value: 'codigo', label: 'Ordenar por código Avere' },
+                ]} /></div>
             </div>
 
             <Card style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 600 }}>
+                <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 318 }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
                         <thead>
                             <tr style={{ background: 'var(--gray-50)' }}>
@@ -199,7 +210,7 @@ export default function DashboardConsultor() {
                             </tr>
                         </thead>
                         <tbody>
-                            {enviosFiltrados.map(c => (
+                            {clientesFiltrados.map(c => (
                                 <tr key={c.cliente_id} onClick={() => abrirCliente(c)} style={{ cursor: 'pointer' }}
                                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-accent-subtle)')}
                                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
@@ -228,13 +239,39 @@ export default function DashboardConsultor() {
                                     <td style={{ ...td, textAlign: 'right' }}><ChevronRight size={16} color="var(--color-border-default)" /></td>
                                 </tr>
                             ))}
-                            {enviosFiltrados.length === 0 && (
+                            {clientesFiltrados.length === 0 && (
                                 <tr><td colSpan={8}><EstadoVazio compacto icon={UsersIcon} titulo="Nenhum cliente encontrado" dica="Ajuste a busca ou o filtro de consultor no topo." /></td></tr>
                             )}
                         </tbody>
                     </table>
                 </div>
             </Card>
+
+            {/* ── Top 10 ── */}
+            {top10.length > 0 && (
+                <Card style={{ padding: 0, overflow: 'hidden' }}>
+                    <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--color-surface-sunken)', fontWeight: 700, fontSize: 13 }}>Top 10 clientes por PL</div>
+                    <div style={{ padding: '8px 0' }}>
+                        {top10.map((c, i) => {
+                            const pct = kpis && kpis.pl_total > 0 ? (c.pl_total / kpis.pl_total) * 100 : 0;
+                            return (
+                                <div key={c.cliente_id} onClick={() => abrirCliente(c)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 16px', cursor: 'pointer', borderTop: i === 0 ? 'none' : '1px solid var(--color-surface-sunken)' }}
+                                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--gray-50)')}
+                                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                                    <span style={{ width: 22, fontSize: 13, fontWeight: 700, color: i < 3 ? 'var(--color-primaria)' : 'var(--color-text-muted)', textAlign: 'right' }}>{i + 1}</span>
+                                    <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome}</div>
+                                    <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                        <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{v(c.pl_total)}</div>
+                                        <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{pct.toFixed(1)}% da base</div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </Card>
+            )}
+
         </div>
     );
 }

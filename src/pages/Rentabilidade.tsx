@@ -227,6 +227,22 @@ export default function Rentabilidade() {
         });
     }, [serie]);
 
+    // Legenda do gráfico: Consolidado primeiro, instituições no meio, CDI no fim.
+    // payload custom porque a ordem natural da legenda seguiria a ordem de
+    // desenho das linhas (e o Consolidado precisa continuar desenhado por cima).
+    const legendaPayload = useMemo(() => {
+        if (!serie) return [];
+        const itens: any[] = [
+            { value: 'Consolidado', dataKey: 'Consolidado', color: '#0F1A21', type: 'circle' },
+        ];
+        serie.series.forEach((sc, i) => {
+            const nome = `${sc.instituicao} ${sc.conta_codigo}`.trim();
+            itens.push({ value: nome, dataKey: nome, color: corInstituicao(sc.instituicao, coresDb[sc.instituicao.toUpperCase()], i), type: 'circle' });
+        });
+        itens.push({ value: 'CDI', dataKey: 'CDI', color: '#69747C', type: 'circle' });
+        return itens;
+    }, [serie, coresDb]);
+
     // Marcar/desmarcar conta: só muda o estado — a consulta do bloco reage sozinha
     const alternarConta = (chave: string) => {
         setDesmarcadas(prev => {
@@ -474,15 +490,21 @@ export default function Rentabilidade() {
                                     contentStyle={{ borderRadius: 8, border: '1px solid var(--color-border-subtle)', fontSize: 12, fontFamily: 'var(--font-family)' }}
                                 />
                                 <Legend
-                                    wrapperStyle={{ fontSize: 12, fontFamily: 'var(--font-family)', cursor: 'pointer', userSelect: 'none' }}
-                                    onClick={(e: any) => alternarLinha(String(e?.dataKey ?? e?.value ?? ''))}
-                                    formatter={(value: string) => (
-                                        <span style={{
-                                            color: linhasOcultas.has(value) ? 'var(--color-text-disabled)' : 'var(--color-text-primary)',
-                                            textDecoration: linhasOcultas.has(value) ? 'line-through' : 'none',
-                                        }}>
-                                            {value}
-                                        </span>
+                                    content={() => (
+                                        <ul style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '4px 18px', listStyle: 'none', margin: 0, padding: '6px 0 0' }}>
+                                            {legendaPayload.map(item => {
+                                                const oculta = linhasOcultas.has(item.dataKey);
+                                                return (
+                                                    <li key={item.dataKey} onClick={() => alternarLinha(item.dataKey)}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', userSelect: 'none', fontSize: 12, fontFamily: 'var(--font-family)' }}>
+                                                        <span style={{ width: 10, height: 10, borderRadius: 'var(--radius-full)', background: oculta ? 'var(--color-text-disabled)' : item.color, flexShrink: 0 }} />
+                                                        <span style={{ color: oculta ? 'var(--color-text-disabled)' : 'var(--color-text-primary)', textDecoration: oculta ? 'line-through' : 'none' }}>
+                                                            {item.value}
+                                                        </span>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
                                     )}
                                 />
                                 {serie.series.map((s, i) => {
