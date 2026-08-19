@@ -8,6 +8,7 @@ import { supabase } from '../services/supabase';
 import { useClient } from '../contexts/ClientContext';
 import { fmt } from '../utils/formatters';
 import { CORES, isValidHex } from '../utils/colors';
+import { PALETA_LINHAS } from '../utils/chartPalette';
 import { NenhumClienteSelecionado } from '../components/home/NenhumClienteSelecionado';
 import { EstadoErro } from '../components/shared/EstadoErro';
 
@@ -84,7 +85,7 @@ const mesCurto = (ym: string) => {
 };
 
 // Paleta reserva das linhas (quando a instituição não tem cor cadastrada)
-const PALETA = ['#0A2C57', '#C2410C', '#0E7C6B', '#7C3AED', '#DB2777', '#D97706'];
+const PALETA = PALETA_LINHAS;
 
 // Cor da instituição: cadastro (Gestão Master) > fallback fixo do sistema > paleta
 function corInstituicao(nome: string, corDb: string | undefined, idx: number): string {

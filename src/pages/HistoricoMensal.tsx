@@ -49,7 +49,8 @@ const VAZIO_SNAPS: SnapshotFechado[] = [];
 const VAZIO_POS: PosicaoFechadaDrawer[] = [];
 const VAZIO_CORES = new Map<string, string>();
 
-const PALETA_CLASSES = ['#0083CB', '#00B4D8', '#F59E0B', '#8B5CF6', '#10B981', '#EF4444', '#EC4899', '#6366F1', '#F97316', '#84CC16'];
+import { PALETA_CATEGORICA } from '../utils/chartPalette';
+const PALETA_CLASSES = PALETA_CATEGORICA;
 
 // ── Página principal ─────────────────────────────────────────────────────────
 export default function HistoricoMensal() {
