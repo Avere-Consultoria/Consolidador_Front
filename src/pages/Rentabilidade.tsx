@@ -11,6 +11,7 @@ import { CORES, isValidHex } from '../utils/colors';
 import { PALETA_LINHAS } from '../utils/chartPalette';
 import { NenhumClienteSelecionado } from '../components/home/NenhumClienteSelecionado';
 import { EstadoErro } from '../components/shared/EstadoErro';
+import { RentabilidadeAtivos } from '../components/rentabilidade/RentabilidadeAtivos';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Rentabilidade — matriz de janelas (Mês · Ano · 12m · 24m · 36m nas colunas).
@@ -580,6 +581,12 @@ export default function Rentabilidade() {
                         </ResponsiveContainer>
                     </div>
                 </Card>
+            )}
+
+            {/* ── Fase 2: rentabilidade por ATIVO (Composição por Estratégia + Posição por Ativo) ── */}
+            {clienteId && (
+                <RentabilidadeAtivos clienteId={clienteId} mesRef={mesRef}
+                    bloco={desmarcadas.size > 0 ? marcadas : null} />
             )}
 
             <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
