@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Typography, Card, Select, Spinner, Badge, toast } from 'avere-ui';
-import { Sparkles, PenLine, AlertTriangle, Check, X, Trash2 } from 'lucide-react';
+import { Typography, Card, Select, Spinner, Badge, Button, toast } from 'avere-ui';
+import { Sparkles, PenLine, AlertTriangle, X, Trash2 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 import { supabase } from '../services/supabase';
@@ -100,6 +100,26 @@ function corInstituicao(nome: string, corDb: string | undefined, idx: number): s
 const corRent = (v: number | null | undefined) =>
     v === null || v === undefined ? 'var(--color-text-muted)' : v < 0 ? 'var(--color-danger-text)' : 'var(--color-text-primary)';
 
+// ── Máscaras dos inputs do modal ─────────────────────────────────────────────
+// Moeda: só dígitos; os 2 últimos são centavos → "9.941.367,82" enquanto digita.
+const fmtMoedaBR = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function maskMoedaBR(s: string): string {
+    const dig = s.replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+    if (!dig) return '';
+    return fmtMoedaBR.format(Number(dig) / 100);
+}
+// Percentual: dígitos + UMA vírgula (até 4 decimais) + sinal negativo opcional.
+function maskPctBR(s: string): string {
+    let t = s.replace(/[^\d,-]/g, '');
+    const neg = t.startsWith('-');
+    t = t.replace(/-/g, '');
+    const [inteiro, ...resto] = t.split(',');
+    const dec = resto.join('').slice(0, 4);
+    return (neg ? '-' : '') + inteiro + (resto.length ? ',' + dec : '');
+}
+// Número → texto do input (sem zeros à direita: 5 → "5", 0,7672 → "0,7672")
+const pctParaInput = (v: number) => String(Number((v * 100).toFixed(4))).replace('.', ',');
+
 // Aceita "150.000,50", "150000,50" e "150000.50"; vazio → null.
 function parseNumBR(s: string): number | null {
     const t = s.trim();
@@ -120,13 +140,19 @@ export default function Rentabilidade() {
     const [desmarcadas, setDesmarcadas] = useState<Set<string>>(new Set());
     const [linhasOcultas, setLinhasOcultas] = useState<Set<string>>(new Set());
 
-    // Edição manual (célula do MÊS — o tijolo; as janelas derivam)
-    const [editando, setEditando] = useState<string | null>(null);
+    // Correção do MÊS via modal (NET + rentabilidade — o tijolo; janelas derivam).
+    // Vale também para linha AUTO (ex.: NET distorcida por valor em trânsito no
+    // fim do mês); a próxima entrega da corretora sobrescreve — espelhamento manda.
+    const [modalLinha, setModalLinha] = useState<Linha | null>(null);
     const [formNet, setFormNet] = useState('');
     const [formRent, setFormRent] = useState('');
+    // Janelas no modal: só gravamos a que o usuário ALTERAR (comparado ao valor
+    // inicial) — campo intocado continua derivando; campo limpo remove o manual.
+    const [formJan, setFormJan] = useState<Record<string, string>>({});
+    const [formJanInicial, setFormJanInicial] = useState<Record<string, string>>({});
 
     // Troca de cliente/mês limpa seleção e edição
-    useEffect(() => { setDesmarcadas(new Set()); setEditando(null); }, [clienteId, mesRef]);
+    useEffect(() => { setDesmarcadas(new Set()); setModalLinha(null); }, [clienteId, mesRef]);
 
     // ── Consultas (cache do TanStack: voltar à aba dentro do staleTime = instantâneo) ──
 
@@ -253,10 +279,17 @@ export default function Rentabilidade() {
     };
 
     const iniciarEdicao = (l: Linha) => {
-        setEditando(l.chave);
-        setFormNet(l.net !== null ? String(l.net).replace('.', ',') : '');
+        setModalLinha(l);
+        setFormNet(l.net !== null ? fmtMoedaBR.format(l.net) : '');
         const rm = l.rent?.mes;
-        setFormRent(rm !== null && rm !== undefined ? (rm * 100).toFixed(4).replace('.', ',') : '');
+        setFormRent(rm !== null && rm !== undefined ? pctParaInput(rm) : '');
+        const j: Record<string, string> = {};
+        for (const k of ['ytd', '12m', '24m', '36m'] as const) {
+            const v = l.rent?.[k];
+            j[k] = v !== null && v !== undefined ? pctParaInput(v) : '';
+        }
+        setFormJan(j);
+        setFormJanInicial(j);
     };
 
     // Escritas invalidam as chaves de rentabilidade → rebusca IMEDIATA (nunca espera o staleTime)
@@ -264,28 +297,58 @@ export default function Rentabilidade() {
         mutationFn: async (l: Linha) => {
             const net = parseNumBR(formNet);
             const rentPct = parseNumBR(formRent);
-            if (net === null && rentPct === null) throw new Error('VALIDACAO');
-            const { error } = await supabase.from('rentabilidade_mensal').upsert([{
-                cliente_id: clienteId,
-                instituicao: l.instituicao,
-                conta_codigo: l.conta_codigo ?? '',
-                mes_referencia: mesRef,
-                net_fechamento: net,
-                rentabilidade_mes: rentPct === null ? null : rentPct / 100,   // digitado em %, guardado em fração
-                origem: 'manual',
-                fonte_detalhe: 'manual',
-            }], { onConflict: 'cliente_id,instituicao,conta_codigo,mes_referencia' });
-            if (error) throw error;
+            const janAlteradas = (['ytd', '12m', '24m', '36m'] as const).filter(k => formJan[k] !== formJanInicial[k]);
+            if (net === null && rentPct === null && janAlteradas.length === 0) throw new Error('VALIDACAO');
+
+            // Tijolo do mês (NET + rentabilidade) — só quando há o que gravar
+            if (net !== null || rentPct !== null) {
+                const { error } = await supabase.from('rentabilidade_mensal').upsert([{
+                    cliente_id: clienteId,
+                    instituicao: l.instituicao,
+                    conta_codigo: l.conta_codigo ?? '',
+                    mes_referencia: mesRef,
+                    net_fechamento: net,
+                    rentabilidade_mes: rentPct === null ? null : rentPct / 100,   // digitado em %, guardado em fração
+                    origem: 'manual',
+                    fonte_detalhe: 'manual',
+                }], { onConflict: 'cliente_id,instituicao,conta_codigo,mes_referencia' });
+                if (error) throw error;
+            }
+
+            // Janelas ALTERADAS: valor → grava manual (sobrepõe derivado/publicado);
+            // campo limpo → remove o manual (volta a derivar).
+            for (const k of janAlteradas) {
+                const val = parseNumBR(formJan[k]);
+                if (val === null) {
+                    const { error } = await supabase.from('rentabilidade_janela').delete().match({
+                        cliente_id: clienteId, instituicao: l.instituicao, conta_codigo: l.conta_codigo ?? '',
+                        mes_referencia: mesRef, janela: k, origem: 'manual',
+                    });
+                    if (error) throw error;
+                } else {
+                    const { error } = await supabase.from('rentabilidade_janela').upsert([{
+                        cliente_id: clienteId,
+                        instituicao: l.instituicao,
+                        conta_codigo: l.conta_codigo ?? '',
+                        mes_referencia: mesRef,
+                        janela: k,
+                        rentabilidade: val / 100,
+                        origem: 'manual',
+                        fonte_detalhe: 'manual',
+                    }], { onConflict: 'cliente_id,instituicao,conta_codigo,mes_referencia,janela' });
+                    if (error) throw error;
+                }
+            }
         },
-        onSuccess: () => {
-            toast.success('Lançamento manual salvo.');
-            setEditando(null);
+        onSuccess: (_data, l) => {
+            toast.success(l.origem === 'auto' ? 'Correção do mês salva.' : 'Lançamento manual salvo.');
+            setModalLinha(null);
             queryClient.invalidateQueries({ queryKey: ['rentabilidade'] });
         },
         onError: (err: any) => {
             if (err?.message === 'VALIDACAO') { toast.error('Informe ao menos a NET ou a rentabilidade.'); return; }
             console.error(err);
-            toast.error('Não foi possível salvar (linha automática não é editável).');
+            toast.error('Não foi possível salvar a correção.');
         },
     });
 
@@ -299,10 +362,19 @@ export default function Rentabilidade() {
                 origem: 'manual',
             });
             if (error) throw error;
+            // Remove também as janelas manuais desta célula (voltam a derivar)
+            const { error: eJan } = await supabase.from('rentabilidade_janela').delete().match({
+                cliente_id: clienteId,
+                instituicao: l.instituicao,
+                conta_codigo: l.conta_codigo ?? '',
+                mes_referencia: mesRef,
+                origem: 'manual',
+            });
+            if (eJan) throw eJan;
         },
         onSuccess: () => {
             toast.success('Lançamento manual removido.');
-            setEditando(null);
+            setModalLinha(null);
             queryClient.invalidateQueries({ queryKey: ['rentabilidade'] });
         },
         onError: (err: any) => { console.error(err); toast.error('Não foi possível apagar.'); },
@@ -339,7 +411,9 @@ export default function Rentabilidade() {
                         O número de cada conta é o que a própria instituição acusa — igual ao app dela.
                     </Typography>
                 </div>
-                <Select label="Mês de referência" value={mesRef} onChange={(v: string) => setMesRef(v)} options={opcoesMes} />
+                <div style={{ width: 220, flexShrink: 0 }}>
+                    <Select label="Mês de referência" value={mesRef} onChange={(v: string) => setMesRef(v)} options={opcoesMes} />
+                </div>
             </header>
 
             {/* Avisos de cobertura — nunca fingir 100% quando há conta sem dados */}
@@ -367,7 +441,6 @@ export default function Rentabilidade() {
                     <tbody>
                         {linhas.map(l => {
                             const fora = desmarcadas.has(l.chave);
-                            const emEdicao = editando === l.chave;
                             return (
                                 <tr key={l.chave} style={{ opacity: fora ? 0.38 : 1, transition: 'opacity 0.15s' }}>
                                     <td style={td}>
@@ -381,52 +454,33 @@ export default function Rentabilidade() {
                                     </td>
 
                                     {/* NET */}
-                                    <td style={tdNum}>
-                                        {emEdicao
-                                            ? <input value={formNet} onChange={e => setFormNet(e.target.value)} placeholder="NET (R$)" style={inputCel} autoFocus />
-                                            : (l.net !== null ? fmt(l.net) : <SemDado />)}
-                                    </td>
+                                    <td style={tdNum}>{l.net !== null ? fmt(l.net) : <SemDado />}</td>
 
-                                    {/* Janelas — só a célula do MÊS é editável (o tijolo) */}
+                                    {/* Janelas */}
                                     {JANELAS.map(j => (
                                         <td key={j.key} style={{ ...tdNum, fontWeight: j.key === 'mes' ? 700 : 500, color: corRent(l.rent?.[j.key]) }}>
-                                            {emEdicao && j.key === 'mes'
-                                                ? <input value={formRent} onChange={e => setFormRent(e.target.value)} placeholder="% (ex.: 0,85)" style={inputCel} />
-                                                : (pct(l.rent?.[j.key]) ?? <SemDado />)}
+                                            {pct(l.rent?.[j.key]) ?? <SemDado />}
                                         </td>
                                     ))}
 
-                                    {/* Origem / ações */}
+                                    {/* Origem / ações — lápis em TODAS as linhas (auto = correção pontual do mês) */}
                                     <td style={{ ...td, textAlign: 'center', whiteSpace: 'nowrap' }}>
-                                        {emEdicao ? (
-                                            <>
-                                                <button title="Salvar" disabled={salvando} onClick={() => salvarMut.mutate(l)} style={{ ...btnCel, color: 'var(--color-success-text)' }}><Check size={16} /></button>
-                                                <button title="Cancelar" onClick={() => setEditando(null)} style={btnCel}><X size={16} /></button>
-                                                {l.origem === 'manual' && (
-                                                    <button title="Apagar lançamento" onClick={() => apagarMut.mutate(l)} style={{ ...btnCel, color: 'var(--color-danger-solid)' }}><Trash2 size={15} /></button>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <>
-                                                {l.origem === 'auto' && (
-                                                    <Badge variant="ghost" style={{ fontSize: 9, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'color-mix(in srgb, var(--color-primaria), transparent 90%)', color: 'var(--color-primaria)', fontWeight: 700 }}>
-                                                        <Sparkles size={10} /> AUTO
-                                                    </Badge>
-                                                )}
-                                                {l.origem === 'manual' && (
-                                                    <Badge variant="ghost" style={{ fontSize: 9, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)', fontWeight: 600 }}>
-                                                        <PenLine size={10} /> MANUAL
-                                                    </Badge>
-                                                )}
-                                                {!l.tem_dados && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>sem dados</span>}
-                                                {l.origem !== 'auto' && (
-                                                    <button title={l.origem === 'manual' ? 'Editar lançamento do mês' : 'Lançar manualmente (mês)'}
-                                                        onClick={() => iniciarEdicao(l)} style={{ ...btnCel, marginLeft: 6 }}>
-                                                        <PenLine size={14} />
-                                                    </button>
-                                                )}
-                                            </>
+                                        {l.origem === 'auto' && (
+                                            <Badge variant="ghost" style={{ fontSize: 9, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'color-mix(in srgb, var(--color-primaria), transparent 90%)', color: 'var(--color-primaria)', fontWeight: 700 }}>
+                                                <Sparkles size={10} /> AUTO
+                                            </Badge>
                                         )}
+                                        {l.origem === 'manual' && (
+                                            <Badge variant="ghost" style={{ fontSize: 9, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)', fontWeight: 600 }}>
+                                                <PenLine size={10} /> MANUAL
+                                            </Badge>
+                                        )}
+                                        {!l.tem_dados && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>sem dados</span>}
+                                        <button
+                                            title={l.origem === 'auto' ? 'Corrigir o mês (NET/rentabilidade)' : l.origem === 'manual' ? 'Editar lançamento do mês' : 'Lançar manualmente (mês)'}
+                                            onClick={() => iniciarEdicao(l)} style={{ ...btnCel, marginLeft: 6 }}>
+                                            <PenLine size={14} />
+                                        </button>
                                     </td>
                                 </tr>
                             );
@@ -533,6 +587,77 @@ export default function Rentabilidade() {
                 Ano = do 1º de janeiro ao mês de referência. Janelas longas usam o valor publicado pela instituição quando existe (BTG) ou o encadeamento
                 dos meses disponíveis. Réguas de benchmark só aparecem com a janela completa. O lápis edita o MÊS — as janelas derivam dele.
             </Typography>
+
+            {/* ── Modal: correção/lançamento do mês ── */}
+            {modalLinha && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(8,31,40,0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 24 }}>
+                    <div style={{ background: 'var(--color-white)', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: 460, boxShadow: 'var(--shadow-modal)', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--color-border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                            <div>
+                                <Typography variant="h2" style={{ fontSize: 17, margin: 0, fontWeight: 700, color: 'var(--color-secundaria)' }}>
+                                    {modalLinha.origem === 'auto' ? 'Corrigir o mês' : modalLinha.origem === 'manual' ? 'Editar lançamento' : 'Lançar o mês'}
+                                </Typography>
+                                <Typography variant="p" style={{ margin: '4px 0 0', fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
+                                    {modalLinha.instituicao}{modalLinha.conta_codigo ? ` · ${modalLinha.conta_codigo}` : ''} — {opcoesMes.find(o => o.value === mesRef)?.label}
+                                </Typography>
+                            </div>
+                            <X size={20} style={{ cursor: 'pointer', flexShrink: 0, color: 'var(--color-text-muted)' }} onClick={() => setModalLinha(null)} />
+                        </div>
+
+                        <div style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            {modalLinha.origem === 'auto' && (
+                                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)', borderRadius: 'var(--radius-md)', padding: '10px 12px', fontSize: 'var(--text-xs)', color: 'var(--color-warning-text)', lineHeight: 1.45 }}>
+                                    <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+                                    <span>
+                                        Correção pontual deste mês (ex.: NET distorcida por valor em trânsito).
+                                        A próxima sincronização da corretora <strong>sobrescreve</strong> esta correção — o oficial sempre volta a valer.
+                                    </span>
+                                </div>
+                            )}
+                            <div>
+                                <label style={mLabel}>NET de fechamento (R$)</label>
+                                <input value={formNet} onChange={e => setFormNet(maskMoedaBR(e.target.value))}
+                                    placeholder="0,00" inputMode="numeric" style={mCtrl} autoFocus />
+                            </div>
+                            <div>
+                                <label style={mLabel}>Rentabilidade do mês (%)</label>
+                                <input value={formRent} onChange={e => setFormRent(maskPctBR(e.target.value))}
+                                    placeholder="ex.: 0,85" inputMode="decimal" style={mCtrl} />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                {([['ytd', 'Ano (%)'], ['12m', '12 meses (%)'], ['24m', '24 meses (%)'], ['36m', '36 meses (%)']] as const).map(([k, rotulo]) => (
+                                    <div key={k}>
+                                        <label style={mLabel}>{rotulo}</label>
+                                        <input value={formJan[k] ?? ''} onChange={e => { const v = maskPctBR(e.target.value); setFormJan(prev => ({ ...prev, [k]: v })); }}
+                                            placeholder="derivado" inputMode="decimal" style={mCtrl} />
+                                    </div>
+                                ))}
+                            </div>
+                            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)', display: 'block' }}>
+                                Janelas: deixe como está para manter o valor derivado/publicado; alterar grava um valor manual;
+                                limpar o campo volta a derivar dos meses.
+                            </span>
+                        </div>
+
+                        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--color-border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                            <div>
+                                {modalLinha.origem === 'manual' && (
+                                    <Button variant="outline" onClick={() => apagarMut.mutate(modalLinha)} disabled={apagarMut.isPending}
+                                        style={{ color: 'var(--color-danger-text)', borderColor: 'var(--color-danger-border)' }}>
+                                        <Trash2 size={14} style={{ marginRight: 6 }} /> Apagar
+                                    </Button>
+                                )}
+                            </div>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <Button variant="outline" onClick={() => setModalLinha(null)}>Cancelar</Button>
+                                <Button variant="solid" onClick={() => salvarMut.mutate(modalLinha)} disabled={salvando}>
+                                    {salvando ? 'Salvando...' : 'Salvar'}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -541,9 +666,13 @@ function SemDado() {
     return <span style={{ color: 'var(--color-text-disabled)' }}>—</span>;
 }
 
-const inputCel: React.CSSProperties = {
-    width: 110, padding: '6px 10px', borderRadius: 6, fontSize: 13, textAlign: 'right',
-    border: '1px solid color-mix(in srgb, var(--color-primaria), transparent 50%)',
+const mLabel: React.CSSProperties = {
+    display: 'block', fontSize: 'var(--text-2xs)', fontWeight: 600, color: 'var(--color-text-secondary)',
+    textTransform: 'uppercase', letterSpacing: 'var(--tracking-caps)', marginBottom: 6,
+};
+const mCtrl: React.CSSProperties = {
+    width: '100%', height: 40, padding: '8px 12px', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)', textAlign: 'right',
+    border: '1px solid color-mix(in srgb, var(--color-secundaria), transparent 80%)',
     fontFamily: 'var(--font-family)', outline: 'none', color: 'var(--color-secundaria)',
 };
 const btnCel: React.CSSProperties = {
