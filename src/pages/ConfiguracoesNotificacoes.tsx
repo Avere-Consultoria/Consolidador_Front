@@ -5,7 +5,7 @@ import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
-import { fmtDate } from '../utils/formatters';
+import { fmt, fmtDate } from '../utils/formatters';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Configurações → Notificações
@@ -27,7 +27,7 @@ type Pref = {
     vencimento_dias: number[] | null;
 };
 type Consultor = { id: string; nome: string; email_professional: string | null; perfil_id: string | null };
-type PreviaDia = { data_envio: string; itens: { tipo: string; cliente_nome: string; titulo?: string; data: string; dias: number }[] };
+type PreviaDia = { data_envio: string; itens: { tipo: string; cliente_nome: string; titulo?: string; instituicao?: string; valor?: number; data: string; dias: number }[] };
 type Envio = { id: string; consultor_id: string; email_destino: string; data_ref: string; status: string; enviada_em: string | null; erro: string | null; assunto: string };
 
 const VAZIA: Pref = { consultor_id: null, ativo: null, email_destino: null, hora_envio: null, somente_dia_util: null, aniversario_ativo: null, aniversario_dias: null, vencimento_ativo: null, vencimento_dias: null };
@@ -448,7 +448,11 @@ export default function ConfiguracoesNotificacoes() {
                                     </Badge>
                                     <div style={{ minWidth: 0, flex: 1 }}>
                                         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-secundaria)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.cliente_nome ?? '—'}</div>
-                                        {it.titulo && <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.titulo}</div>}
+                                        {it.titulo && (
+                                            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {it.titulo}{it.instituicao ? ` · ${it.instituicao}` : ''}{it.valor != null ? ` · ${fmt(it.valor)}` : ''}
+                                            </div>
+                                        )}
                                     </div>
                                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                                         <div style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>{fmtDate(it.data)}</div>
