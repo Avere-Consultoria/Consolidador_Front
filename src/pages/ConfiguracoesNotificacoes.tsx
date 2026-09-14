@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Typography, Card, Badge, Button, Spinner, Switch, TextField, TagInput, toast } from 'avere-ui';
+import { Typography, Card, Badge, Button, Spinner, Switch, TextField, toast } from 'avere-ui';
 import { BellRing, RotateCcw, Eye, History, Send } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -29,13 +29,53 @@ type Envio = { id: string; consultor_id: string; email_destino: string; data_ref
 
 const VAZIA: Pref = { consultor_id: null, ativo: null, email_destino: null, hora_envio: null, somente_dia_util: null, aniversario_ativo: null, aniversario_dias: null, vencimento_ativo: null, vencimento_dias: null };
 const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : '');
-const diasParaTags = (d: number[] | null | undefined) => (d ?? []).map(n => (n === 0 ? 'no dia' : `${n} dias antes`));
-const tagsParaDias = (tags: string[]) => Array.from(new Set(tags.map(t => {
-    const s = t.trim().toLowerCase();
-    if (s === 'no dia' || s === 'hoje' || s === '0') return 0;
-    const n = parseInt(s.replace(/\D/g, ''), 10);
-    return Number.isFinite(n) ? Math.min(Math.max(n, 0), 30) : NaN;
-}).filter(n => !Number.isNaN(n)))).sort((a, b) => b - a);
+const OPCOES_DIAS = [0, 1, 3, 7, 15, 30];
+const rotuloDias = (n: number) => (n === 0 ? 'no dia' : n === 1 ? '1 dia antes' : `${n} dias antes`);
+
+// Seletor de antecedências: chips que ligam/desligam + "outro" numérico (0–60 dias)
+function SeletorDias({ value, onChange }: { value: number[]; onChange: (v: number[]) => void }) {
+    const [outro, setOutro] = useState('');
+    const sel = new Set(value);
+    const alternar = (n: number) => {
+        const s = new Set(sel);
+        if (s.has(n)) s.delete(n); else s.add(n);
+        onChange(Array.from(s).sort((a, b) => b - a));
+    };
+    const adicionarOutro = () => {
+        const n = parseInt(outro, 10);
+        if (!Number.isFinite(n) || n < 0 || n > 60) return;
+        if (!sel.has(n)) onChange(Array.from(new Set([...value, n])).sort((a, b) => b - a));
+        setOutro('');
+    };
+    const extras = value.filter(n => !OPCOES_DIAS.includes(n));
+    const chip = (n: number, ativo: boolean) => (
+        <button key={n} type="button" onClick={() => alternar(n)} aria-pressed={ativo}
+            style={{
+                padding: '6px 12px', borderRadius: '999px', fontSize: 'var(--text-xs)', fontWeight: 600, cursor: 'pointer',
+                border: `1px solid ${ativo ? 'var(--color-primaria)' : 'var(--color-border-default)'}`,
+                background: ativo ? 'var(--color-primaria)' : 'var(--color-surface)',
+                color: ativo ? 'var(--color-text-inverse)' : 'var(--color-text-secondary)',
+            }}>
+            {rotuloDias(n)}{ativo ? ' ✓' : ''}
+        </button>
+    );
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {OPCOES_DIAS.map(n => chip(n, sel.has(n)))}
+                {extras.map(n => chip(n, true))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>outro:</span>
+                <input type="number" min={0} max={60} value={outro} onChange={e => setOutro(e.target.value)} placeholder="dias"
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); adicionarOutro(); } }}
+                    style={{ width: 70, padding: '5px 8px', border: '1px solid var(--color-border-default)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface)', fontSize: 'var(--text-xs)' }} />
+                <Button variant="ghost" onClick={adicionarOutro} disabled={outro === ''} style={{ fontSize: '12px' }}>adicionar</Button>
+                {value.length === 0 && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-danger-text)' }}>escolha ao menos uma antecedência</span>}
+            </div>
+        </div>
+    );
+}
 const fmtData = (iso: string) => { try { return new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR'); } catch { return iso; } };
 const fmtQuando = (iso: string | null) => { if (!iso) return '—'; try { const d = new Date(iso); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); } catch { return iso; } };
 
@@ -286,8 +326,8 @@ export default function ConfiguracoesNotificacoes() {
                             <span style={rotulo}>🎂 Aniversários de clientes</span>
                             <Switch checked={ef('aniversario_ativo') ?? true} onCheckedChange={(v: boolean) => set('aniversario_ativo', v)} />
                         </div>
-                        <TagInput label="Avisar com antecedência de" placeholder="ex.: 7 dias antes, no dia — Enter para adicionar"
-                            value={diasParaTags(ef('aniversario_dias'))} onChange={tags => set('aniversario_dias', tagsParaDias(tags))} />
+                        <span style={{ ...rotulo, marginTop: 8 }}>Avisar com antecedência de</span>
+                        <SeletorDias value={ef('aniversario_dias') ?? []} onChange={v => set('aniversario_dias', v)} />
                         <div style={{ marginTop: 4 }}><Herdado herdado={herdado('aniversario_dias') && herdado('aniversario_ativo')} onReset={() => { reset('aniversario_dias'); reset('aniversario_ativo'); }} permitir={permitirReset} /></div>
                     </div>
 
@@ -296,8 +336,8 @@ export default function ConfiguracoesNotificacoes() {
                             <span style={rotulo}>⏰ Vencimentos (alertas do sistema)</span>
                             <Switch checked={ef('vencimento_ativo') ?? true} onCheckedChange={(v: boolean) => set('vencimento_ativo', v)} />
                         </div>
-                        <TagInput label="Avisar com antecedência de" placeholder="ex.: 7 dias antes, no dia — Enter para adicionar"
-                            value={diasParaTags(ef('vencimento_dias'))} onChange={tags => set('vencimento_dias', tagsParaDias(tags))} />
+                        <span style={{ ...rotulo, marginTop: 8 }}>Avisar com antecedência de</span>
+                        <SeletorDias value={ef('vencimento_dias') ?? []} onChange={v => set('vencimento_dias', v)} />
                         <div style={{ marginTop: 4 }}><Herdado herdado={herdado('vencimento_dias') && herdado('vencimento_ativo')} onReset={() => { reset('vencimento_dias'); reset('vencimento_ativo'); }} permitir={permitirReset} /></div>
                     </div>
 
