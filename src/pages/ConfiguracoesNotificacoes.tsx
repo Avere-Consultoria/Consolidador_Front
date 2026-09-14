@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Typography, Card, Badge, Button, Spinner, Switch, TextField, TagInput, toast } from 'avere-ui';
-import { BellRing, RotateCcw, Eye, History } from 'lucide-react';
+import { BellRing, RotateCcw, Eye, History, Send } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -65,6 +65,7 @@ export default function ConfiguracoesNotificacoes() {
     const [override, setOverride] = useState<Pref>(VAZIA);
     const [previa, setPrevia] = useState<PreviaDia[] | null>(null);
     const [envios, setEnvios] = useState<Envio[]>([]);
+    const [testando, setTestando] = useState(false);
 
     const meuConsultor = useMemo(() => consultores.find(c => c.perfil_id === user?.id) ?? null, [consultores, user?.id]);
     const editandoPadrao = alvo === 'padrao';
@@ -149,6 +150,26 @@ export default function ConfiguracoesNotificacoes() {
             console.error('Notificações: falha ao salvar', err);
             toast.error('Falha ao salvar. Tente de novo.');
         } finally { setSalvando(false); }
+    };
+
+    const enviarTeste = async () => {
+        if (!alvo || alvo === 'padrao') return;
+        setTestando(true);
+        try {
+            const { data, error } = await supabase.rpc('notificacoes_teste', { p_consultor_id: alvo });
+            if (error) throw error;
+            if (data?.ok) toast.success(`E-mail de teste enfileirado para ${data.email} — chega em até 1 minuto.`);
+            else toast.error(data?.motivo ?? 'Não foi possível enfileirar o teste.');
+            if (isMaster) {
+                const { data: hist } = await supabase.from('notificacoes')
+                    .select('id, consultor_id, email_destino, data_ref, status, enviada_em, erro, assunto')
+                    .order('criado_em', { ascending: false }).limit(50);
+                setEnvios((hist ?? []) as Envio[]);
+            }
+        } catch (err: any) {
+            console.error('teste de notificação', err);
+            toast.error(err?.message ?? 'Falha ao enviar o teste.');
+        } finally { setTestando(false); }
     };
 
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
@@ -257,7 +278,12 @@ export default function ConfiguracoesNotificacoes() {
                         <div style={{ marginTop: 4 }}><Herdado herdado={herdado('vencimento_dias') && herdado('vencimento_ativo')} onReset={() => { reset('vencimento_dias'); reset('vencimento_ativo'); }} permitir={permitirReset} /></div>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+                        {!editandoPadrao ? (
+                            <Button variant="outline" onClick={enviarTeste} disabled={testando} title="Envia um e-mail de teste para o destino configurado">
+                                <Send size={14} style={{ marginRight: 6 }} />{testando ? 'Enviando…' : 'Enviar e-mail de teste'}
+                            </Button>
+                        ) : <span />}
                         <Button variant="solid" onClick={salvar} disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar'}</Button>
                     </div>
                 </Card>
