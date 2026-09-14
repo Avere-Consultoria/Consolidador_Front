@@ -407,7 +407,7 @@ export default function ConfiguracoesNotificacoes() {
                 )}
             </header>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 2fr)', gap: '24px', alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 2fr)', gap: '24px', alignItems: 'stretch' }}>
                 {/* ── Preferências ── */}
                 <Card style={{ padding: 0, overflow: 'hidden' }}>
                     <TituloCard
@@ -479,14 +479,17 @@ export default function ConfiguracoesNotificacoes() {
                     </div>
                 </Card>
 
-                {/* ── Prévia ── */}
-                <Card style={{ padding: 0, overflow: 'hidden' }}>
+                {/* ── Prévia ── contida na altura do card de preferências (posição absoluta num
+                    wrapper esticado pela grid); a lista rola dentro do card. */}
+                <div style={{ position: 'relative', minHeight: 360 }}>
+                <Card style={{ padding: 0, overflow: 'hidden', position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
                     <TituloCard icone={Eye} titulo={editandoPadrao ? 'Prévia da casa · próximos 7 dias' : 'Prévia dos próximos 7 dias'}
                         extra={
                             editandoPadrao
-                                ? previaCasa && previaCasa.length > 0 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{previaCasa.length} consultor{previaCasa.length === 1 ? '' : 'es'} · {emailsCasa} e-mail{emailsCasa === 1 ? '' : 's'} · {totalCasa} item{totalCasa === 1 ? '' : 'ns'}</span>
-                                : previa && previa.length > 0 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{previa.length} e-mail{previa.length === 1 ? '' : 's'} · {totalPrevia} item{totalPrevia === 1 ? '' : 'ns'}</span>
+                                ? previaCasa && previaCasa.length > 0 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{previaCasa.length} consultor{previaCasa.length === 1 ? '' : 'es'} · {emailsCasa} e-mail{emailsCasa === 1 ? '' : 's'} · {totalCasa} {totalCasa === 1 ? 'item' : 'itens'}</span>
+                                : previa && previa.length > 0 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{previa.length} e-mail{previa.length === 1 ? '' : 's'} · {totalPrevia} {totalPrevia === 1 ? 'item' : 'itens'}</span>
                         } />
+                    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
                     {(editandoPadrao ? previaCasa === null : previa === null) && <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spinner size="md" /></div>}
                     {editandoPadrao && previaCasa && previaCasa.length === 0 && (
                         <EstadoVazio compacto positivo icon={CalendarCheck2} titulo="Nenhum e-mail previsto na casa" dica="Nenhum consultor tem aniversário ou vencimento no horizonte de 7 dias." />
@@ -505,7 +508,9 @@ export default function ConfiguracoesNotificacoes() {
                         <EstadoVazio compacto positivo icon={CalendarCheck2} titulo="Nenhum e-mail previsto" dica="Sem aniversários nem vencimentos no horizonte de 7 dias. Dias sem itens não geram e-mail." />
                     )}
                     {!editandoPadrao && previa && <ListaDias dias={previa} />}
+                    </div>
                 </Card>
+                </div>
             </div>
 
             {/* ── Histórico (master) ── */}
