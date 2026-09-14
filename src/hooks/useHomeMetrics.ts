@@ -617,6 +617,9 @@ export function useHomeMetrics() {
                     .from(tabela)
                     .select('id, conta_id, data_referencia')
                     .eq('cliente_id', clienteId!)
+                    // Cerca: snapshot 'parcial' (fonte avisou posição incompleta) não
+                    // substitui o último bom da conta.
+                    .neq('qualidade', 'parcial')
                     .order('data_referencia', { ascending: false })
                     .limit(400);
                 if (error) { console.error(`Home: falha ao listar ${tabela}`, error); falhaIds.add(idx); return []; }
