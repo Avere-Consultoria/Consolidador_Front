@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Typography, Card, Badge, Button, Spinner } from 'avere-ui';
 import { ClipboardCheck, ArrowRight, Inbox } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import CercaPosicao from '../components/pendencias/CercaPosicao';
 
 interface Pendencia {
     id: string;
@@ -84,7 +85,9 @@ export default function Pendencias() {
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <CercaPosicao />
+
             <header style={{ borderBottom: '1px solid var(--color-borda)', paddingBottom: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <ClipboardCheck size={22} style={{ color: 'var(--color-primaria)' }} />
