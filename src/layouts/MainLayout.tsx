@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, ClipboardCheck, LayoutGrid, ListTodo, Search } from 'lucide-react';
+import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, BellRing, ClipboardCheck, LayoutGrid, ListTodo, Search } from 'lucide-react';
 import { CommandPalette } from '../components/shared/CommandPalette';
 import { ErrorBoundary } from '../components/shared/ErrorBoundary';
 import { SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, type ComboboxLevel } from 'avere-ui';
@@ -269,6 +269,12 @@ export default function MainLayout() {
           <SideBarItem
             icon={FileStack} label="Meus Envios"
             active={location.pathname === '/documentos-manuais'} href="/documentos-manuais" onClick={navTo('/documentos-manuais')}
+          />
+        )}
+        {(isMaster || isConsultor) && (
+          <SideBarItem
+            icon={BellRing} label="Notificações"
+            active={location.pathname.startsWith('/configuracoes/notificacoes')} href="/configuracoes/notificacoes" onClick={navTo('/configuracoes/notificacoes')}
           />
         )}
 

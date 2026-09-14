@@ -36,6 +36,7 @@ const AlertasConsultor = lazy(() => import('./pages/AlertasConsultor'));
 const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha'));
 const Hub = lazy(() => import('./pages/Hub'));
 const Tarefas = lazy(() => import('./pages/Tarefas'));
+const ConfiguracoesNotificacoes = lazy(() => import('./pages/ConfiguracoesNotificacoes'));
 
 const fallback = (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -99,6 +100,7 @@ export default function App() {
                   <Route path="/alertas" element={<AlertasConsultor />} />
                   <Route path="/tarefas" element={<Tarefas />} />
                   <Route path="/documentos-manuais" element={<DocumentosManuais />} />
+                  <Route path="/configuracoes/notificacoes" element={<ConfiguracoesNotificacoes />} />
                 </Route>
               </Route>
 

@@ -19,6 +19,7 @@ interface Cliente {
     consultor_id: string | null;
     codigo_avere: string | null;
     documento: string | null;   // CPF/CNPJ (só dígitos) — opcional; chave p/ casar fontes (ex.: Avenue)
+    data_nascimento?: string | null;   // yyyy-MM-dd — alimenta as notificações de aniversário
 }
 interface Conta {
     id?: string;
@@ -157,7 +158,7 @@ export default function CadastroClientes() {
         try {
             const [consRes, clisRes, instRes, contasRes] = await Promise.all([
                 supabase.from('consultores').select('id, nome').eq('ativo', true).order('nome'),
-                supabase.from('clientes').select('id, nome, consultor_id, codigo_avere, documento').order('nome'),
+                supabase.from('clientes').select('id, nome, consultor_id, codigo_avere, documento, data_nascimento').order('nome'),
                 supabase.from('instituicoes').select('id, nome, tipo').order('tipo').order('nome'),
                 supabase.from('cliente_contas').select('id, cliente_id, instituicao_id, apelido, codigo, documento, ordem').order('ordem'),
             ]);
@@ -200,7 +201,7 @@ export default function CadastroClientes() {
     const handleEditarNoModal = (cliente: Cliente) => {
         setClienteEmEdicao(cliente.id);
         const docCliente = cliente.documento ? maskDoc(cliente.documento, ehCnpj(cliente.documento) ? 'PJ' : 'PF') : '';
-        setFormCliente({ id: cliente.id, nome: cliente.nome, consultor_id: cliente.consultor_id, codigo_avere: cliente.codigo_avere, documento: docCliente });
+        setFormCliente({ id: cliente.id, nome: cliente.nome, consultor_id: cliente.consultor_id, codigo_avere: cliente.codigo_avere, documento: docCliente, data_nascimento: cliente.data_nascimento ?? null });
         const contas = (contasPorCliente[cliente.id] || []).map(c => ({ ...c, uid: c.id || crypto.randomUUID() }));
         setFormContas(contas);
         // infere PF/PJ pelo documento do cliente (prioridade) ou de alguma conta (Ágora)
@@ -235,6 +236,7 @@ export default function CadastroClientes() {
                 consultor_id: formCliente.consultor_id || null,
                 codigo_avere: (formCliente.codigo_avere ?? '').trim() || null,
                 documento: apenasDigitos(formCliente.documento) || null,   // opcional, só dígitos
+                data_nascimento: formCliente.data_nascimento || null,
             };
             if (clienteEmEdicao) {
                 const { error } = await supabase.from('clientes').update(payload).eq('id', clienteEmEdicao);
@@ -480,6 +482,21 @@ export default function CadastroClientes() {
                                 Opcional. Identifica o cliente em fontes que indexam por documento (ex.: Avenue por CPF).
                             </p>
                         </div>
+
+                        {tipoDoc !== 'PJ' && (
+                            <div>
+                                <TextField
+                                    label="Data de nascimento (opcional)"
+                                    type="date"
+                                    value={formCliente.data_nascimento || ''}
+                                    onChange={e => setFormCliente(p => ({ ...p, data_nascimento: e.target.value || null }))}
+                                    style={{ maxWidth: 220 }}
+                                />
+                                <p style={{ margin: '4px 0 0', fontSize: '10px', color: 'var(--color-text-muted)' }}>
+                                    Alimenta o lembrete de aniversário do consultor (Notificações).
+                                </p>
+                            </div>
+                        )}
 
                         {/* ── Contas por instituição ── */}
                         <div style={{ borderTop: '1px solid var(--color-border-subtle)', paddingTop: '16px' }}>
