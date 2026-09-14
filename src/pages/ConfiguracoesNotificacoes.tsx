@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Typography, Card, Badge, Button, Spinner, Switch, TextField, Combobox, toast } from 'avere-ui';
 import { BellRing, RotateCcw, Eye, History, Send, CalendarCheck2, Users, UserX, Cake, AlarmClock, Mail, RefreshCw, Plus } from 'lucide-react';
 import { supabase } from '../services/supabase';
@@ -143,6 +143,42 @@ function Secao({ icone: Icone, titulo, extra }: { icone: React.ElementType; titu
     );
 }
 
+// ── Prévia: um bloco por dia de envio, com os itens daquele e-mail
+function ListaDias({ dias }: { dias: PreviaDia[] }) {
+    return (
+        <>
+            {dias.map(dia => (
+                <div key={dia.data_envio}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 20px', background: 'var(--gray-50)', borderTop: '1px solid var(--color-surface-sunken)' }}>
+                        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-primaria)', textTransform: 'capitalize' }}>{diaCurto(dia.data_envio)}</span>
+                        <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{fmtDate(dia.data_envio)}</span>
+                        <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 600 }}>{dia.itens.length} {dia.itens.length === 1 ? 'item' : 'itens'}</span>
+                    </div>
+                    {dia.itens.map((it, i) => (
+                        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 20px', borderTop: '1px solid var(--color-surface-sunken)' }}>
+                            <Badge intent={it.tipo === 'aniversario' ? 'primaria' : 'alerta'} variant="ghost" style={{ fontSize: 10, flexShrink: 0 }}>
+                                {it.tipo === 'aniversario' ? 'aniversário' : 'vencimento'}
+                            </Badge>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-secundaria)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.cliente_nome ?? '—'}</div>
+                                {it.titulo && (
+                                    <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {it.titulo}{it.instituicao ? ` · ${it.instituicao}` : ''}{it.valor != null ? ` · ${fmt(it.valor)}` : ''}
+                                    </div>
+                                )}
+                            </div>
+                            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                <div style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>{fmtDate(it.data)}</div>
+                                <div style={{ fontSize: 11, color: it.dias === 0 ? 'var(--color-primaria)' : 'var(--color-text-muted)', fontWeight: 600 }}>{it.dias === 0 ? 'hoje' : `em ${it.dias} dia${it.dias === 1 ? '' : 's'}`}</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ))}
+        </>
+    );
+}
+
 function TituloCard({ icone: Icone, titulo, extra }: { icone: React.ElementType; titulo: React.ReactNode; extra?: React.ReactNode }) {
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px', borderBottom: '1px solid var(--color-surface-sunken)' }}>
@@ -166,6 +202,7 @@ export default function ConfiguracoesNotificacoes() {
     const [override, setOverride] = useState<Pref>(VAZIA);
     const [base, setBase] = useState<string>('');            // snapshot do que está salvo → detecta alteração pendente
     const [previa, setPrevia] = useState<PreviaDia[] | null>(null);
+    const [previaCasa, setPreviaCasa] = useState<{ consultor: Consultor; dias: PreviaDia[] }[] | null>(null);   // Padrão Avere: casa inteira
     const [envios, setEnvios] = useState<Envio[]>([]);
     const [testando, setTestando] = useState(false);
     const [atualizandoEnvios, setAtualizandoEnvios] = useState(false);
@@ -209,12 +246,29 @@ export default function ConfiguracoesNotificacoes() {
 
     useEffect(() => { carregar(); }, [carregar]);
 
-    // ao trocar o alvo, carrega o override dele (ou o padrão) e a prévia
+    // ao trocar o alvo, carrega o override dele (ou o padrão) e a prévia.
+    // `padrao` entra por ref: o efeito NÃO pode reagir a cada toggle do Padrão Avere
+    // (senão a base de "alterações não salvas" acompanha a edição e o Salvar nunca habilita).
+    const padraoRef = useRef(padrao);
+    padraoRef.current = padrao;
     useEffect(() => {
         if (!alvo) return;
         let vivo = true;
         (async () => {
-            if (alvo === PADRAO) { setOverride(padrao); setBase(JSON.stringify(padrao)); setPrevia(null); return; }
+            if (alvo === PADRAO) {
+                setOverride(padraoRef.current); setBase(JSON.stringify(padraoRef.current)); setPrevia(null);
+                // Prévia da casa: uma chamada por consultor, em paralelo; só quem tem item entra.
+                setPreviaCasa(null);
+                const res = await Promise.all(consultores.map(async c => {
+                    const { data, error } = await supabase.rpc('notificacoes_previa', { p_consultor_id: c.id, p_dias: 7 });
+                    if (error) console.error('prévia', c.nome, error);
+                    return { consultor: c, dias: ((data ?? []) as PreviaDia[]) };
+                }));
+                if (!vivo) return;
+                const total = (d: PreviaDia[]) => d.reduce((s, x) => s + x.itens.length, 0);
+                setPreviaCasa(res.filter(r => r.dias.length > 0).sort((a, b) => total(b.dias) - total(a.dias)));
+                return;
+            }
             const { data } = await supabase.from('notificacao_preferencias').select('*').eq('consultor_id', alvo).maybeSingle();
             if (!vivo) return;
             const ov = (data as Pref) ?? { ...VAZIA, consultor_id: alvo };
@@ -225,7 +279,7 @@ export default function ConfiguracoesNotificacoes() {
             setPrevia((pv ?? []) as PreviaDia[]);
         })();
         return () => { vivo = false; };
-    }, [alvo, padrao]);
+    }, [alvo, consultores]);
 
     // valor efetivo por campo = override ?? padrão
     const ef = <K extends keyof Pref>(k: K): Pref[K] => (editandoPadrao ? padrao[k] : (override[k] ?? padrao[k])) as Pref[K];
@@ -324,6 +378,8 @@ export default function ConfiguracoesNotificacoes() {
     const masterDesligado = padrao.ativo === false;
     const opcoesAlvo = [{ value: PADRAO, label: 'Padrão Avere (todos)' }, ...consultores.map(c => ({ value: c.id, label: c.perfil_id === user?.id ? `${c.nome} (eu)` : c.nome }))];
     const totalPrevia = (previa ?? []).reduce((s, d) => s + d.itens.length, 0);
+    const totalCasa = (previaCasa ?? []).reduce((s, r) => s + r.dias.reduce((t, d) => t + d.itens.length, 0), 0);
+    const emailsCasa = (previaCasa ?? []).reduce((s, r) => s + r.dias.length, 0);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -425,43 +481,30 @@ export default function ConfiguracoesNotificacoes() {
 
                 {/* ── Prévia ── */}
                 <Card style={{ padding: 0, overflow: 'hidden' }}>
-                    <TituloCard icone={Eye} titulo="Prévia dos próximos 7 dias"
-                        extra={!editandoPadrao && previa && previa.length > 0 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{previa.length} e-mail{previa.length === 1 ? '' : 's'} · {totalPrevia} item{totalPrevia === 1 ? '' : 'ns'}</span>} />
-                    {editandoPadrao && (
-                        <EstadoVazio compacto icon={Users} titulo="Escolha um consultor" dica="A prévia usa os clientes e as tarefas reais do consultor selecionado no topo da página." />
+                    <TituloCard icone={Eye} titulo={editandoPadrao ? 'Prévia da casa · próximos 7 dias' : 'Prévia dos próximos 7 dias'}
+                        extra={
+                            editandoPadrao
+                                ? previaCasa && previaCasa.length > 0 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{previaCasa.length} consultor{previaCasa.length === 1 ? '' : 'es'} · {emailsCasa} e-mail{emailsCasa === 1 ? '' : 's'} · {totalCasa} item{totalCasa === 1 ? '' : 'ns'}</span>
+                                : previa && previa.length > 0 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{previa.length} e-mail{previa.length === 1 ? '' : 's'} · {totalPrevia} item{totalPrevia === 1 ? '' : 'ns'}</span>
+                        } />
+                    {(editandoPadrao ? previaCasa === null : previa === null) && <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spinner size="md" /></div>}
+                    {editandoPadrao && previaCasa && previaCasa.length === 0 && (
+                        <EstadoVazio compacto positivo icon={CalendarCheck2} titulo="Nenhum e-mail previsto na casa" dica="Nenhum consultor tem aniversário ou vencimento no horizonte de 7 dias." />
                     )}
-                    {!editandoPadrao && previa === null && <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spinner size="md" /></div>}
+                    {editandoPadrao && previaCasa && previaCasa.map(r => (
+                        <div key={r.consultor.id}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', background: 'var(--color-accent-subtle)', borderTop: '1px solid var(--color-surface-sunken)' }}>
+                                <Users size={14} color="var(--color-secundaria)" />
+                                <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-secundaria)' }}>{r.consultor.nome}</span>
+                                <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 600 }}>{r.dias.length} e-mail{r.dias.length === 1 ? '' : 's'}</span>
+                            </div>
+                            <ListaDias dias={r.dias} />
+                        </div>
+                    ))}
                     {!editandoPadrao && previa && previa.length === 0 && (
                         <EstadoVazio compacto positivo icon={CalendarCheck2} titulo="Nenhum e-mail previsto" dica="Sem aniversários nem vencimentos no horizonte de 7 dias. Dias sem itens não geram e-mail." />
                     )}
-                    {!editandoPadrao && previa && previa.map(dia => (
-                        <div key={dia.data_envio}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', background: 'var(--gray-50)', borderTop: '1px solid var(--color-surface-sunken)' }}>
-                                <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-primaria)', textTransform: 'capitalize' }}>{diaCurto(dia.data_envio)}</span>
-                                <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{fmtDate(dia.data_envio)}</span>
-                                <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 600 }}>{dia.itens.length} {dia.itens.length === 1 ? 'item' : 'itens'}</span>
-                            </div>
-                            {dia.itens.map((it, i) => (
-                                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 20px', borderTop: '1px solid var(--color-surface-sunken)' }}>
-                                    <Badge intent={it.tipo === 'aniversario' ? 'primaria' : 'alerta'} variant="ghost" style={{ fontSize: 10, flexShrink: 0 }}>
-                                        {it.tipo === 'aniversario' ? 'aniversário' : 'vencimento'}
-                                    </Badge>
-                                    <div style={{ minWidth: 0, flex: 1 }}>
-                                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-secundaria)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.cliente_nome ?? '—'}</div>
-                                        {it.titulo && (
-                                            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {it.titulo}{it.instituicao ? ` · ${it.instituicao}` : ''}{it.valor != null ? ` · ${fmt(it.valor)}` : ''}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                                        <div style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>{fmtDate(it.data)}</div>
-                                        <div style={{ fontSize: 11, color: it.dias === 0 ? 'var(--color-primaria)' : 'var(--color-text-muted)', fontWeight: 600 }}>{it.dias === 0 ? 'hoje' : `em ${it.dias} dia${it.dias === 1 ? '' : 's'}`}</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ))}
+                    {!editandoPadrao && previa && <ListaDias dias={previa} />}
                 </Card>
             </div>
 
