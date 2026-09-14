@@ -152,19 +152,42 @@ export default function ConfiguracoesNotificacoes() {
         } finally { setSalvando(false); }
     };
 
+    const carregarEnvios = useCallback(async () => {
+        const { data: hist } = await supabase.from('notificacoes')
+            .select('id, consultor_id, email_destino, data_ref, status, enviada_em, erro, assunto')
+            .order('criado_em', { ascending: false }).limit(50);
+        const lista = (hist ?? []) as Envio[];
+        setEnvios(lista);
+        return lista;
+    }, []);
+
+    // Acompanha o worker: consulta a cada 5 s até a linha sair de pendente/enviando (máx. 1 min)
+    const acompanhar = useCallback((id: string) => {
+        let tentativas = 0;
+        const timer = setInterval(async () => {
+            tentativas += 1;
+            const lista = await carregarEnvios();
+            const linha = lista.find(e => e.id === id);
+            const terminou = linha && linha.status !== 'pendente' && linha.status !== 'enviando';
+            if (terminou || tentativas >= 12) {
+                clearInterval(timer);
+                if (linha?.status === 'enviada') toast.success('E-mail de teste enviado.');
+                else if (linha?.status === 'erro') toast.error(`Falha no envio: ${linha.erro ?? 'ver histórico'}`);
+            }
+        }, 5000);
+    }, [carregarEnvios]);
+
     const enviarTeste = async () => {
         if (!alvo || alvo === 'padrao') return;
         setTestando(true);
         try {
             const { data, error } = await supabase.rpc('notificacoes_teste', { p_consultor_id: alvo });
             if (error) throw error;
-            if (data?.ok) toast.success(`E-mail de teste enfileirado para ${data.email} — chega em até 1 minuto.`);
-            else toast.error(data?.motivo ?? 'Não foi possível enfileirar o teste.');
-            if (isMaster) {
-                const { data: hist } = await supabase.from('notificacoes')
-                    .select('id, consultor_id, email_destino, data_ref, status, enviada_em, erro, assunto')
-                    .order('criado_em', { ascending: false }).limit(50);
-                setEnvios((hist ?? []) as Envio[]);
+            if (data?.ok) {
+                toast.success(`E-mail de teste enfileirado para ${data.email} — acompanhando o envio…`);
+                if (isMaster) { await carregarEnvios(); acompanhar(data.id); }
+            } else {
+                toast.error(data?.motivo ?? 'Não foi possível enfileirar o teste.');
             }
         } catch (err: any) {
             console.error('teste de notificação', err);
