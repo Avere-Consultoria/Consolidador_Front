@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Typography, Card, Badge, Button, Spinner, Switch, TextField, Combobox, toast } from 'avere-ui';
-import { BellRing, RotateCcw, Eye, History, Send, CalendarCheck2, Users, UserX, Cake, AlarmClock, Mail, RefreshCw, Plus } from 'lucide-react';
+import { BellRing, RotateCcw, Eye, History, Send, CalendarCheck2, Users, UserX, Cake, AlarmClock, Mail, RefreshCw, Plus, Check, Undo2 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
@@ -12,6 +12,13 @@ import { fmt, fmtDate } from '../utils/formatters';
 // Padrão Avere (linha consultor_id NULL, só o master edita) + override PARCIAL por
 // consultor: campo NULL herda o padrão. O banco resolve a preferência efetiva
 // (notificacao_pref_efetiva) e monta a prévia real (notificacoes_previa).
+//
+// Regras (Bruno, 15/09):
+//  • sem "chave geral" no padrão — a chave da casa é POR TIPO (aniversário/vencimento):
+//    desligado no padrão, ninguém recebe aquele tipo, mesmo quem personalizou;
+//  • e-mail de destino é espelho do cadastro (Equipe); consultor pode, se quiser, usar outro;
+//  • tudo salva sozinho ao mudar (sem botão Salvar);
+//  • master pode "restaurar o padrão para todos" (apaga as personalizações).
 // ─────────────────────────────────────────────────────────────────────────────
 
 type Pref = {
@@ -36,6 +43,7 @@ const hhmm = (t: string | null | undefined) => (t ? t.slice(0, 5) : '');
 const OPCOES_DIAS = [0, 1, 3, 7, 15, 30];
 const rotuloDias = (n: number) => (n === 0 ? 'no dia' : n === 1 ? '1 dia antes' : `${n} dias antes`);
 const fmtQuando = (iso: string | null) => { if (!iso) return '—'; try { const d = new Date(iso); return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); } catch { return iso; } };
+const fmtHora = (d: Date) => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 // "seg, 15 set" — meio-dia evita o deslocamento de fuso do date puro.
 const diaCurto = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }).replace('.', '');
 
@@ -55,6 +63,31 @@ const STATUS_ENVIO: Record<string, { rotulo: string; intent: 'primaria' | 'erro'
     enviando: { rotulo: 'Enviando', intent: 'alerta' },
     cancelada: { rotulo: 'Cancelada', intent: 'neutro' },
 };
+
+// ── Hora com máscara HH:MM (digita só números; valida ao sair do campo / Enter)
+function HoraInput({ value, onCommit }: { value: string; onCommit: (v: string) => void }) {
+    const [texto, setTexto] = useState(value);
+    useEffect(() => { setTexto(value); }, [value]);
+    const mascarar = (s: string) => {
+        const d = s.replace(/\D/g, '').slice(0, 4);
+        return d.length <= 2 ? d : `${d.slice(0, 2)}:${d.slice(2)}`;
+    };
+    const confirmar = () => {
+        const m = texto.match(/^(\d{1,2}):?(\d{2})$/);
+        const h = m ? parseInt(m[1], 10) : NaN, mi = m ? parseInt(m[2], 10) : NaN;
+        if (!m || h > 23 || mi > 59) { toast.error('Hora inválida. Use HH:MM, ex.: 07:30.'); setTexto(value); return; }
+        const norm = `${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}`;
+        setTexto(norm);
+        if (norm !== value) onCommit(norm);
+    };
+    return (
+        <input value={texto} inputMode="numeric" placeholder="HH:MM" maxLength={5}
+            onChange={e => setTexto(mascarar(e.target.value))}
+            onBlur={confirmar}
+            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); (e.target as HTMLInputElement).blur(); } }}
+            style={{ ...ctrl, width: 84, textAlign: 'center', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.05em' }} />
+    );
+}
 
 // ── Seletor de antecedências: chips que ligam/desligam + "outro" numérico (0–60 dias)
 function SeletorDias({ value, onChange }: { value: number[]; onChange: (v: number[]) => void }) {
@@ -118,7 +151,7 @@ function Origem({ herdado, onReset, permitir }: { herdado: boolean; onReset: () 
 }
 
 // ── Linha de configuração: texto à esquerda, controle à direita (ou embaixo, se `vertical`)
-function Linha({ titulo, descricao, origem, controle, vertical }: { titulo: React.ReactNode; descricao?: React.ReactNode; origem?: React.ReactNode; controle: React.ReactNode; vertical?: boolean }) {
+function Linha({ titulo, descricao, origem, controle, vertical }: { titulo: React.ReactNode; descricao?: React.ReactNode; origem?: React.ReactNode; controle?: React.ReactNode; vertical?: boolean }) {
     return (
         <div style={{ padding: '14px 20px', borderTop: '1px solid var(--color-surface-sunken)', display: 'flex', flexDirection: vertical ? 'column' : 'row', alignItems: vertical ? 'stretch' : 'center', justifyContent: 'space-between', gap: vertical ? 10 : 24 }}>
             <div style={{ minWidth: 0 }}>
@@ -128,7 +161,7 @@ function Linha({ titulo, descricao, origem, controle, vertical }: { titulo: Reac
                 </div>
                 {descricao && <Typography variant="p" style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--color-text-secondary)' }}>{descricao}</Typography>}
             </div>
-            <div style={{ flexShrink: 0 }}>{controle}</div>
+            {controle && <div style={{ flexShrink: 0 }}>{controle}</div>}
         </div>
     );
 }
@@ -138,7 +171,7 @@ function Secao({ icone: Icone, titulo, extra }: { icone: React.ElementType; titu
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 20px', background: 'var(--gray-50)', borderTop: '1px solid var(--color-surface-sunken)' }}>
             <Icone size={14} color="var(--color-text-muted)" />
             <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)' }}>{titulo}</span>
-            <div style={{ marginLeft: 'auto' }}>{extra}</div>
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>{extra}</div>
         </div>
     );
 }
@@ -189,23 +222,34 @@ function TituloCard({ icone: Icone, titulo, extra }: { icone: React.ElementType;
     );
 }
 
+// Indicador do autosave (rodapé do card)
+function StatusSalvo({ estado, quando }: { estado: 'salvando' | 'salvo' | 'erro' | null; quando: Date | null }) {
+    if (estado === 'salvando') return <span style={{ fontSize: 12, color: 'var(--color-text-muted)', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Spinner size="sm" /> Salvando…</span>;
+    if (estado === 'erro') return <span style={{ fontSize: 12, color: 'var(--color-danger-text)', fontWeight: 600 }}>Não salvou. Tente de novo.</span>;
+    if (estado === 'salvo' && quando) return <span style={{ fontSize: 12, color: 'var(--color-success-text)', display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600 }}><Check size={13} /> Salvo às {fmtHora(quando)}</span>;
+    return <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>As mudanças são salvas automaticamente.</span>;
+}
+
 export default function ConfiguracoesNotificacoes() {
     const { user, perfil } = useAuth();
     const { consultorSelecionado } = useClient();
     const isMaster = perfil?.role === 'MASTER';
 
     const [loading, setLoading] = useState(true);
-    const [salvando, setSalvando] = useState(false);
     const [padrao, setPadrao] = useState<Pref>(VAZIA);
+    const [nPersonalizados, setNPersonalizados] = useState(0);
     const [consultores, setConsultores] = useState<Consultor[]>([]);
     const [alvo, setAlvo] = useState<string | null>(null);   // consultor sendo editado ou PADRAO
     const [override, setOverride] = useState<Pref>(VAZIA);
-    const [base, setBase] = useState<string>('');            // snapshot do que está salvo → detecta alteração pendente
+    const [outroEmail, setOutroEmail] = useState(false);     // consultor: mostrar campo de e-mail alternativo
     const [previa, setPrevia] = useState<PreviaDia[] | null>(null);
     const [previaCasa, setPreviaCasa] = useState<{ consultor: Consultor; dias: PreviaDia[] }[] | null>(null);   // Padrão Avere: casa inteira
     const [envios, setEnvios] = useState<Envio[]>([]);
     const [testando, setTestando] = useState(false);
+    const [restaurando, setRestaurando] = useState(false);
     const [atualizandoEnvios, setAtualizandoEnvios] = useState(false);
+    const [salvo, setSalvo] = useState<'salvando' | 'salvo' | 'erro' | null>(null);
+    const [salvoEm, setSalvoEm] = useState<Date | null>(null);
 
     const meuConsultor = useMemo(() => consultores.find(c => c.perfil_id === user?.id) ?? null, [consultores, user?.id]);
     const editandoPadrao = alvo === PADRAO;
@@ -231,6 +275,7 @@ export default function ConfiguracoesNotificacoes() {
             if (prefRes.error) throw prefRes.error;
             const prefs = (prefRes.data ?? []) as Pref[];
             setPadrao(prefs.find(p => p.consultor_id === null) ?? VAZIA);
+            setNPersonalizados(prefs.filter(p => p.consultor_id !== null).length);
             const cons = (consRes.data ?? []) as Consultor[];
             setConsultores(cons);
             const meu = cons.find(c => c.perfil_id === user?.id) ?? null;
@@ -246,77 +291,87 @@ export default function ConfiguracoesNotificacoes() {
 
     useEffect(() => { carregar(); }, [carregar]);
 
-    // ao trocar o alvo, carrega o override dele (ou o padrão) e a prévia.
-    // `padrao` entra por ref: o efeito NÃO pode reagir a cada toggle do Padrão Avere
-    // (senão a base de "alterações não salvas" acompanha a edição e o Salvar nunca habilita).
-    const padraoRef = useRef(padrao);
-    padraoRef.current = padrao;
+    // Prévia: do consultor (alvo) ou da casa inteira (Padrão) — uma RPC por consultor, em paralelo.
+    const carregarPrevia = useCallback(async (quem: string, cons: Consultor[]) => {
+        if (quem === PADRAO) {
+            const res = await Promise.all(cons.map(async c => {
+                const { data, error } = await supabase.rpc('notificacoes_previa', { p_consultor_id: c.id, p_dias: 7 });
+                if (error) console.error('prévia', c.nome, error);
+                return { consultor: c, dias: ((data ?? []) as PreviaDia[]) };
+            }));
+            const total = (d: PreviaDia[]) => d.reduce((s, x) => s + x.itens.length, 0);
+            return { casa: res.filter(r => r.dias.length > 0).sort((a, b) => total(b.dias) - total(a.dias)) };
+        }
+        const { data, error } = await supabase.rpc('notificacoes_previa', { p_consultor_id: quem, p_dias: 7 });
+        if (error) console.error('prévia', error);
+        return { um: (data ?? []) as PreviaDia[] };
+    }, []);
+
+    // ao trocar o alvo, carrega o override dele e a prévia
     useEffect(() => {
         if (!alvo) return;
         let vivo = true;
         (async () => {
-            if (alvo === PADRAO) {
-                setOverride(padraoRef.current); setBase(JSON.stringify(padraoRef.current)); setPrevia(null);
-                // Prévia da casa: uma chamada por consultor, em paralelo; só quem tem item entra.
-                setPreviaCasa(null);
-                const res = await Promise.all(consultores.map(async c => {
-                    const { data, error } = await supabase.rpc('notificacoes_previa', { p_consultor_id: c.id, p_dias: 7 });
-                    if (error) console.error('prévia', c.nome, error);
-                    return { consultor: c, dias: ((data ?? []) as PreviaDia[]) };
-                }));
+            setPrevia(null); setPreviaCasa(null); setSalvo(null); setSalvoEm(null);
+            if (alvo !== PADRAO) {
+                const { data } = await supabase.from('notificacao_preferencias').select('*').eq('consultor_id', alvo).maybeSingle();
                 if (!vivo) return;
-                const total = (d: PreviaDia[]) => d.reduce((s, x) => s + x.itens.length, 0);
-                setPreviaCasa(res.filter(r => r.dias.length > 0).sort((a, b) => total(b.dias) - total(a.dias)));
-                return;
+                const ov = (data as Pref) ?? { ...VAZIA, consultor_id: alvo };
+                setOverride(ov);
+                setOutroEmail(!!ov.email_destino);
             }
-            const { data } = await supabase.from('notificacao_preferencias').select('*').eq('consultor_id', alvo).maybeSingle();
+            const r = await carregarPrevia(alvo, consultores);
             if (!vivo) return;
-            const ov = (data as Pref) ?? { ...VAZIA, consultor_id: alvo };
-            setOverride(ov); setBase(JSON.stringify(ov));
-            const { data: pv, error } = await supabase.rpc('notificacoes_previa', { p_consultor_id: alvo, p_dias: 7 });
-            if (!vivo) return;
-            if (error) console.error('prévia', error);
-            setPrevia((pv ?? []) as PreviaDia[]);
+            if (r.casa) setPreviaCasa(r.casa); else setPrevia(r.um ?? []);
         })();
         return () => { vivo = false; };
-    }, [alvo, consultores]);
+    }, [alvo, consultores, carregarPrevia]);
+
+    // ── Autosave: cada mudança persiste na hora e atualiza a prévia ──
+    const versao = useRef(0);
+    const persistir = useCallback(async (next: Pref) => {
+        const minha = ++versao.current;
+        setSalvo('salvando');
+        try {
+            const carimbo = { atualizado_em: new Date().toISOString(), atualizado_por: user?.id };
+            if (next.consultor_id === null) {
+                const { id, ...campos } = next;
+                const { error } = id
+                    ? await supabase.from('notificacao_preferencias').update({ ...campos, ...carimbo }).eq('id', id)
+                    : await supabase.from('notificacao_preferencias').insert({ ...campos, consultor_id: null, ...carimbo });
+                if (error) throw error;
+            } else {
+                const campos: Pref = { ...next };
+                delete campos.id;
+                const { data, error } = await supabase.from('notificacao_preferencias')
+                    .upsert({ ...campos, ...carimbo }, { onConflict: 'consultor_id' }).select('id').single();
+                if (error) throw error;
+                if (data?.id && !next.id) setOverride(p => ({ ...p, id: data.id }));
+                setNPersonalizados(n => (next.id ? n : n + 1));
+            }
+            if (minha !== versao.current) return;   // veio outra mudança atrás desta
+            setSalvo('salvo'); setSalvoEm(new Date());
+            const r = await carregarPrevia(alvo ?? PADRAO, consultores);
+            if (minha !== versao.current) return;
+            if (r.casa) setPreviaCasa(r.casa); else setPrevia(r.um ?? []);
+        } catch (err) {
+            console.error('Notificações: falha ao salvar', err);
+            setSalvo('erro');
+            toast.error('Não foi possível salvar. Tente de novo.');
+        }
+    }, [user?.id, alvo, consultores, carregarPrevia]);
 
     // valor efetivo por campo = override ?? padrão
     const ef = <K extends keyof Pref>(k: K): Pref[K] => (editandoPadrao ? padrao[k] : (override[k] ?? padrao[k])) as Pref[K];
     const herdado = (k: keyof Pref) => !editandoPadrao && override[k] == null;
     const set = <K extends keyof Pref>(k: K, v: Pref[K]) => {
-        if (editandoPadrao) setPadrao(p => ({ ...p, [k]: v }));
-        else setOverride(p => ({ ...p, [k]: v }));
+        if (editandoPadrao) { const next = { ...padrao, [k]: v }; setPadrao(next); persistir(next); }
+        else { const next = { ...override, [k]: v }; setOverride(next); persistir(next); }
     };
-    const reset = (k: keyof Pref) => setOverride(p => ({ ...p, [k]: null }));
-    const alterado = JSON.stringify(editandoPadrao ? padrao : override) !== base;
-
-    const salvar = async () => {
-        setSalvando(true);
-        try {
-            if (editandoPadrao) {
-                const { id, ...campos } = padrao;
-                const { error } = id
-                    ? await supabase.from('notificacao_preferencias').update({ ...campos, atualizado_em: new Date().toISOString(), atualizado_por: user?.id }).eq('id', id)
-                    : await supabase.from('notificacao_preferencias').insert({ ...campos, consultor_id: null, atualizado_por: user?.id });
-                if (error) throw error;
-                setBase(JSON.stringify(padrao));
-                toast.success('Padrão Avere salvo.');
-            } else {
-                const campos: Pref = { ...override };
-                delete campos.id;
-                const { error } = await supabase.from('notificacao_preferencias')
-                    .upsert({ ...campos, consultor_id: alvo, atualizado_em: new Date().toISOString(), atualizado_por: user?.id }, { onConflict: 'consultor_id' });
-                if (error) throw error;
-                toast.success('Preferências salvas.');
-                const { data: pv } = await supabase.rpc('notificacoes_previa', { p_consultor_id: alvo, p_dias: 7 });
-                setPrevia((pv ?? []) as PreviaDia[]);
-            }
-            await carregar();
-        } catch (err) {
-            console.error('Notificações: falha ao salvar', err);
-            toast.error('Falha ao salvar. Tente de novo.');
-        } finally { setSalvando(false); }
+    const reset = (...ks: (keyof Pref)[]) => {
+        const next = { ...override };
+        for (const k of ks) (next as Record<string, unknown>)[k] = null;
+        setOverride(next); persistir(next);
     };
 
     // Acompanha o worker: consulta a cada 5 s até a linha sair de pendente/enviando (máx. 1 min)
@@ -353,6 +408,25 @@ export default function ConfiguracoesNotificacoes() {
         } finally { setTestando(false); }
     };
 
+    // Master: apaga todas as personalizações → todo mundo volta ao padrão Avere
+    const restaurarPadrao = () => {
+        toast(`Restaurar o padrão Avere para todos? As ${nPersonalizados} personalizações serão apagadas.`, {
+            action: {
+                label: 'Restaurar', onClick: async () => {
+                    setRestaurando(true);
+                    const { error } = await supabase.from('notificacao_preferencias').delete().not('consultor_id', 'is', null);
+                    setRestaurando(false);
+                    if (error) { toast.error(`Não foi possível restaurar: ${error.message}`); return; }
+                    toast.success('Todos os consultores voltaram ao padrão Avere.');
+                    await carregar();
+                    const r = await carregarPrevia(PADRAO, consultores);
+                    if (r.casa) setPreviaCasa(r.casa);
+                },
+            },
+            cancel: { label: 'Cancelar', onClick: () => {} },
+        });
+    };
+
     const atualizarEnvios = async () => { setAtualizandoEnvios(true); await carregarEnvios(); setAtualizandoEnvios(false); };
 
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
@@ -374,24 +448,28 @@ export default function ConfiguracoesNotificacoes() {
     }
 
     const permitirReset = !editandoPadrao;
-    const emailEfetivo = ef('email_destino') || consultorAlvo?.email_professional || '';
-    const masterDesligado = padrao.ativo === false;
+    const emailCadastro = consultorAlvo?.email_professional ?? '';
+    const emailEfetivo = ef('email_destino') || emailCadastro;
+    const casaAniv = padrao.aniversario_ativo ?? true;
+    const casaVenc = padrao.vencimento_ativo ?? true;
     const opcoesAlvo = [{ value: PADRAO, label: 'Padrão Avere (todos)' }, ...consultores.map(c => ({ value: c.id, label: c.perfil_id === user?.id ? `${c.nome} (eu)` : c.nome }))];
     const totalPrevia = (previa ?? []).reduce((s, d) => s + d.itens.length, 0);
     const totalCasa = (previaCasa ?? []).reduce((s, r) => s + r.dias.reduce((t, d) => t + d.itens.length, 0), 0);
     const emailsCasa = (previaCasa ?? []).reduce((s, r) => s + r.dias.length, 0);
+    const semEmail = consultores.filter(c => !c.email_professional).length;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px', flexWrap: 'wrap', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
                 <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
                         <BellRing size={28} color="var(--color-secundaria)" />
                         <Typography variant="h1">Notificações</Typography>
                         {isMaster && (
-                            <Badge intent={masterDesligado ? 'neutro' : 'primaria'} variant="solid" style={{ fontSize: 11 }}>
-                                {masterDesligado ? 'Envios desligados' : 'Envios ligados'}
-                            </Badge>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                                <Badge intent={casaAniv ? 'primaria' : 'neutro'} variant="solid" style={{ fontSize: 11 }}>Aniversários {casaAniv ? 'ligados' : 'desligados'}</Badge>
+                                <Badge intent={casaVenc ? 'primaria' : 'neutro'} variant="solid" style={{ fontSize: 11 }}>Vencimentos {casaVenc ? 'ligados' : 'desligados'}</Badge>
+                            </div>
                         )}
                     </div>
                     <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
@@ -414,68 +492,99 @@ export default function ConfiguracoesNotificacoes() {
                         icone={editandoPadrao ? Users : Mail}
                         titulo={editandoPadrao ? 'Padrão Avere' : (isMaster ? `Preferências de ${consultorAlvo?.nome ?? ''}` : 'Minhas preferências')}
                         extra={<>
+                            {editandoPadrao && nPersonalizados > 0 && <Badge intent="neutro" variant="ghost" style={{ fontSize: 10 }}>{nPersonalizados} consultor{nPersonalizados === 1 ? '' : 'es'} com personalização</Badge>}
                             {!editandoPadrao && override.id && <Badge intent="primaria" variant="ghost" style={{ fontSize: 10 }}>personalizado</Badge>}
-                            {alterado && <Badge intent="alerta" variant="ghost" style={{ fontSize: 10 }}>alterações não salvas</Badge>}
                         </>}
                     />
 
                     <Secao icone={Send} titulo="Entrega" />
-                    <Linha
-                        titulo="Receber notificações"
-                        descricao={editandoPadrao ? 'Chave geral: desligada aqui, ninguém recebe — mesmo quem personalizou.' : 'Desligado, você não recebe nenhum e-mail.'}
-                        origem={<Origem herdado={herdado('ativo')} onReset={() => reset('ativo')} permitir={permitirReset} />}
-                        controle={<Switch checked={ef('ativo') ?? true} onCheckedChange={(v: boolean) => set('ativo', v)} />}
-                    />
-                    <Linha
-                        vertical
-                        titulo="E-mail de destino"
-                        descricao={editandoPadrao ? 'Cada consultor recebe no próprio e-mail profissional.' : `Em branco = seu e-mail profissional (${consultorAlvo?.email_professional ?? '—'}).`}
-                        origem={<Origem herdado={herdado('email_destino')} onReset={() => reset('email_destino')} permitir={permitirReset} />}
-                        controle={
-                            <TextField type="email" placeholder={editandoPadrao ? 'e-mail profissional de cada consultor' : (consultorAlvo?.email_professional ?? 'e-mail')}
-                                value={ef('email_destino') ?? ''} onChange={e => set('email_destino', e.target.value || null)} disabled={editandoPadrao} />
-                        }
-                    />
+                    {!editandoPadrao && (
+                        <Linha
+                            titulo="Receber notificações"
+                            descricao="Desligado, você não recebe nenhum e-mail."
+                            origem={<Origem herdado={herdado('ativo')} onReset={() => reset('ativo')} permitir={permitirReset} />}
+                            controle={<Switch checked={ef('ativo') ?? true} onCheckedChange={(v: boolean) => set('ativo', v)} />}
+                        />
+                    )}
+                    {editandoPadrao ? (
+                        <Linha
+                            titulo="E-mail de destino"
+                            descricao={<>Cada consultor recebe no <strong>e-mail profissional do cadastro</strong> (Cadastros → Equipe).{semEmail > 0 && <> <span style={{ color: 'var(--color-warning-text)', fontWeight: 600 }}>{semEmail} consultor{semEmail === 1 ? '' : 'es'} sem e-mail cadastrado.</span></>}</>}
+                        />
+                    ) : (
+                        <Linha
+                            vertical={outroEmail}
+                            titulo="E-mail de destino"
+                            descricao={outroEmail ? `Do cadastro: ${emailCadastro || '—'}. Em branco volta a usar o cadastro.` : 'E-mail profissional do cadastro (Cadastros → Equipe).'}
+                            origem={<Origem herdado={herdado('email_destino')} onReset={() => { reset('email_destino'); setOutroEmail(false); }} permitir={permitirReset} />}
+                            controle={outroEmail ? (
+                                <TextField type="email" placeholder={emailCadastro || 'e-mail'} defaultValue={override.email_destino ?? ''}
+                                    onBlur={e => { const v = e.target.value.trim() || null; if (v !== (override.email_destino ?? null)) set('email_destino', v); if (!v) setOutroEmail(false); }}
+                                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+                            ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-secundaria)' }}>{emailEfetivo || '—'}</span>
+                                    <button type="button" onClick={() => setOutroEmail(true)}
+                                        style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-primaria)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--font-family)' }}>
+                                        usar outro
+                                    </button>
+                                </div>
+                            )}
+                        />
+                    )}
                     <Linha
                         titulo="Hora do envio"
                         descricao="Horário de Brasília. O e-mail sai na primeira rodada após essa hora."
                         origem={<Origem herdado={herdado('hora_envio')} onReset={() => reset('hora_envio')} permitir={permitirReset} />}
-                        controle={<input type="time" value={hhmm(ef('hora_envio')) || '07:30'} onChange={e => set('hora_envio', e.target.value || null)} style={{ ...ctrl, width: 110 }} />}
+                        controle={<HoraInput value={hhmm(ef('hora_envio')) || '07:30'} onCommit={v => set('hora_envio', v)} />}
                     />
                     <Linha
                         titulo="Só em dias úteis"
-                        descricao="Na véspera útil o resumo já cobre o fim de semana e os feriados."
+                        descricao="Ligado, a véspera útil já cobre o fim de semana e os feriados."
                         origem={<Origem herdado={herdado('somente_dia_util')} onReset={() => reset('somente_dia_util')} permitir={permitirReset} />}
-                        controle={<Switch checked={ef('somente_dia_util') ?? true} onCheckedChange={(v: boolean) => set('somente_dia_util', v)} />}
+                        controle={<Switch checked={ef('somente_dia_util') ?? false} onCheckedChange={(v: boolean) => set('somente_dia_util', v)} />}
                     />
 
                     <Secao icone={Cake} titulo="Aniversários de clientes"
-                        extra={<Switch checked={ef('aniversario_ativo') ?? true} onCheckedChange={(v: boolean) => set('aniversario_ativo', v)} />} />
+                        extra={<>
+                            {!editandoPadrao && !casaAniv && <Badge intent="neutro" variant="ghost" style={{ fontSize: 10 }}>desligado na casa</Badge>}
+                            <Switch checked={editandoPadrao ? casaAniv : (ef('aniversario_ativo') ?? true)} disabled={!editandoPadrao && !casaAniv}
+                                onCheckedChange={(v: boolean) => set('aniversario_ativo', v)} />
+                        </>} />
                     <Linha
                         vertical
                         titulo="Avisar com antecedência de"
-                        descricao="Cada antecedência marcada gera um lembrete. Clique para ligar ou desligar."
-                        origem={<Origem herdado={herdado('aniversario_dias') && herdado('aniversario_ativo')} onReset={() => { reset('aniversario_dias'); reset('aniversario_ativo'); }} permitir={permitirReset} />}
+                        descricao={editandoPadrao ? 'Chave da casa: desligada acima, ninguém recebe aniversários — mesmo quem personalizou.' : 'Cada antecedência marcada gera um lembrete. Clique para ligar ou desligar.'}
+                        origem={<Origem herdado={herdado('aniversario_dias') && herdado('aniversario_ativo')} onReset={() => reset('aniversario_dias', 'aniversario_ativo')} permitir={permitirReset} />}
                         controle={<SeletorDias value={ef('aniversario_dias') ?? []} onChange={v => set('aniversario_dias', v)} />}
                     />
 
                     <Secao icone={AlarmClock} titulo="Vencimentos (alertas do sistema)"
-                        extra={<Switch checked={ef('vencimento_ativo') ?? true} onCheckedChange={(v: boolean) => set('vencimento_ativo', v)} />} />
+                        extra={<>
+                            {!editandoPadrao && !casaVenc && <Badge intent="neutro" variant="ghost" style={{ fontSize: 10 }}>desligado na casa</Badge>}
+                            <Switch checked={editandoPadrao ? casaVenc : (ef('vencimento_ativo') ?? true)} disabled={!editandoPadrao && !casaVenc}
+                                onCheckedChange={(v: boolean) => set('vencimento_ativo', v)} />
+                        </>} />
                     <Linha
                         vertical
                         titulo="Avisar com antecedência de"
-                        descricao="Vale para as tarefas automáticas de vencimento ainda abertas."
-                        origem={<Origem herdado={herdado('vencimento_dias') && herdado('vencimento_ativo')} onReset={() => { reset('vencimento_dias'); reset('vencimento_ativo'); }} permitir={permitirReset} />}
+                        descricao={editandoPadrao ? 'Chave da casa: desligada acima, ninguém recebe vencimentos — mesmo quem personalizou.' : 'Vale para os ativos da sua carteira com vencimento (posição viva).'}
+                        origem={<Origem herdado={herdado('vencimento_dias') && herdado('vencimento_ativo')} onReset={() => reset('vencimento_dias', 'vencimento_ativo')} permitir={permitirReset} />}
                         controle={<SeletorDias value={ef('vencimento_dias') ?? []} onChange={v => set('vencimento_dias', v)} />}
                     />
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '14px 20px', borderTop: '1px solid var(--color-borda)', background: 'var(--gray-50)', flexWrap: 'wrap' }}>
-                        {!editandoPadrao ? (
+                        <StatusSalvo estado={salvo} quando={salvoEm} />
+                        {editandoPadrao ? (
+                            <Button variant="outline" onClick={restaurarPadrao} disabled={restaurando || nPersonalizados === 0}
+                                title={nPersonalizados === 0 ? 'Ninguém personalizou nada' : 'Apaga as personalizações de todos os consultores'}>
+                                <Undo2 size={14} style={{ marginRight: 6 }} />{restaurando ? 'Restaurando…' : 'Restaurar padrão para todos'}
+                            </Button>
+                        ) : (
                             <Button variant="outline" onClick={enviarTeste} disabled={testando} title={`Envia um e-mail de teste para ${emailEfetivo || 'o destino configurado'}`}>
                                 <Send size={14} style={{ marginRight: 6 }} />{testando ? 'Enviando…' : 'Enviar e-mail de teste'}
                             </Button>
-                        ) : <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Escolha um consultor para enviar um e-mail de teste.</span>}
-                        <Button variant="solid" onClick={salvar} disabled={salvando || !alterado}>{salvando ? 'Salvando…' : 'Salvar'}</Button>
+                        )}
                     </div>
                 </Card>
 
@@ -492,7 +601,8 @@ export default function ConfiguracoesNotificacoes() {
                     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
                     {(editandoPadrao ? previaCasa === null : previa === null) && <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spinner size="md" /></div>}
                     {editandoPadrao && previaCasa && previaCasa.length === 0 && (
-                        <EstadoVazio compacto positivo icon={CalendarCheck2} titulo="Nenhum e-mail previsto na casa" dica="Nenhum consultor tem aniversário ou vencimento no horizonte de 7 dias." />
+                        <EstadoVazio compacto positivo icon={CalendarCheck2} titulo="Nenhum e-mail previsto na casa"
+                            dica={!casaAniv && !casaVenc ? 'Os dois tipos de aviso estão desligados no padrão Avere.' : 'Nenhum consultor tem aniversário ou vencimento no horizonte de 7 dias.'} />
                     )}
                     {editandoPadrao && previaCasa && previaCasa.map(r => (
                         <div key={r.consultor.id}>
