@@ -154,10 +154,7 @@ export function ModeloEmailDrawer({ tipo, modelo, onChange, exemploId, exemploNo
 
                         <Bloco titulo="E-mail (comum aos dois avisos)">
                             <Texto label="Saudação" value={m.saudacao} onCommit={v => set('saudacao', v || 'Olá, {nome}!')} hint="{nome} vira o primeiro nome do consultor." />
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'end' }}>
-                                <Texto label="Prefixo do assunto" value={m.assunto_prefixo} onCommit={v => set('assunto_prefixo', v || 'Avere')} hint="Ex.: “Avere · 3 vencimentos · 1 aniversário (17/09)”." />
-                                <div style={{ paddingBottom: 22 }}><LinhaSwitch label="Contagem" checked={m.assunto_contagem} onChange={v => set('assunto_contagem', v)} /></div>
-                            </div>
+                            <LinhaSwitch label="Contagem no assunto" descricao="“Vencimentos (17/09) · 3 vencimentos”. Desligado: só “Vencimentos (17/09)”." checked={m.assunto_contagem} onChange={v => set('assunto_contagem', v)} />
                             <div>
                                 <label style={rotulo}>Organizar os vencimentos</label>
                                 <div style={{ display: 'flex', gap: 6 }}>
@@ -166,8 +163,7 @@ export function ModeloEmailDrawer({ tipo, modelo, onChange, exemploId, exemploNo
                                 </div>
                                 <span style={dica}>Por cliente: um bloco por pessoa, com os ativos dela. Por data: lista corrida, do mais próximo ao mais distante.</span>
                             </div>
-                            <Texto label="Rodapé" value={m.rodape} onCommit={v => set('rodape', v)} multiline />
-                            <LinhaSwitch label="Aviso “Não responda a este e-mail”" checked={m.nao_responder} onChange={v => set('nao_responder', v)} />
+                            <Texto label="Rodapé" value={m.rodape} onCommit={v => set('rodape', v)} multiline hint="Texto livre. O link “Ajustar preferências” é acrescentado no fim." />
                         </Bloco>
 
                         <DrawerSeparator />
