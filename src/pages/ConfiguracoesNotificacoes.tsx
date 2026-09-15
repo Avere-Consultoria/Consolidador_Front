@@ -311,16 +311,14 @@ export default function ConfiguracoesNotificacoes() {
 
     useEffect(() => { carregar(); }, [carregar]);
 
-    // Prévia: do consultor (alvo) ou da casa inteira (Padrão) — uma RPC por consultor, em paralelo.
-    const carregarPrevia = useCallback(async (quem: string, cons: Consultor[]) => {
+    // Prévia: do consultor (alvo) ou da casa inteira (Padrão) — UMA RPC, o banco percorre os consultores.
+    const carregarPrevia = useCallback(async (quem: string) => {
         if (quem === PADRAO) {
-            const res = await Promise.all(cons.map(async c => {
-                const { data, error } = await supabase.rpc('notificacoes_previa', { p_consultor_id: c.id, p_dias: 7 });
-                if (error) console.error('prévia', c.nome, error);
-                return { consultor: c, dias: ((data ?? []) as PreviaDia[]) };
-            }));
+            const { data, error } = await supabase.rpc('notificacoes_previa_casa', { p_dias: 7 });
+            if (error) console.error('prévia da casa', error);
+            const res = ((data ?? []) as { consultor: Consultor; dias: PreviaDia[] }[]);
             const total = (d: PreviaDia[]) => d.reduce((s, x) => s + x.itens.length, 0);
-            return { casa: res.filter(r => r.dias.length > 0).sort((a, b) => total(b.dias) - total(a.dias)) };
+            return { casa: [...res].sort((a, b) => total(b.dias) - total(a.dias)) };
         }
         const { data, error } = await supabase.rpc('notificacoes_previa', { p_consultor_id: quem, p_dias: 7 });
         if (error) console.error('prévia', error);
@@ -339,7 +337,7 @@ export default function ConfiguracoesNotificacoes() {
                 const ov = (data as Pref) ?? { ...VAZIA, consultor_id: alvo };
                 setOverride(ov);
             }
-            const r = await carregarPrevia(alvo, consultores);
+            const r = await carregarPrevia(alvo);
             if (!vivo) return;
             if (r.casa) setPreviaCasa(r.casa); else setPrevia(r.um ?? []);
         })();
@@ -370,7 +368,7 @@ export default function ConfiguracoesNotificacoes() {
             }
             if (minha !== versao.current) return;   // veio outra mudança atrás desta
             setSalvo('salvo'); setSalvoEm(new Date());
-            const r = await carregarPrevia(alvo ?? PADRAO, consultores);
+            const r = await carregarPrevia(alvo ?? PADRAO);
             if (minha !== versao.current) return;
             if (r.casa) setPreviaCasa(r.casa); else setPrevia(r.um ?? []);
         } catch (err) {
@@ -378,7 +376,7 @@ export default function ConfiguracoesNotificacoes() {
             setSalvo('erro');
             toast.error('Não foi possível salvar. Tente de novo.');
         }
-    }, [user?.id, alvo, consultores, carregarPrevia]);
+    }, [user?.id, alvo, carregarPrevia]);
 
     // valor efetivo por campo = override ?? padrão
     const ef = <K extends keyof Pref>(k: K): Pref[K] => (editandoPadrao ? padrao[k] : (override[k] ?? padrao[k])) as Pref[K];
@@ -449,7 +447,7 @@ export default function ConfiguracoesNotificacoes() {
                     if (error) { toast.error(`Não foi possível restaurar: ${error.message}`); return; }
                     toast.success('Todos os consultores voltaram ao padrão Avere.');
                     await carregar();
-                    const r = await carregarPrevia(PADRAO, consultores);
+                    const r = await carregarPrevia(PADRAO);
                     if (r.casa) setPreviaCasa(r.casa);
                 },
             },
