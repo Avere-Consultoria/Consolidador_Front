@@ -69,9 +69,26 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
             ?? ativos.find(a => focoCanon && a.ativoCanonicoId === focoCanon)
             ?? ativos.find(a => focoNome && norm(a.nome) === norm(focoNome));
         if (alvo) {
-            setGruposAbertos(prev => ({ ...prev, [alvo.tipo || 'Outros']: true }));
-            setAtivoSelecionado(alvo);
-            setDrawerAberto(true);
+            const grupo = alvo.tipo || 'Outros';
+            setGruposAbertos(prev => ({ ...prev, [grupo]: true }));
+            // Rola até a linha do ativo (fica à vista quando o drawer fechar), destaca por
+            // alguns segundos e só então abre o drawer.
+            const nomeAlvo = norm(alvo.nome);
+            let tentativas = 0;
+            const rolar = () => {
+                const secao = document.querySelector<HTMLElement>(`[data-grupo="${CSS.escape(grupo)}"]`);
+                const linha = secao
+                    ? Array.from(secao.querySelectorAll<HTMLTableRowElement>('tbody tr')).find(tr => norm(tr.textContent).includes(nomeAlvo))
+                    : null;
+                if (!linha) { if (++tentativas < 20) requestAnimationFrame(rolar); return; }
+                linha.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const fundo = linha.style.background, transicao = linha.style.transition;
+                linha.style.transition = 'background 0.4s ease';
+                linha.style.background = 'var(--color-accent-subtle)';
+                window.setTimeout(() => { linha.style.background = fundo; linha.style.transition = transicao; }, 4000);
+                window.setTimeout(() => { setAtivoSelecionado(alvo); setDrawerAberto(true); }, 400);
+            };
+            requestAnimationFrame(rolar);
         }
         searchParams.delete('canon'); searchParams.delete('ativo'); searchParams.delete('venc');
         setSearchParams(searchParams, { replace: true });
@@ -124,7 +141,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                     const ehUltimo = index === grupos.length - 1;
 
                     return (
-                        <div key={tipo} style={{
+                        <div key={tipo} data-grupo={tipo} style={{
                             borderBottom: ehUltimo && !aberto ? 'none' : '1px solid var(--color-border-subtle)',
                         }}>
                             {/* LINHA DO GRUPO */}
