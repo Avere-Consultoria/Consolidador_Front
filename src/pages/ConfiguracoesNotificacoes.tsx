@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Typography, Card, Badge, Button, Spinner, Switch, Combobox, toast } from 'avere-ui';
 import { BellRing, RotateCcw, Eye, History, Send, CalendarCheck2, Users, UserX, Cake, AlarmClock, Mail, RefreshCw, Plus, Check, Undo2, ChevronRight } from 'lucide-react';
 import { supabase } from '../services/supabase';
@@ -189,7 +188,7 @@ function ListaDias({ dias, onAbrir }: { dias: PreviaDia[]; onAbrir?: (it: Previa
                     </div>
                     {dia.itens.map((it, i) => (
                         <div key={i} onClick={onAbrir && it.cliente_id ? () => onAbrir(it) : undefined}
-                            title={onAbrir && it.cliente_id ? 'Abrir na posição do cliente' : undefined}
+                            title={onAbrir && it.cliente_id ? 'Abrir na posição do cliente (nova aba)' : undefined}
                             style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 20px', borderTop: '1px solid var(--color-surface-sunken)', cursor: onAbrir && it.cliente_id ? 'pointer' : 'default' }}
                             onMouseEnter={e => { if (onAbrir && it.cliente_id) e.currentTarget.style.background = 'var(--color-accent-subtle)'; }}
                             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
@@ -237,8 +236,7 @@ function StatusSalvo({ estado, quando }: { estado: 'salvando' | 'salvo' | 'erro'
 
 export default function ConfiguracoesNotificacoes() {
     const { user, perfil } = useAuth();
-    const { consultorSelecionado, consultorPerfilId, setSelectedClient } = useClient();
-    const navigate = useNavigate();
+    const { consultorSelecionado } = useClient();
     const isMaster = perfil?.role === 'MASTER';
 
     const [loading, setLoading] = useState(true);
@@ -433,17 +431,11 @@ export default function ConfiguracoesNotificacoes() {
 
     const atualizarEnvios = async () => { setAtualizandoEnvios(true); await carregarEnvios(); setAtualizandoEnvios(false); };
 
-    // Drill-down: item da prévia → posição do cliente, com o drawer daquele ativo aberto
-    // (TabelaAtivos lê ?canon= / ?ativo= / &venc=). Mesmo padrão do abrirCliente de Alertas.
-    const abrirItem = async (it: PreviaItem) => {
+    // Drill-down: item da prévia → posição do cliente em ABA NOVA, com o drawer daquele ativo
+    // aberto (TabelaAtivos lê ?canon= / ?ativo= / &venc=). O ClienteWorkspace recarrega o
+    // cliente pela URL, então a aba nova não depende do contexto desta.
+    const abrirItem = (it: PreviaItem) => {
         if (!it.cliente_id) return;
-        const { data: cli } = await supabase.from('clientes').select('id, codigo_avere, nome').eq('id', it.cliente_id).maybeSingle();
-        setSelectedClient({
-            id: it.cliente_id,
-            codigoAvere: cli?.codigo_avere ?? '',
-            nome: cli?.nome ?? it.cliente_nome,
-            consultorId: consultorAlvo?.perfil_id ?? (isMaster ? consultorPerfilId : (perfil?.id ?? null)),
-        });
         const q = new URLSearchParams();
         if (it.tipo === 'vencimento') {
             if (it.ativo_canonico_id) q.set('canon', it.ativo_canonico_id);
@@ -451,7 +443,7 @@ export default function ConfiguracoesNotificacoes() {
             if (it.data) q.set('venc', it.data);
         }
         const qs = q.toString();
-        navigate(`/cliente/${it.cliente_id}/posicao${qs ? `?${qs}` : ''}`);
+        window.open(`/cliente/${it.cliente_id}/posicao${qs ? `?${qs}` : ''}`, '_blank', 'noopener');
     };
 
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
