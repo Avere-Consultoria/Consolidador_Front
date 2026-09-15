@@ -570,11 +570,12 @@ export default function ConfiguracoesNotificacoes() {
                 <div style={{ position: 'relative', minHeight: 360 }}>
                 <Card style={{ padding: 0, overflow: 'hidden', position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
                     <TituloCard icone={Eye} titulo="Prévia"
-                        extra={
-                            editandoPadrao
+                        extra={<>
+                            {isMaster && !casaAniv && !casaVenc && <Badge intent="neutro" variant="ghost" style={{ fontSize: 10 }} title="A prévia mostra o que sairia; nada é enviado com as chaves da casa desligadas">envios desligados</Badge>}
+                            {editandoPadrao
                                 ? previaCasa && previaCasa.length > 0 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{previaCasa.length} consultor{previaCasa.length === 1 ? '' : 'es'} · {emailsCasa} e-mail{emailsCasa === 1 ? '' : 's'} · {totalCasa} {totalCasa === 1 ? 'item' : 'itens'}</span>
-                                : previa && previa.length > 0 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{previa.length} e-mail{previa.length === 1 ? '' : 's'} · {totalPrevia} {totalPrevia === 1 ? 'item' : 'itens'}</span>
-                        } />
+                                : previa && previa.length > 0 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{previa.length} e-mail{previa.length === 1 ? '' : 's'} · {totalPrevia} {totalPrevia === 1 ? 'item' : 'itens'}</span>}
+                        </>} />
                     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
                     {(editandoPadrao ? previaCasa === null : previa === null) && <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spinner size="md" /></div>}
                     {editandoPadrao && previaCasa && previaCasa.length === 0 && (
