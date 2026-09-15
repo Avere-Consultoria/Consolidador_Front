@@ -416,7 +416,7 @@ export default function ConfiguracoesNotificacoes() {
             const { data, error } = await supabase.rpc('notificacoes_teste', { p_consultor_id: alvo });
             if (error) throw error;
             if (data?.ok) {
-                toast.success(`E-mail de teste enfileirado para ${data.email} — acompanhando o envio…`);
+                toast.success(`${data.quantos > 1 ? `${data.quantos} e-mails de teste enfileirados` : 'E-mail de teste enfileirado'} para ${data.email} — acompanhando o envio…`);
                 if (isMaster) { await carregarEnvios(); acompanhar(data.id); }
             } else {
                 toast.error(data?.motivo ?? 'Não foi possível enfileirar o teste.');
@@ -497,9 +497,13 @@ export default function ConfiguracoesNotificacoes() {
     const casaAniv = padrao.aniversario_ativo ?? true;
     const casaVenc = padrao.vencimento_ativo ?? true;
     const opcoesAlvo = [{ value: PADRAO, label: 'Padrão Avere (todos)' }, ...consultores.map(c => ({ value: c.id, label: c.perfil_id === user?.id ? `${c.nome} (eu)` : c.nome }))];
+    // Um e-mail por TIPO por dia (aniversários e vencimentos separados)
+    const emailsDoDia = (d: PreviaDia) => new Set(d.itens.map(i => i.tipo)).size;
+    const emailsDe = (dias: PreviaDia[]) => dias.reduce((s, d) => s + emailsDoDia(d), 0);
     const totalPrevia = (previa ?? []).reduce((s, d) => s + d.itens.length, 0);
+    const emailsPrevia = emailsDe(previa ?? []);
     const totalCasa = (previaCasa ?? []).reduce((s, r) => s + r.dias.reduce((t, d) => t + d.itens.length, 0), 0);
-    const emailsCasa = (previaCasa ?? []).reduce((s, r) => s + r.dias.length, 0);
+    const emailsCasa = (previaCasa ?? []).reduce((s, r) => s + emailsDe(r.dias), 0);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -608,7 +612,7 @@ export default function ConfiguracoesNotificacoes() {
                             {isMaster && !casaAniv && !casaVenc && <Badge intent="neutro" variant="ghost" style={{ fontSize: 10 }} title="A prévia mostra o que sairia; nada é enviado com as chaves da casa desligadas">envios desligados</Badge>}
                             {editandoPadrao
                                 ? previaCasa && previaCasa.length > 0 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{previaCasa.length} consultor{previaCasa.length === 1 ? '' : 'es'} · {emailsCasa} e-mail{emailsCasa === 1 ? '' : 's'} · {totalCasa} {totalCasa === 1 ? 'item' : 'itens'}</span>
-                                : previa && previa.length > 0 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{previa.length} e-mail{previa.length === 1 ? '' : 's'} · {totalPrevia} {totalPrevia === 1 ? 'item' : 'itens'}</span>}
+                                : previa && previa.length > 0 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{emailsPrevia} e-mail{emailsPrevia === 1 ? '' : 's'} · {totalPrevia} {totalPrevia === 1 ? 'item' : 'itens'}</span>}
                         </>} />
                     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
                     {(editandoPadrao ? previaCasa === null : previa === null) && <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spinner size="md" /></div>}
@@ -620,7 +624,7 @@ export default function ConfiguracoesNotificacoes() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 20px', background: 'var(--color-accent-subtle)', borderTop: '1px solid var(--color-surface-sunken)' }}>
                                 <Users size={14} color="var(--color-secundaria)" />
                                 <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-secundaria)' }}>{r.consultor.nome}</span>
-                                <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 600 }}>{r.dias.length} e-mail{r.dias.length === 1 ? '' : 's'}</span>
+                                <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 600 }}>{emailsDe(r.dias)} e-mail{emailsDe(r.dias) === 1 ? '' : 's'}</span>
                             </div>
                             <ListaDias dias={r.dias} onAbrir={abrirItem} />
                         </div>
