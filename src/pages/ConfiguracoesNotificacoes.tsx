@@ -456,7 +456,6 @@ export default function ConfiguracoesNotificacoes() {
     const totalPrevia = (previa ?? []).reduce((s, d) => s + d.itens.length, 0);
     const totalCasa = (previaCasa ?? []).reduce((s, r) => s + r.dias.reduce((t, d) => t + d.itens.length, 0), 0);
     const emailsCasa = (previaCasa ?? []).reduce((s, r) => s + r.dias.length, 0);
-    const semEmail = consultores.filter(c => !c.email_professional).length;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -491,10 +490,7 @@ export default function ConfiguracoesNotificacoes() {
                     <TituloCard
                         icone={editandoPadrao ? Users : Mail}
                         titulo={editandoPadrao ? 'Padrão Avere' : (isMaster ? `Preferências de ${consultorAlvo?.nome ?? ''}` : 'Minhas preferências')}
-                        extra={<>
-                            {editandoPadrao && nPersonalizados > 0 && <Badge intent="neutro" variant="ghost" style={{ fontSize: 10 }}>{nPersonalizados} consultor{nPersonalizados === 1 ? '' : 'es'} com personalização</Badge>}
-                            {!editandoPadrao && override.id && <Badge intent="primaria" variant="ghost" style={{ fontSize: 10 }}>personalizado</Badge>}
-                        </>}
+                        extra={!editandoPadrao && override.id && <Badge intent="primaria" variant="ghost" style={{ fontSize: 10 }}>personalizado</Badge>}
                     />
 
                     <Secao icone={Send} titulo="Entrega" />
@@ -506,12 +502,7 @@ export default function ConfiguracoesNotificacoes() {
                             controle={<Switch checked={ef('ativo') ?? true} onCheckedChange={(v: boolean) => set('ativo', v)} />}
                         />
                     )}
-                    {editandoPadrao ? (
-                        <Linha
-                            titulo="E-mail de destino"
-                            descricao={<>Cada consultor recebe no <strong>e-mail profissional do cadastro</strong> (Cadastros → Equipe).{semEmail > 0 && <> <span style={{ color: 'var(--color-warning-text)', fontWeight: 600 }}>{semEmail} consultor{semEmail === 1 ? '' : 'es'} sem e-mail cadastrado.</span></>}</>}
-                        />
-                    ) : (
+                    {!editandoPadrao && (
                         <Linha
                             vertical={outroEmail}
                             titulo="E-mail de destino"
