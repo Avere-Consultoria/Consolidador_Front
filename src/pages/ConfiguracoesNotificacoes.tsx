@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Typography, Card, Badge, Button, Spinner, Switch, Combobox, toast } from 'avere-ui';
-import { BellRing, RotateCcw, Eye, History, Send, CalendarCheck2, Users, UserX, Cake, AlarmClock, Mail, RefreshCw, Plus, Check, Undo2 } from 'lucide-react';
+import { BellRing, RotateCcw, Eye, History, Send, CalendarCheck2, Users, UserX, Cake, AlarmClock, Mail, RefreshCw, Plus, Check, Undo2, ChevronRight } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
@@ -34,7 +35,8 @@ type Pref = {
     vencimento_dias: number[] | null;
 };
 type Consultor = { id: string; nome: string; email_professional: string | null; perfil_id: string | null };
-type PreviaDia = { data_envio: string; itens: { tipo: string; cliente_nome: string; titulo?: string; instituicao?: string; valor?: number; data: string; dias: number }[] };
+type PreviaItem = { tipo: string; cliente_id?: string; cliente_nome: string; titulo?: string; instituicao?: string; valor?: number; ativo_canonico_id?: string | null; data: string; dias: number };
+type PreviaDia = { data_envio: string; itens: PreviaItem[] };
 type Envio = { id: string; consultor_id: string; email_destino: string; data_ref: string; status: string; enviada_em: string | null; erro: string | null; assunto: string };
 
 const VAZIA: Pref = { consultor_id: null, ativo: null, email_destino: null, hora_envio: null, somente_dia_util: null, aniversario_ativo: null, aniversario_dias: null, vencimento_ativo: null, vencimento_dias: null };
@@ -174,8 +176,8 @@ function Secao({ icone: Icone, titulo, extra }: { icone: React.ElementType; titu
     );
 }
 
-// ── Prévia: um bloco por dia de envio, com os itens daquele e-mail
-function ListaDias({ dias }: { dias: PreviaDia[] }) {
+// ── Prévia: um bloco por dia de envio, com os itens daquele e-mail (clique = drill-down no cliente)
+function ListaDias({ dias, onAbrir }: { dias: PreviaDia[]; onAbrir?: (it: PreviaItem) => void }) {
     return (
         <>
             {dias.map(dia => (
@@ -186,7 +188,11 @@ function ListaDias({ dias }: { dias: PreviaDia[] }) {
                         <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 600 }}>{dia.itens.length} {dia.itens.length === 1 ? 'item' : 'itens'}</span>
                     </div>
                     {dia.itens.map((it, i) => (
-                        <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 20px', borderTop: '1px solid var(--color-surface-sunken)' }}>
+                        <div key={i} onClick={onAbrir && it.cliente_id ? () => onAbrir(it) : undefined}
+                            title={onAbrir && it.cliente_id ? 'Abrir na posição do cliente' : undefined}
+                            style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '10px 20px', borderTop: '1px solid var(--color-surface-sunken)', cursor: onAbrir && it.cliente_id ? 'pointer' : 'default' }}
+                            onMouseEnter={e => { if (onAbrir && it.cliente_id) e.currentTarget.style.background = 'var(--color-accent-subtle)'; }}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                             <Badge intent={it.tipo === 'aniversario' ? 'primaria' : 'alerta'} variant="ghost" style={{ fontSize: 10, flexShrink: 0 }}>
                                 {it.tipo === 'aniversario' ? 'aniversário' : 'vencimento'}
                             </Badge>
@@ -202,6 +208,7 @@ function ListaDias({ dias }: { dias: PreviaDia[] }) {
                                 <div style={{ fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>{fmtDate(it.data)}</div>
                                 <div style={{ fontSize: 11, color: it.dias === 0 ? 'var(--color-primaria)' : 'var(--color-text-muted)', fontWeight: 600 }}>{it.dias === 0 ? 'hoje' : `em ${it.dias} dia${it.dias === 1 ? '' : 's'}`}</div>
                             </div>
+                            {onAbrir && it.cliente_id && <ChevronRight size={15} color="var(--color-border-default)" style={{ flexShrink: 0 }} />}
                         </div>
                     ))}
                 </div>
@@ -230,7 +237,8 @@ function StatusSalvo({ estado, quando }: { estado: 'salvando' | 'salvo' | 'erro'
 
 export default function ConfiguracoesNotificacoes() {
     const { user, perfil } = useAuth();
-    const { consultorSelecionado } = useClient();
+    const { consultorSelecionado, consultorPerfilId, setSelectedClient } = useClient();
+    const navigate = useNavigate();
     const isMaster = perfil?.role === 'MASTER';
 
     const [loading, setLoading] = useState(true);
@@ -425,6 +433,27 @@ export default function ConfiguracoesNotificacoes() {
 
     const atualizarEnvios = async () => { setAtualizandoEnvios(true); await carregarEnvios(); setAtualizandoEnvios(false); };
 
+    // Drill-down: item da prévia → posição do cliente, com o drawer daquele ativo aberto
+    // (TabelaAtivos lê ?canon= / ?ativo= / &venc=). Mesmo padrão do abrirCliente de Alertas.
+    const abrirItem = async (it: PreviaItem) => {
+        if (!it.cliente_id) return;
+        const { data: cli } = await supabase.from('clientes').select('id, codigo_avere, nome').eq('id', it.cliente_id).maybeSingle();
+        setSelectedClient({
+            id: it.cliente_id,
+            codigoAvere: cli?.codigo_avere ?? '',
+            nome: cli?.nome ?? it.cliente_nome,
+            consultorId: consultorAlvo?.perfil_id ?? (isMaster ? consultorPerfilId : (perfil?.id ?? null)),
+        });
+        const q = new URLSearchParams();
+        if (it.tipo === 'vencimento') {
+            if (it.ativo_canonico_id) q.set('canon', it.ativo_canonico_id);
+            if (it.titulo) q.set('ativo', it.titulo);
+            if (it.data) q.set('venc', it.data);
+        }
+        const qs = q.toString();
+        navigate(`/cliente/${it.cliente_id}/posicao${qs ? `?${qs}` : ''}`);
+    };
+
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
 
     if (!isMaster && !meuConsultor) {
@@ -566,13 +595,13 @@ export default function ConfiguracoesNotificacoes() {
                                 <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-secundaria)' }}>{r.consultor.nome}</span>
                                 <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--color-text-muted)', fontWeight: 600 }}>{r.dias.length} e-mail{r.dias.length === 1 ? '' : 's'}</span>
                             </div>
-                            <ListaDias dias={r.dias} />
+                            <ListaDias dias={r.dias} onAbrir={abrirItem} />
                         </div>
                     ))}
                     {!editandoPadrao && previa && previa.length === 0 && (
                         <EstadoVazio compacto positivo icon={CalendarCheck2} titulo="Nenhum e-mail previsto" />
                     )}
-                    {!editandoPadrao && previa && <ListaDias dias={previa} />}
+                    {!editandoPadrao && previa && <ListaDias dias={previa} onAbrir={abrirItem} />}
                     </div>
                 </Card>
                 </div>

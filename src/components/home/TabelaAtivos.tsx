@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, Typography, Badge, DataTable } from 'avere-ui';
 import { LayoutGrid, ChevronRight, List } from 'lucide-react';
 import { fmt, fmtDate, padronizarTaxaExibicao } from '../../utils/formatters';
@@ -52,6 +53,30 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
             }))
             .sort((a, b) => b.total - a.total);
     }, [ativos]);
+
+    // Deep-link (?canon=<ativo_canonico_id> | ?ativo=<nome>, opcional &venc=YYYY-MM-DD) vindo das
+    // Notificações/Alertas: abre o grupo do ativo e o drawer de detalhe direto nele.
+    const [searchParams, setSearchParams] = useSearchParams();
+    const focoCanon = searchParams.get('canon');
+    const focoNome = searchParams.get('ativo');
+    const focoVenc = searchParams.get('venc');
+    useEffect(() => {
+        if ((!focoCanon && !focoNome) || ativos.length === 0) return;
+        const norm = (s?: string | null) => (s ?? '').trim().toLowerCase();
+        const bateVenc = (a: ConsolidatedAtivo) => !focoVenc || (a.vencimento ?? '').slice(0, 10) === focoVenc;
+        const alvo = ativos.find(a => focoCanon && a.ativoCanonicoId === focoCanon && bateVenc(a))
+            ?? ativos.find(a => focoNome && norm(a.nome) === norm(focoNome) && bateVenc(a))
+            ?? ativos.find(a => focoCanon && a.ativoCanonicoId === focoCanon)
+            ?? ativos.find(a => focoNome && norm(a.nome) === norm(focoNome));
+        if (alvo) {
+            setGruposAbertos(prev => ({ ...prev, [alvo.tipo || 'Outros']: true }));
+            setAtivoSelecionado(alvo);
+            setDrawerAberto(true);
+        }
+        searchParams.delete('canon'); searchParams.delete('ativo'); searchParams.delete('venc');
+        setSearchParams(searchParams, { replace: true });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [focoCanon, focoNome, focoVenc, ativos]);
 
     const COR_INSTITUICAO: Record<string, string> = {
         'BTG Pactual': CORES.btg,
