@@ -5,6 +5,7 @@ import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
+import { ModeloEmailDrawer, type ModeloEmail, type TipoAviso } from '../components/notificacoes/ModeloEmailDrawer';
 import { fmt, fmtDate } from '../utils/formatters';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -226,6 +227,17 @@ function TituloCard({ icone: Icone, titulo, extra }: { icone: React.ElementType;
     );
 }
 
+// Botão "Modelo do e-mail" nas faixas de aniversário/vencimento (master, Padrão Avere)
+function BotaoModelo({ onClick }: { onClick: () => void }) {
+    return (
+        <button type="button" onClick={onClick} title="Editar o modelo do e-mail deste aviso"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 26, padding: '0 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-family)',
+                border: '1px solid var(--color-border-default)', background: 'var(--color-white)', color: 'var(--color-primaria)' }}>
+            <Mail size={12} /> Modelo do e-mail
+        </button>
+    );
+}
+
 // Indicador do autosave (rodapé do card)
 function StatusSalvo({ estado, quando }: { estado: 'salvando' | 'salvo' | 'erro' | null; quando: Date | null }) {
     if (estado === 'salvando') return <span style={{ fontSize: 12, color: 'var(--color-text-muted)', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Spinner size="sm" /> Salvando…</span>;
@@ -253,6 +265,8 @@ export default function ConfiguracoesNotificacoes() {
     const [atualizandoEnvios, setAtualizandoEnvios] = useState(false);
     const [salvo, setSalvo] = useState<'salvando' | 'salvo' | 'erro' | null>(null);
     const [salvoEm, setSalvoEm] = useState<Date | null>(null);
+    const [modelo, setModelo] = useState<ModeloEmail | null>(null);      // modelo do e-mail (master)
+    const [modeloAberto, setModeloAberto] = useState<TipoAviso | null>(null);
 
     const meuConsultor = useMemo(() => consultores.find(c => c.perfil_id === user?.id) ?? null, [consultores, user?.id]);
     const editandoPadrao = alvo === PADRAO;
@@ -285,7 +299,10 @@ export default function ConfiguracoesNotificacoes() {
             // Master: segue o consultor escolhido na barra do topo; senão o próprio; senão o padrão.
             const doTopo = isMaster && cons.some(c => c.id === consultorSelecionado) ? consultorSelecionado : null;
             setAlvo(prev => prev ?? (isMaster ? (doTopo ?? meu?.id ?? PADRAO) : (meu?.id ?? null)));
-            if (isMaster) await carregarEnvios();
+            if (isMaster) {
+                const [, mod] = await Promise.all([carregarEnvios(), supabase.from('notificacao_modelo').select('*').eq('id', 1).maybeSingle()]);
+                setModelo((mod.data as ModeloEmail) ?? null);
+            }
         } catch (err) {
             console.error('Notificações: falha ao carregar', err);
             toast.error('Não foi possível carregar as preferências.');
@@ -410,6 +427,17 @@ export default function ConfiguracoesNotificacoes() {
         } finally { setTestando(false); }
     };
 
+    // Modelo do e-mail: cada campo salva na hora (linha única, só o master escreve)
+    const salvarModelo = async (patch: Partial<ModeloEmail>) => {
+        if (!modelo) return;
+        const next = { ...modelo, ...patch };
+        setModelo(next);
+        const { error } = await supabase.from('notificacao_modelo')
+            .update({ ...patch, atualizado_em: new Date().toISOString(), atualizado_por: user?.id }).eq('id', 1);
+        if (error) { console.error('modelo do e-mail', error); toast.error('Não foi possível salvar o modelo.'); setModelo(modelo); }
+    };
+    const exemploPrevia = editandoPadrao ? (previaCasa?.[0]?.consultor ?? null) : (consultorAlvo ?? null);
+
     // Master: apaga todas as personalizações → todo mundo volta ao padrão Avere
     const restaurarPadrao = () => {
         toast(`Restaurar o padrão Avere para todos? As ${nPersonalizados} personalizações serão apagadas.`, {
@@ -531,7 +559,10 @@ export default function ConfiguracoesNotificacoes() {
                     />
 
                     <Secao icone={Cake} titulo="Aniversários de clientes"
-                        extra={<Switch checked={editandoPadrao ? casaAniv : (ef('aniversario_ativo') ?? true)} onCheckedChange={(v: boolean) => set('aniversario_ativo', v)} />} />
+                        extra={<>
+                            {editandoPadrao && modelo && <BotaoModelo onClick={() => setModeloAberto('aniversario')} />}
+                            <Switch checked={editandoPadrao ? casaAniv : (ef('aniversario_ativo') ?? true)} onCheckedChange={(v: boolean) => set('aniversario_ativo', v)} />
+                        </>} />
                     <Linha
                         vertical
                         titulo="Avisar com antecedência de"
@@ -541,7 +572,10 @@ export default function ConfiguracoesNotificacoes() {
                     />
 
                     <Secao icone={AlarmClock} titulo="Vencimentos (alertas do sistema)"
-                        extra={<Switch checked={editandoPadrao ? casaVenc : (ef('vencimento_ativo') ?? true)} onCheckedChange={(v: boolean) => set('vencimento_ativo', v)} />} />
+                        extra={<>
+                            {editandoPadrao && modelo && <BotaoModelo onClick={() => setModeloAberto('vencimento')} />}
+                            <Switch checked={editandoPadrao ? casaVenc : (ef('vencimento_ativo') ?? true)} onCheckedChange={(v: boolean) => set('vencimento_ativo', v)} />
+                        </>} />
                     <Linha
                         vertical
                         titulo="Avisar com antecedência de"
@@ -599,6 +633,12 @@ export default function ConfiguracoesNotificacoes() {
                 </Card>
                 </div>
             </div>
+
+            {isMaster && (
+                <ModeloEmailDrawer tipo={modeloAberto} modelo={modelo} onChange={salvarModelo}
+                    exemploId={exemploPrevia?.id ?? null} exemploNome={exemploPrevia?.nome ?? null}
+                    onOpenChange={o => { if (!o) setModeloAberto(null); }} />
+            )}
 
             {/* ── Histórico (master) ── */}
             {isMaster && (
