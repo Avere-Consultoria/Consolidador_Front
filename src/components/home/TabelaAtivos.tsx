@@ -60,8 +60,14 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
     const focoCanon = searchParams.get('canon');
     const focoNome = searchParams.get('ativo');
     const focoVenc = searchParams.get('venc');
+    const focoTratado = React.useRef<string | null>(null);
     useEffect(() => {
         if ((!focoCanon && !focoNome) || ativos.length === 0) return;
+        // O mesmo alvo não pode ser tratado duas vezes (ativos muda de referência antes da
+        // URL limpar): a 2ª rodada capturaria o fundo já destacado como "original".
+        const chave = `${focoCanon}|${focoNome}|${focoVenc}`;
+        if (focoTratado.current === chave) return;
+        focoTratado.current = chave;
         const norm = (s?: string | null) => (s ?? '').trim().toLowerCase();
         const bateVenc = (a: ConsolidatedAtivo) => !focoVenc || (a.vencimento ?? '').slice(0, 10) === focoVenc;
         const alvo = ativos.find(a => focoCanon && a.ativoCanonicoId === focoCanon && bateVenc(a))
@@ -82,10 +88,10 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                     : null;
                 if (!linha) { if (++tentativas < 20) requestAnimationFrame(rolar); return; }
                 linha.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                const fundo = linha.style.background, transicao = linha.style.transition;
                 linha.style.transition = 'background 0.4s ease';
                 linha.style.background = 'var(--color-accent-subtle)';
-                window.setTimeout(() => { linha.style.background = fundo; linha.style.transition = transicao; }, 10000);
+                // Volta ao estilo da tabela (sem inline) — nunca "restaurar" um fundo capturado.
+                window.setTimeout(() => { linha.style.background = ''; window.setTimeout(() => { linha.style.transition = ''; }, 500); }, 10000);
                 window.setTimeout(() => { setAtivoSelecionado(alvo); setDrawerAberto(true); }, 400);
             };
             requestAnimationFrame(rolar);
