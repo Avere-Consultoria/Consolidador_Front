@@ -85,7 +85,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                 const fundo = linha.style.background, transicao = linha.style.transition;
                 linha.style.transition = 'background 0.4s ease';
                 linha.style.background = 'var(--color-accent-subtle)';
-                window.setTimeout(() => { linha.style.background = fundo; linha.style.transition = transicao; }, 4000);
+                window.setTimeout(() => { linha.style.background = fundo; linha.style.transition = transicao; }, 10000);
                 window.setTimeout(() => { setAtivoSelecionado(alvo); setDrawerAberto(true); }, 400);
             };
             requestAnimationFrame(rolar);
