@@ -96,7 +96,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
             };
             requestAnimationFrame(rolar);
         }
-        searchParams.delete('canon'); searchParams.delete('ativo'); searchParams.delete('venc');
+        searchParams.delete('canon'); searchParams.delete('ativo'); searchParams.delete('venc'); searchParams.delete('menu');
         setSearchParams(searchParams, { replace: true });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [focoCanon, focoNome, focoVenc, ativos]);

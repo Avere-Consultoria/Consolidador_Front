@@ -15,7 +15,8 @@ import LogoAvereIcone from '../assets/A_Azul.svg';
 import LogoAvereCompleta from '../assets/B_Azul.svg';
 
 export default function MainLayout() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // ?menu=fechado (deep-links da prévia de Notificações / e-mail): abre com a sidebar recolhida
+  const [isCollapsed, setIsCollapsed] = useState(() => new URLSearchParams(window.location.search).get('menu') === 'fechado');
   const [clientes, setClientes] = useState<any[]>([]);
   const [consultores, setConsultores] = useState<any[]>([]);
   const [pendenciasCount, setPendenciasCount] = useState(0);

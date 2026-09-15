@@ -464,7 +464,7 @@ export default function ConfiguracoesNotificacoes() {
     // cliente pela URL, então a aba nova não depende do contexto desta.
     const abrirItem = (it: PreviaItem) => {
         if (!it.cliente_id) return;
-        const q = new URLSearchParams();
+        const q = new URLSearchParams({ menu: 'fechado' });
         if (it.tipo === 'vencimento') {
             if (it.ativo_canonico_id) q.set('canon', it.ativo_canonico_id);
             if (it.titulo) q.set('ativo', it.titulo);
