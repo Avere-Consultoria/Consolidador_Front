@@ -154,7 +154,11 @@ export function ModeloEmailDrawer({ tipo, modelo, onChange, exemploId, exemploNo
 
                         <Bloco titulo="E-mail (comum aos dois avisos)">
                             <Texto label="Saudação" value={m.saudacao} onCommit={v => set('saudacao', v || 'Olá, {nome}!')} hint="{nome} vira o primeiro nome do consultor." />
-                            <LinhaSwitch label="Contagem no assunto" descricao="“Vencimentos (17/09) · 3 vencimentos”. Desligado: só “Vencimentos (17/09)”." checked={m.assunto_contagem} onChange={v => set('assunto_contagem', v)} />
+                            <LinhaSwitch label="Contagem no assunto"
+                                descricao={tipo === 'aniversario'
+                                    ? '“Aniversários (17/09/2026) · 2 aniversários”. Desligado: só “Aniversários (17/09/2026)”.'
+                                    : '“Vencimentos (17/09/2026) · 3 vencimentos”. Desligado: só “Vencimentos (17/09/2026)”.'}
+                                checked={m.assunto_contagem} onChange={v => set('assunto_contagem', v)} />
                             <div>
                                 <label style={rotulo}>Organizar os vencimentos</label>
                                 <div style={{ display: 'flex', gap: 6 }}>
