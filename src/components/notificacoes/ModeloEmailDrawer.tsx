@@ -88,28 +88,31 @@ export function ModeloEmailDrawer({ tipo, modelo, onChange, exemploId, exemploNo
     exemploNome?: string | null;
     onOpenChange: (open: boolean) => void;
 }) {
-    type Previa = { assunto: string; corpo_html: string; data_envio: string } | null;
+    type Previa = { assunto: string; corpo_html: string; data_envio: string; ficticio?: boolean } | null;
+    const [salvoEm, setSalvoEm] = useState<Date | null>(null);
     // A prévia é guardada com a "chave" (exemplo + modelo) que a gerou: chave diferente = carregando.
     const [previaRes, setPreviaRes] = useState<{ chave: string; dados: Previa } | null>(null);
     const aberto = tipo !== null;
-    const chave = `${exemploId ?? ''}|${JSON.stringify(modelo)}`;
+    const chave = `${tipo ?? ''}|${exemploId ?? ''}|${JSON.stringify(modelo)}`;
 
     // Prévia renderizada: recarrega quando abre e a cada mudança salva no modelo
     useEffect(() => {
         if (!aberto || !exemploId) return;
         let vivo = true;
-        supabase.rpc('notificacoes_previa_email', { p_consultor_id: exemploId }).then(({ data, error }) => {
+        supabase.rpc('notificacoes_previa_email', { p_consultor_id: exemploId, p_tipo: tipo }).then(({ data, error }) => {
             if (!vivo) return;
             if (error) console.error('prévia do e-mail', error);
             setPreviaRes({ chave, dados: error ? null : ((data ?? null) as Previa) });
         });
         return () => { vivo = false; };
-    }, [aberto, exemploId, chave]);
+    }, [aberto, exemploId, chave, tipo]);
     const previa: Previa | undefined = previaRes?.chave === chave ? previaRes.dados : undefined;
 
     if (!modelo) return null;
     const m = modelo;
-    const set = <K extends keyof ModeloEmail>(k: K, v: ModeloEmail[K]) => { void onChange({ [k]: v } as Partial<ModeloEmail>); };
+    const set = <K extends keyof ModeloEmail>(k: K, v: ModeloEmail[K]) => {
+        Promise.resolve(onChange({ [k]: v } as Partial<ModeloEmail>)).then(() => setSalvoEm(new Date()));
+    };
     const chip = (ativo: boolean, label: string, onClick: () => void) => (
         <button type="button" onClick={onClick} aria-pressed={ativo}
             style={{ height: 30, padding: '0 14px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font-family)',
@@ -124,19 +127,22 @@ export function ModeloEmailDrawer({ tipo, modelo, onChange, exemploId, exemploNo
             <DrawerContent style={{ width: 620, maxWidth: '96vw' }}>
                 <DrawerHeader>
                     <DrawerTitle>Modelo do e-mail · {tipo === 'aniversario' ? 'Aniversários' : 'Vencimentos'}</DrawerTitle>
-                    <DrawerDescription>Vale para todos os consultores. Cada campo salva sozinho; a prévia abaixo é o e-mail real.</DrawerDescription>
+                    <DrawerDescription>
+                        Vale para todos os consultores. Cada campo salva sozinho; a prévia abaixo é o e-mail como vai sair.
+                        {salvoEm && <span style={{ marginLeft: 8, color: 'var(--color-success-text)', fontWeight: 600 }}>✓ Salvo às {salvoEm.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>}
+                    </DrawerDescription>
                 </DrawerHeader>
                 <DrawerBody>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
                         {tipo === 'aniversario' ? (
                             <Bloco titulo="Bloco de aniversários">
-                                <Texto label="Título do bloco" value={m.aniv_titulo} onCommit={v => set('aniv_titulo', v || '🎂 Aniversários')} />
+                                <Texto label="Título do bloco" value={m.aniv_titulo} onCommit={v => set('aniv_titulo', v || 'Aniversários')} />
                                 <Texto label="Texto de abertura (opcional)" value={m.aniv_intro ?? ''} onCommit={v => set('aniv_intro', v || null)} multiline placeholder="Ex.: Clientes que fazem aniversário nos próximos dias." />
                                 <LinhaSwitch label="Mostrar a idade que faz" descricao="Ex.: “faz 52 anos”. Sensível se o e-mail for encaminhado." checked={m.aniv_mostrar_idade} onChange={v => set('aniv_mostrar_idade', v)} />
                             </Bloco>
                         ) : (
                             <Bloco titulo="Bloco de vencimentos">
-                                <Texto label="Título do bloco" value={m.venc_titulo} onCommit={v => set('venc_titulo', v || '⏰ Vencimentos')} />
+                                <Texto label="Título do bloco" value={m.venc_titulo} onCommit={v => set('venc_titulo', v || 'Vencimentos')} />
                                 <Texto label="Texto de abertura (opcional)" value={m.venc_intro ?? ''} onCommit={v => set('venc_intro', v || null)} multiline placeholder="Ex.: Ativos da sua carteira que vencem em breve." />
                                 <LinhaSwitch label="Mostrar valor bruto" checked={m.venc_mostrar_valor} onChange={v => set('venc_mostrar_valor', v)} />
                                 <LinhaSwitch label="Mostrar instituição" checked={m.venc_mostrar_instituicao} onChange={v => set('venc_mostrar_instituicao', v)} />
@@ -160,17 +166,16 @@ export function ModeloEmailDrawer({ tipo, modelo, onChange, exemploId, exemploNo
                                 </div>
                                 <span style={dica}>Por cliente: um bloco por pessoa, com os ativos dela. Por data: lista corrida, do mais próximo ao mais distante.</span>
                             </div>
-                            <Texto label="Responder para" type="email" value={m.reply_to ?? ''} onCommit={v => set('reply_to', v.trim() || null)} placeholder="ex.: consultoria@averepartners.com.br" hint="Para onde vai a resposta do consultor. Em branco, responde à caixa de notificações (ninguém lê)." />
                             <Texto label="Rodapé" value={m.rodape} onCommit={v => set('rodape', v)} multiline />
                             <LinhaSwitch label="Aviso “Não responda a este e-mail”" checked={m.nao_responder} onChange={v => set('nao_responder', v)} />
                         </Bloco>
 
                         <DrawerSeparator />
 
-                        <Bloco titulo={`Prévia${exemploNome ? ` · exemplo: ${exemploNome}` : ''}`}>
-                            {!exemploId && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Nenhum consultor com lembretes nos próximos 7 dias para servir de exemplo.</span>}
+                        <Bloco titulo={`Prévia${exemploNome ? ` · ${exemploNome}` : ''}${previa?.ficticio ? ' · dados de exemplo' : ''}`}>
+                            {!exemploId && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Nenhum consultor disponível para servir de exemplo.</span>}
                             {exemploId && previa === undefined && <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}><Spinner size="md" /></div>}
-                            {exemploId && previa === null && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Esse consultor não tem lembretes nos próximos 7 dias.</span>}
+                            {exemploId && previa === null && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>Não foi possível montar a prévia.</span>}
                             {previa && (
                                 <div style={{ border: '1px solid var(--color-border-default)', borderRadius: 8, overflow: 'hidden' }}>
                                     <div style={{ padding: '10px 14px', background: 'var(--gray-50)', borderBottom: '1px solid var(--color-border-subtle)', fontSize: 13 }}>
