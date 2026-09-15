@@ -98,8 +98,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
         }
         searchParams.delete('canon'); searchParams.delete('ativo'); searchParams.delete('venc'); searchParams.delete('menu');
         setSearchParams(searchParams, { replace: true });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [focoCanon, focoNome, focoVenc, ativos]);
+    }, [focoCanon, focoNome, focoVenc, ativos, searchParams, setSearchParams]);
 
     const COR_INSTITUICAO: Record<string, string> = {
         'BTG Pactual': CORES.btg,
