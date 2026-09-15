@@ -548,7 +548,7 @@ export default function ConfiguracoesNotificacoes() {
                     wrapper esticado pela grid); a lista rola dentro do card. */}
                 <div style={{ position: 'relative', minHeight: 360 }}>
                 <Card style={{ padding: 0, overflow: 'hidden', position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
-                    <TituloCard icone={Eye} titulo={editandoPadrao ? 'Prévia da casa · próximos 7 dias' : 'Prévia dos próximos 7 dias'}
+                    <TituloCard icone={Eye} titulo="Prévia"
                         extra={
                             editandoPadrao
                                 ? previaCasa && previaCasa.length > 0 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{previaCasa.length} consultor{previaCasa.length === 1 ? '' : 'es'} · {emailsCasa} e-mail{emailsCasa === 1 ? '' : 's'} · {totalCasa} {totalCasa === 1 ? 'item' : 'itens'}</span>
@@ -557,8 +557,7 @@ export default function ConfiguracoesNotificacoes() {
                     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
                     {(editandoPadrao ? previaCasa === null : previa === null) && <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spinner size="md" /></div>}
                     {editandoPadrao && previaCasa && previaCasa.length === 0 && (
-                        <EstadoVazio compacto positivo icon={CalendarCheck2} titulo="Nenhum e-mail previsto na casa"
-                            dica={!casaAniv && !casaVenc ? 'Os dois tipos de aviso estão desligados no padrão Avere.' : 'Nenhum consultor tem aniversário ou vencimento no horizonte de 7 dias.'} />
+                        <EstadoVazio compacto positivo icon={CalendarCheck2} titulo="Nenhum e-mail previsto" />
                     )}
                     {editandoPadrao && previaCasa && previaCasa.map(r => (
                         <div key={r.consultor.id}>
@@ -571,7 +570,7 @@ export default function ConfiguracoesNotificacoes() {
                         </div>
                     ))}
                     {!editandoPadrao && previa && previa.length === 0 && (
-                        <EstadoVazio compacto positivo icon={CalendarCheck2} titulo="Nenhum e-mail previsto" dica="Sem aniversários nem vencimentos no horizonte de 7 dias. Dias sem itens não geram e-mail." />
+                        <EstadoVazio compacto positivo icon={CalendarCheck2} titulo="Nenhum e-mail previsto" />
                     )}
                     {!editandoPadrao && previa && <ListaDias dias={previa} />}
                     </div>
