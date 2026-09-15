@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Typography, Card, Badge, Button, Spinner, Switch, TextField, Combobox, toast } from 'avere-ui';
+import { Typography, Card, Badge, Button, Spinner, Switch, Combobox, toast } from 'avere-ui';
 import { BellRing, RotateCcw, Eye, History, Send, CalendarCheck2, Users, UserX, Cake, AlarmClock, Mail, RefreshCw, Plus, Check, Undo2 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -139,12 +139,10 @@ function SeletorDias({ value, onChange }: { value: number[]; onChange: (v: numbe
     );
 }
 
-// ── Origem do valor: herdado do padrão Avere ou personalizado (com "voltar ao padrão")
+// ── Campo personalizado pelo consultor → link "voltar ao padrão" (herdado não mostra nada)
 function Origem({ herdado, onReset, permitir }: { herdado: boolean; onReset: () => void; permitir: boolean }) {
-    if (!permitir) return null;
-    return herdado
-        ? <Badge intent="neutro" variant="ghost" style={{ fontSize: 10 }}>padrão Avere</Badge>
-        : <button type="button" onClick={onReset} title="Voltar ao padrão Avere"
+    if (!permitir || herdado) return null;
+    return <button type="button" onClick={onReset} title="Voltar ao padrão Avere"
             style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: 'var(--color-primaria)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--font-family)' }}>
             <RotateCcw size={11} /> voltar ao padrão
           </button>;
@@ -227,7 +225,7 @@ function StatusSalvo({ estado, quando }: { estado: 'salvando' | 'salvo' | 'erro'
     if (estado === 'salvando') return <span style={{ fontSize: 12, color: 'var(--color-text-muted)', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Spinner size="sm" /> Salvando…</span>;
     if (estado === 'erro') return <span style={{ fontSize: 12, color: 'var(--color-danger-text)', fontWeight: 600 }}>Não salvou. Tente de novo.</span>;
     if (estado === 'salvo' && quando) return <span style={{ fontSize: 12, color: 'var(--color-success-text)', display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 600 }}><Check size={13} /> Salvo às {fmtHora(quando)}</span>;
-    return <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>As mudanças são salvas automaticamente.</span>;
+    return <span />;
 }
 
 export default function ConfiguracoesNotificacoes() {
@@ -241,7 +239,6 @@ export default function ConfiguracoesNotificacoes() {
     const [consultores, setConsultores] = useState<Consultor[]>([]);
     const [alvo, setAlvo] = useState<string | null>(null);   // consultor sendo editado ou PADRAO
     const [override, setOverride] = useState<Pref>(VAZIA);
-    const [outroEmail, setOutroEmail] = useState(false);     // consultor: mostrar campo de e-mail alternativo
     const [previa, setPrevia] = useState<PreviaDia[] | null>(null);
     const [previaCasa, setPreviaCasa] = useState<{ consultor: Consultor; dias: PreviaDia[] }[] | null>(null);   // Padrão Avere: casa inteira
     const [envios, setEnvios] = useState<Envio[]>([]);
@@ -318,7 +315,6 @@ export default function ConfiguracoesNotificacoes() {
                 if (!vivo) return;
                 const ov = (data as Pref) ?? { ...VAZIA, consultor_id: alvo };
                 setOverride(ov);
-                setOutroEmail(!!ov.email_destino);
             }
             const r = await carregarPrevia(alvo, consultores);
             if (!vivo) return;
@@ -448,8 +444,7 @@ export default function ConfiguracoesNotificacoes() {
     }
 
     const permitirReset = !editandoPadrao;
-    const emailCadastro = consultorAlvo?.email_professional ?? '';
-    const emailEfetivo = ef('email_destino') || emailCadastro;
+    const emailEfetivo = ef('email_destino') || consultorAlvo?.email_professional || '';
     const casaAniv = padrao.aniversario_ativo ?? true;
     const casaVenc = padrao.vencimento_ativo ?? true;
     const opcoesAlvo = [{ value: PADRAO, label: 'Padrão Avere (todos)' }, ...consultores.map(c => ({ value: c.id, label: c.perfil_id === user?.id ? `${c.nome} (eu)` : c.nome }))];
@@ -496,31 +491,9 @@ export default function ConfiguracoesNotificacoes() {
                     <Secao icone={Send} titulo="Entrega" />
                     {!editandoPadrao && (
                         <Linha
-                            titulo="Receber notificações"
-                            descricao="Desligado, você não recebe nenhum e-mail."
-                            origem={<Origem herdado={herdado('ativo')} onReset={() => reset('ativo')} permitir={permitirReset} />}
-                            controle={<Switch checked={ef('ativo') ?? true} onCheckedChange={(v: boolean) => set('ativo', v)} />}
-                        />
-                    )}
-                    {!editandoPadrao && (
-                        <Linha
-                            vertical={outroEmail}
                             titulo="E-mail de destino"
-                            descricao={outroEmail ? `Do cadastro: ${emailCadastro || '—'}. Em branco volta a usar o cadastro.` : 'E-mail profissional do cadastro (Cadastros → Equipe).'}
-                            origem={<Origem herdado={herdado('email_destino')} onReset={() => { reset('email_destino'); setOutroEmail(false); }} permitir={permitirReset} />}
-                            controle={outroEmail ? (
-                                <TextField type="email" placeholder={emailCadastro || 'e-mail'} defaultValue={override.email_destino ?? ''}
-                                    onBlur={e => { const v = e.target.value.trim() || null; if (v !== (override.email_destino ?? null)) set('email_destino', v); if (!v) setOutroEmail(false); }}
-                                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
-                            ) : (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-secundaria)' }}>{emailEfetivo || '—'}</span>
-                                    <button type="button" onClick={() => setOutroEmail(true)}
-                                        style={{ fontSize: 11, fontWeight: 600, color: 'var(--color-primaria)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--font-family)' }}>
-                                        usar outro
-                                    </button>
-                                </div>
-                            )}
+                            descricao="E-mail profissional do cadastro (Cadastros → Equipe)."
+                            controle={<span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-secundaria)' }}>{emailEfetivo || '—'}</span>}
                         />
                     )}
                     <Linha
@@ -537,11 +510,7 @@ export default function ConfiguracoesNotificacoes() {
                     />
 
                     <Secao icone={Cake} titulo="Aniversários de clientes"
-                        extra={<>
-                            {!editandoPadrao && !casaAniv && <Badge intent="neutro" variant="ghost" style={{ fontSize: 10 }}>desligado na casa</Badge>}
-                            <Switch checked={editandoPadrao ? casaAniv : (ef('aniversario_ativo') ?? true)} disabled={!editandoPadrao && !casaAniv}
-                                onCheckedChange={(v: boolean) => set('aniversario_ativo', v)} />
-                        </>} />
+                        extra={<Switch checked={editandoPadrao ? casaAniv : (ef('aniversario_ativo') ?? true)} onCheckedChange={(v: boolean) => set('aniversario_ativo', v)} />} />
                     <Linha
                         vertical
                         titulo="Avisar com antecedência de"
@@ -551,11 +520,7 @@ export default function ConfiguracoesNotificacoes() {
                     />
 
                     <Secao icone={AlarmClock} titulo="Vencimentos (alertas do sistema)"
-                        extra={<>
-                            {!editandoPadrao && !casaVenc && <Badge intent="neutro" variant="ghost" style={{ fontSize: 10 }}>desligado na casa</Badge>}
-                            <Switch checked={editandoPadrao ? casaVenc : (ef('vencimento_ativo') ?? true)} disabled={!editandoPadrao && !casaVenc}
-                                onCheckedChange={(v: boolean) => set('vencimento_ativo', v)} />
-                        </>} />
+                        extra={<Switch checked={editandoPadrao ? casaVenc : (ef('vencimento_ativo') ?? true)} onCheckedChange={(v: boolean) => set('vencimento_ativo', v)} />} />
                     <Linha
                         vertical
                         titulo="Avisar com antecedência de"
