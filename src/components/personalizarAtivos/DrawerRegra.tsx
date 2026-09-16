@@ -217,8 +217,8 @@ export function DrawerRegra({
 
                             {/* Apelido */}
                             <div>
-                                <label style={{ ...labelStyle, color: 'var(--color-primaria)' }}>Apelido do ativo (opcional)</label>
-                                <input value={formApelido} onChange={e => setFormApelido(e.target.value)} placeholder="Em branco = nome original" style={ctrlStyle} />
+                                <label style={{ ...labelStyle, color: 'var(--color-primaria)' }}>Nome exibido do ativo (opcional)</label>
+                                <input value={formApelido} onChange={e => setFormApelido(e.target.value)} placeholder="Em branco = nome do ativo" style={ctrlStyle} />
                             </div>
 
                             {/* Classe + Liquidez */}
@@ -238,7 +238,7 @@ export function DrawerRegra({
 
                             {/* Emissor */}
                             <div style={{ position: 'relative', zIndex: 10 }}>
-                                <label style={labelStyle}>Novo emissor (opcional)</label>
+                                <label style={labelStyle}>Emissor — entidade (risco e FGC)</label>
                                 <Combobox options={opcoesEmissores} value={formEmissorId} onChange={setFormEmissorId} placeholder="Manter original" />
                                 {emissorMasterNome && <RefMaster>{emissorMasterNome}</RefMaster>}
                             </div>

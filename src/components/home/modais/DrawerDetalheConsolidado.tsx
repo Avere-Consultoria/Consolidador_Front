@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import {
     Drawer, DrawerContent, DrawerHeader, DrawerBody,
-    DrawerTitle, DrawerDescription, DrawerSeparator, Badge, Button,
+    DrawerTitle, DrawerDescription, DrawerSeparator, Badge, Button, Typography,
 } from 'avere-ui';
 import { SlidersHorizontal } from 'lucide-react';
 import type { ConsolidatedAtivo } from '../../../hooks/useHomeMetrics';
 import { fmt, fmtUsd, fmtDate, fmtNum, padronizarTaxaExibicao } from '../../../utils/formatters';
 import { DetalheItem, Secao } from '../../shared/DrawerDetalhe';
+import { rotuloAtivo } from '../../../utils/rotuloAtivo';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -163,6 +164,9 @@ function TabGeral({ ativo, raw, pesoPct, isAvenue }: {
             <Secao titulo="Info">
                 <DetalheItem label="Classe Avere"  value={ativo.tipo || '—'} />
                 <DetalheItem label="Subtipo"       value={ativo.subTipo || '—'} />
+                {/* Emissor = entidade do dicionário (risco por emissor, FGC). Vínculo feito na Master Ativos. */}
+                <DetalheItem label="Emissor" value={ativo.emissorNome ?? 'não vinculado'} fullWidth
+                    accentColor={ativo.emissorNome ? undefined : 'var(--color-text-muted)'} />
                 {identificadores.map(id => (
                     <DetalheItem key={id.label} label={id.label} value={id.value} mono />
                 ))}
@@ -637,7 +641,7 @@ export function DrawerDetalheConsolidado({
                         {raw.liquidez_diaria && <Badge intent="primaria" variant="ghost" style={{ fontSize: 'var(--text-xs)' }}>Liquidez Diária</Badge>}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
-                        <DrawerTitle>{ativo.nome}</DrawerTitle>
+                        <DrawerTitle>{rotuloAtivo(ativo)}</DrawerTitle>
                         {onPersonalizar && (
                             personalizavel ? (
                                 <Button variant="outline" onClick={onPersonalizar}
@@ -658,6 +662,12 @@ export function DrawerDetalheConsolidado({
                     <DrawerDescription>
                         {ativo.tipo}{ticker ? ` · ${ticker}` : ''}
                     </DrawerDescription>
+                    {/* Rastro: como a corretora chama o papel — nunca some da tela */}
+                    {ativo.nomeCru && ativo.nomeCru !== rotuloAtivo(ativo) && (
+                        <Typography variant="p" style={{ margin: '6px 0 0', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
+                            {ativo.instituicao === 'BTG Pactual' ? 'No BTG' : ativo.instituicao === 'XP Investimentos' ? 'Na XP' : `Em ${ativo.instituicao}`}: {ativo.nomeCru}
+                        </Typography>
+                    )}
                 </DrawerHeader>
 
                 <DrawerBody>

@@ -154,7 +154,7 @@ export function ModalNovaRegra({
 
                         {/* Apelido */}
                         <div>
-                            <label style={{ ...labelStyle, color: 'var(--color-primaria)' }}>Apelido do Ativo (Opcional)</label>
+                            <label style={{ ...labelStyle, color: 'var(--color-primaria)' }}>Nome exibido do ativo (opcional)</label>
                             <input
                                 value={formApelido}
                                 onChange={e => setFormApelido(e.target.value)}
@@ -219,7 +219,7 @@ export function ModalNovaRegra({
 
                         {/* Emissor */}
                         <div style={{ position: 'relative', zIndex: 10 }}>
-                            <label style={labelStyle}>Novo Emissor (Opcional)</label>
+                            <label style={labelStyle}>Emissor — entidade (risco e FGC)</label>
                             <Combobox options={opcoesEmissores} value={formEmissorId} onChange={setFormEmissorId} placeholder="Manter original" />
                             {canonicoSelecionado?.emissor_id && (
                                 <div style={{ display: 'flex', gap: '4px', marginTop: '5px', flexWrap: 'wrap' }}>

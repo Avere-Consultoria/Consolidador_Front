@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Card, Typography, Badge, DataTable } from 'avere-ui';
 import { LayoutGrid, ChevronRight, List } from 'lucide-react';
 import { fmt, fmtDate, padronizarTaxaExibicao } from '../../utils/formatters';
+import { rotuloAtivo } from '../../utils/rotuloAtivo';
 import { CORES } from '../../utils/colors';
 import type { ConsolidatedAtivo } from '../../hooks/useHomeMetrics';
 import { DrawerDetalheConsolidado } from './modais/DrawerDetalheConsolidado';
@@ -79,7 +80,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
             setGruposAbertos(prev => ({ ...prev, [grupo]: true }));
             // Rola até a linha do ativo (fica à vista quando o drawer fechar), destaca por
             // alguns segundos e só então abre o drawer.
-            const nomeAlvo = norm(alvo.nome);
+            const nomeAlvo = norm(rotuloAtivo(alvo));   // a linha mostra o rótulo, não o cru
             let tentativas = 0;
             const rolar = () => {
                 const secao = document.querySelector<HTMLElement>(`[data-grupo="${CSS.escape(grupo)}"]`);
@@ -235,24 +236,32 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                                                 ),
                                             },
                                             {
-                                                header: 'Emissor / Ativo',
+                                                header: 'Ativo',
                                                 accessorKey: 'nome',
                                                 cell: (item: ConsolidatedAtivo) => (
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, maxWidth: '300px', minWidth: 0 }}>
-                                                        <Typography
-                                                            variant="p"
-                                                            style={{
-                                                                fontWeight: 'var(--weight-medium)' as any,
-                                                                fontSize: 'var(--text-sm)',
-                                                                margin: 0,
-                                                                whiteSpace: 'nowrap',
-                                                                overflow: 'hidden',
-                                                                textOverflow: 'ellipsis'
-                                                            }}
-                                                            title={item.nome}
-                                                        >
-                                                            {item.nome || '—'}
-                                                        </Typography>
+                                                        <div style={{ minWidth: 0 }}>
+                                                            <Typography
+                                                                variant="p"
+                                                                style={{
+                                                                    fontWeight: 'var(--weight-medium)' as any,
+                                                                    fontSize: 'var(--text-sm)',
+                                                                    margin: 0,
+                                                                    whiteSpace: 'nowrap',
+                                                                    overflow: 'hidden',
+                                                                    textOverflow: 'ellipsis'
+                                                                }}
+                                                                title={item.nomeCru && item.nomeCru !== rotuloAtivo(item) ? `${item.instituicao}: ${item.nomeCru}` : item.nome}
+                                                            >
+                                                                {rotuloAtivo(item)}
+                                                            </Typography>
+                                                            {/* Emissor = entidade vinculada no canônico (risco/FGC). Sem vínculo, nada — nunca texto cru rotulado de emissor. */}
+                                                            {item.emissorNome && (
+                                                                <Typography variant="p" style={{ margin: 0, fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                    {item.emissorNome}
+                                                                </Typography>
+                                                            )}
+                                                        </div>
                                                         {item.naoVerificado && (
                                                             <Badge
                                                                 variant="ghost"

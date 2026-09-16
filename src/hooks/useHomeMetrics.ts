@@ -23,6 +23,11 @@ export interface ConsolidatedAtivo {
     benchmark?: string | null;
     taxa?: string | null;
     naoVerificado?: boolean;   // entrada manual sem canônico (Camada 1): dado raso, não vinculado
+    // Separação ativo × emissor (ver utils/rotuloAtivo): `nome` continua sendo apelido || cru;
+    // estes três permitem à tela derivar o rótulo sem perder o rastro.
+    nomeCru?: string | null;      // string da corretora, intocada
+    apelido?: string | null;      // personalização do consultor
+    emissorNome?: string | null;  // entidade do dicionário vinculada ao canônico (null = não vinculado)
 }
 
 export interface CarteiraPersonalizada {
@@ -1017,25 +1022,32 @@ export function useHomeMetrics() {
                     benchmark: cls.benchmark || '-',
                     taxa: cls.taxa,
                 };
+                at.apelido = cls.apelido ?? null;
+                at.emissorNome = cls.emissorId ? (emissorMap.get(cls.emissorId)?.nome_fantasia ?? null) : null;
                 if (f.baseInst === 'BTG') {
+                    at.nomeCru = a.emissor || null;          // BTG: o campo já é o emissor; o papel é o sub_tipo
                     at.nome = cls.apelido || a.emissor || '-';
                     at.valorLiquido = parseFloat(a.valor_liquido || 0);
                     at.valorBruto = parseFloat(a.valor_bruto || 0);
                 } else if (f.baseInst === 'XP') {
+                    at.nomeCru = a.nome || a.emissor || null;  // XP: produto inteiro ("CDB BMG - NOV/2026")
                     at.nome = cls.apelido || a.nome || a.emissor || '-';
                     at.valorLiquido = parseFloat(a.valor_liquido || 0);
                     at.valorBruto = parseFloat(a.valor_bruto || 0);
                 } else if (f.baseInst === 'AVENUE') {
+                    at.nomeCru = a.nome || null;
                     at.nome = cls.apelido || a.nome || '-';
                     at.valorLiquido = parseFloat(a.valor_bruto_brl || 0);
                     at.valorBruto = parseFloat(a.valor_bruto_brl || 0);
                     at.liquidez = a.is_liquidity ? '0' : liquidezComFallback(a, cls);
                     at.benchmark = '-';
                 } else if (f.baseInst === 'AGORA') {
+                    at.nomeCru = a.emissor || null;
                     at.nome = cls.apelido || a.emissor || '-';
                     at.valorLiquido = parseFloat(a.valor_liquido || 0);
                     at.valorBruto = parseFloat(a.valor_bruto || 0);
                 } else { // MANUAL
+                    at.nomeCru = a.emissor || null;
                     at.nome = cls.apelido || a.emissor || '-';
                     at.valorLiquido = parseFloat(a.valor_liquido ?? a.valor_bruto ?? 0);
                     at.valorBruto = parseFloat(a.valor_bruto || 0);
