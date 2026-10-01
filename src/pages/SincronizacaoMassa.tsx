@@ -256,8 +256,11 @@ export default function SincronizacaoMassa() {
                         <label style={lblS}>Lote por rodada
                             <input type="number" min={1} max={200} value={cfg.tamanho_lote} onChange={e => upCfg({ tamanho_lote: Number(e.target.value) })} style={{ ...numS, width: 70 }} />
                         </label>
-                        <button onClick={() => upCfg({ somente_dia_util: !cfg.somente_dia_util })} style={{ ...chipS, ...(cfg.somente_dia_util ? chipA : {}) }}>
-                            {cfg.somente_dia_util ? '● Só dias úteis' : '○ Todos os dias'}
+                        {/* A chamada do dia X grava a posição de X−1. Ligado, pula domingo e segunda
+                            (que repetiriam o fechamento de sexta); sábado continua, é ele que captura a sexta. */}
+                        <button onClick={() => upCfg({ somente_dia_util: !cfg.somente_dia_util })} style={{ ...chipS, ...(cfg.somente_dia_util ? chipA : {}) }}
+                            title="A sincronização de cada manhã grava o fechamento do dia anterior. Ligado: não roda domingo nem segunda, que repetiriam a posição de sexta.">
+                            {cfg.somente_dia_util ? '● Sem repetir fim de semana' : '○ Todos os dias'}
                         </button>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                             <span style={{ fontSize: 11, color: 'var(--color-text-secondary)', fontWeight: 600 }}>Instituições</span>
