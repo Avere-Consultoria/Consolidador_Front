@@ -31,7 +31,7 @@ export default function Home() {
     instituicoesManuais,
     periodo, setPeriodo, mesesFechados,
     recarregar, recarregarTudo,
-  } = useHomeMetrics();
+  } = useHomeMetrics({ fonte: 'juncao' });
 
   // <-- 1. NOVO ESTADO: Se não houver cliente, mostra o Empty State amigável -->
   if (!selectedClient) {

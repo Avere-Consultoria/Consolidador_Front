@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
     Drawer, DrawerContent, DrawerHeader, DrawerBody,
     DrawerTitle, DrawerDescription, DrawerSeparator, Badge, Button, Typography,
 } from 'avere-ui';
 import { SlidersHorizontal } from 'lucide-react';
+import { supabase } from '../../../services/supabase';
 import type { ConsolidatedAtivo } from '../../../hooks/useHomeMetrics';
 import { fmt, fmtUsd, fmtDate, fmtNum, padronizarTaxaExibicao } from '../../../utils/formatters';
 import { DetalheItem, Secao } from '../../shared/DrawerDetalhe';
@@ -587,6 +589,31 @@ function TabAgora({ raw }: { raw: any }) {
     );
 }
 
+// ── Linha crua da corretora, sob demanda ─────────────────────────────────────
+// Pela junção, `rawData` traz só o essencial; as abas por instituição (lotes de
+// aquisição, janelas, campos exclusivos da API) leem a linha inteira quando o
+// drawer abre. No caminho legado a linha já vem completa e nada é buscado.
+const TABELA_LINHA: Record<string, { tabela: string; select: string }> = {
+    BTG:    { tabela: 'posicao_btg_ativos',    select: '*, posicao_btg_aquisicoes(*), posicao_btg_janelas_liquidez(*)' },
+    XP:     { tabela: 'posicao_xp_ativos',     select: '*' },
+    AVENUE: { tabela: 'posicao_avenue_ativos', select: '*' },
+    AGORA:  { tabela: 'posicao_agora_ativos',  select: '*, posicao_agora_aquisicoes(*)' },
+    MANUAL: { tabela: 'posicao_manual_ativos', select: '*' },
+};
+function useLinhaCrua(base: string, linhaId: string | undefined, aberto: boolean) {
+    const def = TABELA_LINHA[base];
+    return useQuery({
+        queryKey: ['linha-crua', base, linhaId],
+        enabled: aberto && !!linhaId && !!def,
+        staleTime: 60 * 1000,
+        queryFn: async () => {
+            const { data, error } = await supabase.from(def.tabela).select(def.select).eq('id', linhaId!).maybeSingle();
+            if (error) throw error;
+            return (data ?? {}) as Record<string, unknown>;
+        },
+    });
+}
+
 // ── Componente Principal ──────────────────────────────────────────────────────
 
 export function DrawerDetalheConsolidado({
@@ -594,17 +621,19 @@ export function DrawerDetalheConsolidado({
 }: DrawerDetalheConsolidadoProps) {
     const [activeTab, setActiveTab] = useState<TabId>('geral');
 
-    if (!ativo || !ativo.rawData) return null;
-
-    const raw         = ativo.rawData;
-    const instituicao = ativo.instituicao;
+    const instituicao = ativo?.instituicao ?? '';
     // Base da instituição (resiste a rótulos multi-conta tipo "BTG Pactual 2").
     // Fallback por nome para snapshots antigos sem instituicaoBase.
-    const base = ativo.instituicaoBase
+    const base = ativo?.instituicaoBase
         ?? (instituicao.includes('BTG') ? 'BTG'
             : instituicao.includes('XP') ? 'XP'
             : instituicao.includes('Avenue') ? 'AVENUE'
             : /[ÁA]gora/.test(instituicao) ? 'AGORA' : 'MANUAL');
+    const cruaQ = useLinhaCrua(base, ativo?.rawData?.linha_id, aberto);
+
+    if (!ativo || !ativo.rawData) return null;
+
+    const raw = { ...ativo.rawData, ...(cruaQ.data ?? {}) };
     const isBTG    = base === 'BTG';
     const isXP     = base === 'XP';
     const isAvenue = base === 'AVENUE';
@@ -665,7 +694,7 @@ export function DrawerDetalheConsolidado({
                     {/* Rastro: como a corretora chama o papel — nunca some da tela */}
                     {ativo.nomeCru && ativo.nomeCru !== rotuloAtivo(ativo) && (
                         <Typography variant="p" style={{ margin: '6px 0 0', fontSize: 'var(--text-xs)', color: 'var(--color-text-muted)' }}>
-                            {ativo.instituicao === 'BTG Pactual' ? 'No BTG' : ativo.instituicao === 'XP Investimentos' ? 'Na XP' : `Em ${ativo.instituicao}`}: {ativo.nomeCru}
+                            {base === 'BTG' ? 'No BTG' : base === 'XP' ? 'Na XP' : `Em ${ativo.instituicao}`}: {ativo.nomeCru}
                         </Typography>
                     )}
                 </DrawerHeader>

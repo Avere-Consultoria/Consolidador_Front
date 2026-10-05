@@ -4,6 +4,7 @@ import { useClient } from '../contexts/ClientContext';
 import { supabase } from '../services/supabase';
 import { pct, diasAteVencimento } from '../utils/formatters';
 import { CORES } from '../utils/colors';
+import { carregarPosicaoAvere, montarFontesJuncao, linhaParaAtivo, chaveFonte, corDaBase, type LinhaAvere } from './juncaoPosicao';
 
 export interface ConsolidatedAtivo {
     rowId: string;
@@ -101,7 +102,7 @@ interface ExcecaoClassificacao {
 function resolveCorClasse(keyBusca: string, colorMap: Map<string, string>): string {
     const cor = colorMap.get(keyBusca);
     if (cor) return cor;
-    if (keyBusca === 'CLASSIFICAR') return '#EF4444';
+    if (keyBusca === 'CLASSIFICAR' || keyBusca === 'A CLASSIFICAR') return '#EF4444';
     if (keyBusca === 'CONTA CORRENTE / OUTROS') return '#10B981';
     return '#9CA3AF';
 }
@@ -581,10 +582,16 @@ function montarFechado(sfRows: any[], contas: any[], instituicoesDb: Instituicao
 const SNAP_VAZIO: Record<'btg' | 'xp' | 'avenue' | 'agora', any[]> = { btg: [], xp: [], avenue: [], agora: [] };
 const ARR_VAZIO: any[] = [];
 
-export function useHomeMetrics() {
+// `fonte`: de onde vem a posição viva.
+//   'juncao' — Padrão Avere: `posicao_avere()` já resolvida no banco (Home, Fase 3).
+//   'legado' — snapshots + catálogo + exceções resolvidos aqui no front (Relatório,
+//              até migrar). Some quando o último consumidor sair.
+// O mês fechado e as carteiras personalizadas são iguais nos dois.
+export function useHomeMetrics({ fonte = 'legado' }: { fonte?: 'juncao' | 'legado' } = {}) {
     const { selectedClient, consultorPerfilId } = useClient();
     const queryClient = useQueryClient();
     const clienteId = selectedClient?.id ?? null;
+    const viaJuncao = fonte === 'juncao';
 
     // Período: 'LIVE' (posição atual) ou 'YYYY-MM' (relatório fechado, read-only).
     const [periodo, setPeriodo] = useState<string>('LIVE');
@@ -595,7 +602,7 @@ export function useHomeMetrics() {
     // ── Carga principal (cache TanStack — chave por cliente + lente do consultor) ──
     const dadosQ = useQuery({
         queryKey: ['home', 'dados', clienteId, consultorPerfilId],
-        enabled: !!clienteId,
+        enabled: !!clienteId && !viaJuncao,
         queryFn: async () => {
             // Pagina tabelas globais (o Supabase corta cada request em 1000 linhas) —
             // mantém o shape {data,error}. Sem isto, com a base cheia os ativos além do
@@ -803,27 +810,66 @@ export function useHomeMetrics() {
         },
     });
 
+    // ── Padrão Avere: a posição já resolvida no banco, com a lente do consultor ──
+    // Personalizar um ativo invalida só esta consulta (~200 ms); os dicionários ficam.
+    const juncaoQ = useQuery({
+        queryKey: ['home', 'juncao', clienteId, consultorPerfilId],
+        enabled: !!clienteId && viaJuncao,
+        queryFn: () => carregarPosicaoAvere(clienteId!, consultorPerfilId),
+    });
+    // Dicionários que os gráficos ainda leem por id (setor/cor do emissor, porte do
+    // conglomerado, cor e ordem das classes, cor das instituições).
+    const dicionariosQ = useQuery({
+        queryKey: ['home', 'dicionarios'],
+        enabled: viaJuncao,
+        staleTime: 5 * 60 * 1000,
+        queryFn: async () => {
+            const [em, cl, inst, cg] = await Promise.all([
+                supabase.from('dicionario_emissores').select('id, nome_fantasia, cnpj_raiz, setor_id, setores(nome, cor_hex)').range(0, 4999),
+                supabase.from('dicionario_classes').select('*').order('ordem_exibicao'),
+                supabase.from('instituicoes').select('*'),
+                supabase.from('dicionario_conglomerados').select('id, nome_lider, porte').range(0, 4999),
+            ]);
+            const erro = em.error ?? cl.error ?? inst.error ?? cg.error;
+            if (erro) throw erro;
+            return {
+                emissores: ((em.data ?? []) as any[]).map((r: any) => ({
+                    id: r.id, nome_fantasia: r.nome_fantasia, cnpj_raiz: r.cnpj_raiz,
+                    setor: r.setores?.nome ?? '', setorCor: r.setores?.cor_hex ?? null,
+                })) as Emissor[],
+                classesMaster: (cl.data ?? []) as ClasseMaster[],
+                instituicoesDb: (inst.data ?? []) as InstituicaoDb[],
+                conglomeradosDb: (cg.data ?? []) as ConglomeradoDb[],
+            };
+        },
+    });
+    const linhasJuncao = (viaJuncao ? juncaoQ.data : undefined) ?? (ARR_VAZIO as LinhaAvere[]);
+    const fontesJuncao = useMemo(() => montarFontesJuncao(linhasJuncao), [linhasJuncao]);
+
     const d = dadosQ.data;
+    const dic = viaJuncao ? dicionariosQ.data : undefined;
     const snapshotData = d?.snapshotData ?? SNAP_VAZIO;
     const contas = d?.contas ?? (ARR_VAZIO as any[]);
     const canonicos = d?.canonicos ?? (ARR_VAZIO as AtivoCanonico[]);
-    const emissores = d?.emissores ?? (ARR_VAZIO as Emissor[]);
-    const conglomeradosDb = d?.conglomeradosDb ?? (ARR_VAZIO as ConglomeradoDb[]);
+    const emissores = (viaJuncao ? dic?.emissores : d?.emissores) ?? (ARR_VAZIO as Emissor[]);
+    const conglomeradosDb = (viaJuncao ? dic?.conglomeradosDb : d?.conglomeradosDb) ?? (ARR_VAZIO as ConglomeradoDb[]);
     const manualSnapshots = d?.manualSnapshots ?? (ARR_VAZIO as any[]);
-    const classesMaster = d?.classesMaster ?? (ARR_VAZIO as ClasseMaster[]);
-    const instituicoesDb = d?.instituicoesDb ?? (ARR_VAZIO as InstituicaoDb[]);
+    const classesMaster = (viaJuncao ? dic?.classesMaster : d?.classesMaster) ?? (ARR_VAZIO as ClasseMaster[]);
+    const instituicoesDb = (viaJuncao ? dic?.instituicoesDb : d?.instituicoesDb) ?? (ARR_VAZIO as InstituicaoDb[]);
     const liquidezSubtipo = d?.liquidezSubtipo ?? (ARR_VAZIO as any[]);
 
+    const cargaQ = viaJuncao ? juncaoQ : dadosQ;
     useEffect(() => {
-        if (dadosQ.error) console.error('Erro na carga da Home:', dadosQ.error);
-    }, [dadosQ.error]);
+        if (cargaQ.error) console.error('Erro na carga da Home:', cargaQ.error);
+        if (dicionariosQ.error) console.error('Erro ao carregar dicionários:', dicionariosQ.error);
+    }, [cargaQ.error, dicionariosQ.error]);
 
     // Exceções pela LENTE DO HEADER (consultor selecionado no topo) — query própria:
     // personalizar um ativo invalida SÓ isto (o snapshot pesado fica no cache).
     // 'Todos' → consultorPerfilId null → nenhuma exceção → visão master/genérica.
     const excecoesQ = useQuery({
         queryKey: ['home', 'excecoes', consultorPerfilId],
-        enabled: !!consultorPerfilId,
+        enabled: !!consultorPerfilId && !viaJuncao,
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('excecoes_classificacao').select('*')
@@ -894,21 +940,33 @@ export function useHomeMetrics() {
         if (fechadoQ.error) console.error('Erro ao carregar relatório fechado:', fechadoQ.error);
     }, [fechadoQ.error]);
 
-    const loading = !!clienteId && (dadosQ.isPending || (periodo !== 'LIVE' && fechadoQ.isPending));
+    const loading = !!clienteId && (cargaQ.isPending || (viaJuncao && dicionariosQ.isPending) || (periodo !== 'LIVE' && fechadoQ.isPending));
 
-    const opcoesCarteira = useMemo(() => {
-        const fontes = montarFontesMeta(snapshotData, contas, manualSnapshots, instituicoesDb);
-        return [
-            { label: 'Consolidada', value: 'CONSOLIDADA' },
-            ...fontes.map(f => ({ label: f.label, value: f.key })),
-            ...carteirasPersonalizadas.map(c => ({ label: c.nome, value: c.id })),
-        ];
-    }, [snapshotData, contas, manualSnapshots, instituicoesDb, carteirasPersonalizadas]);
+    // Fontes vivas no formato interno. Pela junção, uma fonte = uma conta com linhas;
+    // o total é a soma das linhas (D11) e não há "saldo por fora" (D14).
+    const fontesVivas = useMemo<FonteMeta[]>(() => {
+        if (!viaJuncao) return montarFontesMeta(snapshotData, contas, manualSnapshots, instituicoesDb);
+        return fontesJuncao.map(f => ({
+            key: f.key, grupoKey: f.grupoKey, baseInst: f.baseInst, label: f.label, contaId: f.contaId,
+            cor: (f.baseInst === 'MANUAL'
+                ? instituicoesDb.find(i => i.nome.toUpperCase() === f.instituicao.toUpperCase())?.cor_primaria
+                : instApiDb(f.baseInst, instituicoesDb)?.cor_primaria) || corDaBase(f.baseInst),
+            snapshot: { patrimonio_total: f.patrimonio }, dataRef: f.dataRef, ativosKey: '', saldoOutros: 0,
+        }));
+    }, [viaJuncao, fontesJuncao, snapshotData, contas, manualSnapshots, instituicoesDb]);
+
+    const opcoesCarteira = useMemo(() => [
+        { label: 'Consolidada', value: 'CONSOLIDADA' },
+        ...fontesVivas.map(f => ({ label: f.label, value: f.key })),
+        ...carteirasPersonalizadas.map(c => ({ label: c.nome, value: c.id })),
+    ], [fontesVivas, carteirasPersonalizadas]);
 
     // Nomes distintos das instituições manuais (p/ montar carteiras personalizadas)
     const instituicoesManuais = useMemo(
-        () => Array.from(new Set((manualSnapshots || []).map((s: any) => s.instituicao))) as string[],
-        [manualSnapshots],
+        () => viaJuncao
+            ? Array.from(new Set(fontesJuncao.filter(f => f.baseInst === 'MANUAL').map(f => f.instituicao)))
+            : Array.from(new Set((manualSnapshots || []).map((s: any) => s.instituicao))) as string[],
+        [viaJuncao, fontesJuncao, manualSnapshots],
     );
 
     const metrics = useMemo(() => {
@@ -944,6 +1002,21 @@ export function useHomeMetrics() {
             const ativosPorFonteF = new Map<string, ConsolidatedAtivo[]>();
             fontesIncluidasF.forEach(f => ativosPorFonteF.set(f.key, fechadoData.ativos.get(f.key) || []));
             return computeMetrics({ fontesIncluidas: fontesIncluidasF, fontesTodas: fechadoData.fontes, ativosPorFonte: ativosPorFonteF, emissores, emissorMap, conglomeradoMap, colorMap, orderMap, diasVencimento });
+        }
+
+        // ── Padrão Avere: linha já resolvida no banco — só agrupa por fonte ──
+        if (viaJuncao) {
+            const personalizadaJ = carteirasPersonalizadas.find(c => c.id === carteiraAtiva);
+            const fontesIncluidasJ = filtrarFontes(fontesVivas, carteiraAtiva, personalizadaJ);
+            const fonteJPorKey = new Map(fontesJuncao.map(f => [f.key, f]));
+            const ativosPorFonteJ = new Map<string, ConsolidatedAtivo[]>();
+            fontesIncluidasJ.forEach(f => ativosPorFonteJ.set(f.key, []));
+            linhasJuncao.forEach(l => {
+                const fj = fonteJPorKey.get(chaveFonte(l));
+                const lista = fj && ativosPorFonteJ.get(fj.key);
+                if (fj && lista) lista.push(linhaParaAtivo(l, fj));
+            });
+            return computeMetrics({ fontesIncluidas: fontesIncluidasJ, fontesTodas: fontesVivas, ativosPorFonte: ativosPorFonteJ, emissores, emissorMap, conglomeradoMap, colorMap, orderMap, diasVencimento });
         }
 
         // ── Resolução canônico + exceções (lookup O(1)) ──────────────────────
@@ -1066,7 +1139,7 @@ export function useHomeMetrics() {
         };
 
         // ── Fontes VIVAS (carteiras) + filtro pela carteira ativa ────────────
-        const fontes = montarFontesMeta(snapshotData, contas, manualSnapshots, instituicoesDb);
+        const fontes = fontesVivas;
         const personalizada = carteirasPersonalizadas.find(c => c.id === carteiraAtiva);
         const fontesIncluidas = filtrarFontes(fontes, carteiraAtiva, personalizada);
 
@@ -1074,12 +1147,13 @@ export function useHomeMetrics() {
         fontesIncluidas.forEach(f => ativosPorFonte.set(f.key, parseFonteAtivos(f)));
 
         return computeMetrics({ fontesIncluidas, fontesTodas: fontes, ativosPorFonte, emissores, emissorMap, conglomeradoMap, colorMap, orderMap, diasVencimento });
-    }, [periodo, fechadoData, snapshotData, contas, manualSnapshots, liquidezSubtipo, consultorPerfilId, diasVencimento, carteiraAtiva, carteirasPersonalizadas, canonicos, emissores, conglomeradosDb, classesMaster, instituicoesDb, excecoes, selectedClient]);
+    }, [periodo, fechadoData, viaJuncao, linhasJuncao, fontesJuncao, fontesVivas, liquidezSubtipo, consultorPerfilId, diasVencimento, carteiraAtiva, carteirasPersonalizadas, canonicos, emissores, conglomeradosDb, classesMaster, excecoes, selectedClient]);
 
-    // Re-busca só as exceções (o que muda ao personalizar um ativo pelo drawer da
-    // carteira). O snapshot pesado fica no cache; metrics recomputa sozinho.
+    // Re-busca o que muda ao personalizar um ativo pelo drawer da carteira: pela
+    // junção, a própria posição (a lente é aplicada no banco); no legado, só as
+    // exceções — o snapshot pesado fica no cache e o metrics recomputa sozinho.
     function recarregar() {
-        queryClient.invalidateQueries({ queryKey: ['home', 'excecoes'] });
+        queryClient.invalidateQueries({ queryKey: viaJuncao ? ['home', 'juncao'] : ['home', 'excecoes'] });
     }
 
     // Recarga completa (posições + exceções + carteiras). Usada quando a posição
@@ -1088,5 +1162,5 @@ export function useHomeMetrics() {
         queryClient.invalidateQueries({ queryKey: ['home'] });
     }
 
-    return { selectedClient, loading, erroCarga: !!dadosQ.error, semRede: dadosQ.fetchStatus === 'paused' && dadosQ.isPending, fontesComFalha: d?.fontesComFalha ?? (ARR_VAZIO as string[]), metrics, snapshotData, diasVencimento, setDiasVencimento, drawerCarteirasAberto, setDrawerCarteirasAberto, carteiraAtiva, setCarteiraAtiva, opcoesCarteira, instituicoesManuais, periodo, setPeriodo, mesesFechados, recarregar, recarregarTudo };
+    return { selectedClient, loading, erroCarga: !!cargaQ.error || !!dicionariosQ.error, semRede: cargaQ.fetchStatus === 'paused' && cargaQ.isPending, fontesComFalha: d?.fontesComFalha ?? (ARR_VAZIO as string[]), metrics, snapshotData, diasVencimento, setDiasVencimento, drawerCarteirasAberto, setDrawerCarteirasAberto, carteiraAtiva, setCarteiraAtiva, opcoesCarteira, instituicoesManuais, periodo, setPeriodo, mesesFechados, recarregar, recarregarTudo };
 }
