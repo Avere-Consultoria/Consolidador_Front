@@ -13,6 +13,7 @@ import {
     FAIXAS_LIQUIDEZ_DEFAULT, FAIXAS_VENC_DEFAULT, type FaixaAgregada,
 } from '../utils/faixas';
 import { fmt, fmtDate, fmtK } from '../utils/formatters';
+import { rotuloAtivo } from '../utils/rotuloAtivo';
 import logoAvere from '../assets/A_Azul.svg';
 
 // ── FGC / porte (espelha o CreditoBancarioFGC da Home) ────────────────────────
@@ -465,17 +466,17 @@ export default function Relatorio() {
                                     <th style={thP}>Instituição</th>
                                     <th style={thP}>Classe</th>
                                     <th style={thR}>Vencimento</th>
-                                    <th style={thR}>Valor Líquido</th>
+                                    <th style={thR}>Valor Bruto</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {comVencimento.slice(0, 20).map((a, i) => (
                                     <tr key={i} className="sem-quebra">
-                                        <td style={{ ...tdP, fontWeight: 'var(--weight-medium)' as any, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.nome}</td>
+                                        <td style={{ ...tdP, fontWeight: 'var(--weight-medium)' as any, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rotuloAtivo(a)}</td>
                                         <td style={tdP}>{a.instituicao}</td>
                                         <td style={tdP}><span style={{ fontSize: 'var(--text-2xs)', background: 'var(--color-surface-sunken)', padding: '2px 5px', borderRadius: 'var(--radius-sm)' }}>{a.tipo}</span></td>
                                         <td style={{ ...tdR, fontWeight: 'var(--weight-medium)' as any }}>{fmtDate(a.vencimento)}</td>
-                                        <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any }}>{fmt(a.valorLiquido)}</td>
+                                        <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any }}>{fmt(a.valorBruto)}</td>
                                     </tr>
                                 ))}
                                 {comVencimento.length > 20 && (
@@ -500,23 +501,24 @@ export default function Relatorio() {
                                 <th style={thP}>Instituição</th>
                                 <th style={thP}>Classe</th>
                                 <th style={thR}>Vencimento</th>
-                                <th style={thR}>Valor Líquido</th>
+                                <th style={thR}>Valor Bruto</th>
                                 <th style={thR}>Peso %</th>
                             </tr>
                         </thead>
                         <tbody>
+                            {/* Valor de referência = bruto (D1): a coluna soma o patrimônio e o peso fecha em 100%. */}
                             {(metrics.todosAtivos || []).map((a: any, i: number) => {
-                                const peso = pTotal > 0 ? (a.valorLiquido / pTotal) * 100 : 0;
+                                const peso = pTotal > 0 ? (a.valorBruto / pTotal) * 100 : 0;
                                 return (
                                     <tr key={i} className="sem-quebra">
                                         <td style={{ ...tdP, fontWeight: 'var(--weight-medium)' as any, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {a.nome}
+                                            {rotuloAtivo(a)}
                                             {a.subTipo && <span style={{ display: 'block', fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-regular)' as any, color: 'var(--color-text-muted)' }}>{a.subTipo}</span>}
                                         </td>
                                         <td style={tdP}>{a.instituicao}</td>
                                         <td style={tdP}><span style={{ fontSize: 'var(--text-2xs)', background: 'var(--color-surface-sunken)', padding: '2px 5px', borderRadius: 'var(--radius-sm)' }}>{a.tipo}</span></td>
                                         <td style={{ ...tdR, fontSize: 'var(--text-2xs)' }}>{fmtDate(a.vencimento)}</td>
-                                        <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any }}>{fmt(a.valorLiquido)}</td>
+                                        <td style={{ ...tdR, fontWeight: 'var(--weight-semibold)' as any }}>{fmt(a.valorBruto)}</td>
                                         <td style={{ ...tdR, fontWeight: 'var(--weight-medium)' as any, color: 'var(--color-text-secondary)' }}>{peso.toFixed(2)}%</td>
                                     </tr>
                                 );

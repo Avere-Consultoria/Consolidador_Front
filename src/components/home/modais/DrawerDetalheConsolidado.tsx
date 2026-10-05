@@ -590,9 +590,9 @@ function TabAgora({ raw }: { raw: any }) {
 }
 
 // ── Linha crua da corretora, sob demanda ─────────────────────────────────────
-// Pela junção, `rawData` traz só o essencial; as abas por instituição (lotes de
+// A junção traz em `rawData` só o essencial; as abas por instituição (lotes de
 // aquisição, janelas, campos exclusivos da API) leem a linha inteira quando o
-// drawer abre. No caminho legado a linha já vem completa e nada é buscado.
+// drawer abre. No mês fechado não há `linha_id` e nada é buscado.
 const TABELA_LINHA: Record<string, { tabela: string; select: string }> = {
     BTG:    { tabela: 'posicao_btg_ativos',    select: '*, posicao_btg_aquisicoes(*), posicao_btg_janelas_liquidez(*)' },
     XP:     { tabela: 'posicao_xp_ativos',     select: '*' },

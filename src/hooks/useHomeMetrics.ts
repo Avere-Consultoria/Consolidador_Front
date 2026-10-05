@@ -38,21 +38,6 @@ export interface CarteiraPersonalizada {
     criada_em: string;
 }
 
-interface AtivoCanonico {
-    id: string;
-    nome_canonico: string;
-    classe_avere: string | null;
-    liquidez_avere: string | null;
-    emissor_id: string | null;
-    conglomerado_id: string | null;
-    data_vencimento: string | null;
-    taxa_canonica: string | null;
-    benchmark_canonico: string | null;
-    sub_tipo_canonico: string | null;
-    is_fii: boolean;
-    is_coe: boolean;
-}
-
 interface Emissor {
     id: string;
     nome_fantasia: string;
@@ -84,17 +69,6 @@ interface InstituicaoDb {
     cor_primaria: string;
     tipo?: string | null;     // 'API' | 'MANUAL'
     codigo?: string | null;   // 'BTG' | 'XP' | 'AVENUE' | 'AGORA' (chave estável)
-}
-
-interface ExcecaoClassificacao {
-    ativo_canonico_id: string;
-    cliente_id: string | null;
-    consultor_id: string;
-    classe_customizada: string | null;
-    liquidez_customizada: string | null;
-    vencimento_customizado: string | null;
-    emissor_customizado_id: string | null;
-    apelido_ativo: string | null;
 }
 
 // ── Helpers de cor ────────────────────────────────────────────────────────────
@@ -315,88 +289,6 @@ function nomeApiBase(base: BaseInst, instituicoesDb: InstituicaoDb[]): string {
     return instApiDb(base, instituicoesDb)?.nome || def?.nomeBase || base;
 }
 
-// Monta a lista de fontes (sem parsear ativos) a partir dos snapshots por conta.
-function montarFontesMeta(
-    apiSnapshots: Record<'btg' | 'xp' | 'avenue' | 'agora', any[]>,
-    contas: any[],
-    manualSnapshots: any[],
-    instituicoesDb: InstituicaoDb[],
-): FonteMeta[] {
-    const contaById = new Map<string, any>(contas.map(c => [c.id, c]));
-    const corFallback: Record<string, string> = { BTG: CORES.btg, XP: CORES.xp, AVENUE: CORES.avenue, AGORA: CORES.agora };
-    const fontes: FonteMeta[] = [];
-
-    for (const def of API_DEFS) {
-        const list = apiSnapshots[def.key] || [];
-        // lista vem ordenada por data desc → 1º por conta_id é o mais recente
-        const latestByConta = new Map<string, any>();
-        for (const snap of list) {
-            const cid = snap.conta_id ?? '__none__';
-            if (!latestByConta.has(cid)) latestByConta.set(cid, snap);
-        }
-        if (latestByConta.size === 0) continue;
-
-        const inst = instApiDb(def.base, instituicoesDb);
-        const cor = inst?.cor_primaria || corFallback[def.base];
-        const nomeBase = inst?.nome || def.nomeBase;
-        const entries = Array.from(latestByConta.entries())
-            .map(([cid, snap]) => {
-                const conta = cid !== '__none__' ? contaById.get(cid) : null;
-                return { cid: cid === '__none__' ? null : cid, snap, apelido: conta?.apelido ?? null, ordem: conta?.ordem ?? 1 };
-            })
-            .sort((a, b) => a.ordem - b.ordem);
-        const multi = entries.length > 1;
-        entries.forEach((e, i) => {
-            const label = (e.apelido && e.apelido.trim()) || (multi ? `${nomeBase} ${i + 1}` : nomeBase);
-            // BTG: a conta corrente já entra como ATIVO (CASH) → não somar saldo_cc
-            // aqui senão duplica em "Conta Corrente / Outros". Mantém só o cripto,
-            // que não vem como ativo no parser.
-            const saldoOutros = def.base === 'BTG' ? (Number(e.snap?.saldo_cripto) || 0)
-                              : def.base === 'XP'  ? (Number(e.snap?.saldo_coe) || 0) : 0;
-            fontes.push({
-                key: e.cid ? `CONTA:${e.cid}` : `CONTA:${def.base}`,
-                grupoKey: def.base,
-                baseInst: def.base, label, cor, contaId: e.cid,
-                snapshot: e.snap, dataRef: e.snap?.data_referencia, ativosKey: def.ativosKey,
-                saldoOutros,
-            });
-        });
-    }
-
-    // Manuais: mais recente POR CONTA (fallback por instituição se sem conta_id).
-    const manualLatest = new Map<string, any>();
-    (manualSnapshots || []).forEach((s: any) => {
-        const k = s.conta_id ?? `inst:${s.instituicao}`;
-        if (!manualLatest.has(k)) manualLatest.set(k, s);
-    });
-    // Agrupa por instituição para numerar "Inst 1 / Inst 2".
-    const manualPorInst = new Map<string, any[]>();
-    manualLatest.forEach((snap) => {
-        const arr = manualPorInst.get(snap.instituicao) || [];
-        arr.push(snap);
-        manualPorInst.set(snap.instituicao, arr);
-    });
-    manualPorInst.forEach((snaps, inst) => {
-        const cor = instituicoesDb.find(i => i.nome.toUpperCase() === inst.toUpperCase())?.cor_primaria || '#64748B';
-        const ordenados = snaps
-            .map((s: any) => ({ s, conta: s.conta_id ? contaById.get(s.conta_id) : null }))
-            .sort((a, b) => (a.conta?.ordem ?? 1) - (b.conta?.ordem ?? 1));
-        const multi = ordenados.length > 1;
-        ordenados.forEach(({ s, conta }, i) => {
-            const label = (conta?.apelido && conta.apelido.trim()) || (multi ? `${inst} ${i + 1}` : inst);
-            fontes.push({
-                key: s.conta_id ? `CONTA:${s.conta_id}` : `MANUAL:${inst}`,
-                grupoKey: `MANUAL:${inst}`,
-                baseInst: 'MANUAL', label, cor, contaId: s.conta_id ?? null,
-                snapshot: s, dataRef: s.data_referencia, ativosKey: 'posicao_manual_ativos',
-                saldoOutros: 0,
-            });
-        });
-    });
-
-    return fontes;
-}
-
 // Filtra fontes pela carteira ativa (Consolidada / personalizada / fonte única). Igual p/ vivo e fechado.
 function filtrarFontes(fontes: FonteMeta[], carteiraAtiva: string, personalizada?: CarteiraPersonalizada): FonteMeta[] {
     return fontes.filter(f => {
@@ -579,19 +471,16 @@ function montarFechado(sfRows: any[], contas: any[], instituicoesDb: Instituicao
 
 // Refs estáveis para quando ainda não há dados — evita recomputar o metrics
 // a cada render por causa de arrays/objetos novos.
-const SNAP_VAZIO: Record<'btg' | 'xp' | 'avenue' | 'agora', any[]> = { btg: [], xp: [], avenue: [], agora: [] };
 const ARR_VAZIO: any[] = [];
 
-// `fonte`: de onde vem a posição viva.
-//   'juncao' — Padrão Avere: `posicao_avere()` já resolvida no banco (Home, Fase 3).
-//   'legado' — snapshots + catálogo + exceções resolvidos aqui no front (Relatório,
-//              até migrar). Some quando o último consumidor sair.
-// O mês fechado e as carteiras personalizadas são iguais nos dois.
-export function useHomeMetrics({ fonte = 'legado' }: { fonte?: 'juncao' | 'legado' } = {}) {
+// Posição viva no Padrão Avere: `posicao_avere(cliente, lente)` devolve a linha já
+// resolvida no banco (classe, sub-tipo, emissor, taxa, liquidez, personalização do
+// consultor). Aqui só se agrupa por conta e se alimentam os gráficos. O mês fechado
+// continua lendo `snapshots_fechados` (classificação carimbada, sem lente).
+export function useHomeMetrics() {
     const { selectedClient, consultorPerfilId } = useClient();
     const queryClient = useQueryClient();
     const clienteId = selectedClient?.id ?? null;
-    const viaJuncao = fonte === 'juncao';
 
     // Período: 'LIVE' (posição atual) ou 'YYYY-MM' (relatório fechado, read-only).
     const [periodo, setPeriodo] = useState<string>('LIVE');
@@ -599,229 +488,18 @@ export function useHomeMetrics({ fonte = 'legado' }: { fonte?: 'juncao' | 'legad
     const [drawerCarteirasAberto, setDrawerCarteirasAberto] = useState(false);
     const [carteiraAtiva, setCarteiraAtiva] = useState<string>('CONSOLIDADA');
 
-    // ── Carga principal (cache TanStack — chave por cliente + lente do consultor) ──
-    const dadosQ = useQuery({
-        queryKey: ['home', 'dados', clienteId, consultorPerfilId],
-        enabled: !!clienteId && !viaJuncao,
-        queryFn: async () => {
-            // Pagina tabelas globais (o Supabase corta cada request em 1000 linhas) —
-            // mantém o shape {data,error}. Sem isto, com a base cheia os ativos além do
-            // 1000º canônico ficavam SEM classe/taxa na Home.
-            const selectAllRows = async (tabela: string, colunas: string) => {
-                const PAGE = 1000; const acc: any[] = [];
-                for (let from = 0; ; from += PAGE) {
-                    const { data, error } = await supabase.from(tabela).select(colunas).range(from, from + PAGE - 1);
-                    if (error) return { data: acc, error };
-                    acc.push(...(data ?? []));
-                    if (!data || data.length < PAGE) break;
-                }
-                return { data: acc, error: null };
-            };
-
-            // Só o snapshot MAIS RECENTE por conta interessa à Home (visão LIVE).
-            // Buscar o histórico inteiro com filhos aninhados estourava o
-            // statement_timeout (8s) via RLS por linha — o BTG (o único com
-            // aquisições/janelas aninhadas) sumia da tela silenciosamente.
-            // Passo 1 leve (3 colunas) escolhe os ids; o pesado busca só eles.
-            const falhaIds = new Set<number>();
-            const idsMaisRecentes = async (tabela: string, idx: number): Promise<string[]> => {
-                const { data, error } = await supabase
-                    .from(tabela)
-                    .select('id, conta_id, data_referencia')
-                    .eq('cliente_id', clienteId!)
-                    // Cerca: snapshot 'parcial' (fonte avisou posição incompleta) não
-                    // substitui o último bom da conta.
-                    .neq('qualidade', 'parcial')
-                    .order('data_referencia', { ascending: false })
-                    .limit(400);
-                if (error) { console.error(`Home: falha ao listar ${tabela}`, error); falhaIds.add(idx); return []; }
-                const vistos = new Set<string>();
-                const ids: string[] = [];
-                for (const s of data ?? []) {
-                    const k = s.conta_id ?? '__none__';
-                    if (!vistos.has(k)) { vistos.add(k); ids.push(s.id); }
-                }
-                return ids;
-            };
-            const [idsBtg, idsXp, idsAvenue, idsAgora] = await Promise.all([
-                idsMaisRecentes('posicao_btg_snapshots', 0),
-                idsMaisRecentes('posicao_xp_snapshots', 1),
-                idsMaisRecentes('posicao_avenue_snapshots', 2),
-                idsMaisRecentes('posicao_agora_snapshots', 3),
-            ]);
-
-            // Índices fixos: 0=BTG, 1=XP, 2=Avenue, 3=Ágora, 4=canonicos, 5=emissores,
-            // 6=classes, 7=instituicoes, 8=conglomerados, 9=manuais
-            const queries: any[] = [
-                // 0: BTG
-                supabase
-                    .from('posicao_btg_snapshots')
-                    .select(`
-                        conta_id, patrimonio_total, data_referencia, saldo_cc, saldo_cripto,
-                        posicao_btg_ativos (
-                            id, ativo_canonico_id, emissor, sub_tipo, tipo, asset_class,
-                            valor_liquido, valor_bruto, maturity_date, isin, ticker, fund_cnpj,
-                            ir, quantidade, preco_mercado, rentabilidade, benchmark,
-                            tax_free, is_liquidity, cetip_code, selic_code, issue_date, yield_avg, iof_tax,
-                            posicao_btg_aquisicoes (
-                                acquisition_date, quantity, initial_investment_value, cost_price, gross_value, net_value, income_tax, yield_to_maturity, index_yield_rate
-                            ),
-                            posicao_btg_janelas_liquidez (
-                                type, from_date, to_date
-                            )
-                        )
-                    `)
-                    .in('id', idsBtg)
-                    .order('data_referencia', { ascending: false }),
-
-                // 1: XP
-                supabase
-                    .from('posicao_xp_snapshots')
-                    .select(`
-                        conta_id, patrimonio_total, patrimonio_total_liquido, data_referencia, saldo_coe,
-                        posicao_xp_ativos (
-                            id, ativo_canonico_id, nome, sub_tipo, tipo, asset_class,
-                            codigo_ativo, isin, ticker, cnpj, emissor,
-                            valor_aplicado, valor_bruto, valor_liquido,
-                            valor_imposto_renda, valor_iof, valor_rendimento,
-                            is_isento_ir, resultado, resultado_percentual,
-                            quantidade, preco_unitario, preco_medio, valor_cota, quantidade_cotas,
-                            indexador, percentual_indexador, benchmark,
-                            data_vencimento, data_aplicacao, data_adesao, data_posicao,
-                            periodo_cotizacao, periodo_liquidacao,
-                            cenario_base, cenario_pessimista, barreira_crescimento, tipo_certificado,
-                            is_liquidity
-                        )
-                    `)
-                    .in('id', idsXp)
-                    .order('data_referencia', { ascending: false }),
-
-                // 2: Avenue
-                supabase
-                    .from('posicao_avenue_snapshots')
-                    .select(`
-                        conta_id, patrimonio_total, data_referencia,
-                        posicao_avenue_ativos (
-                            id, ativo_canonico_id, asset_class, tipo, sub_tipo, nome, ticker,
-                            cusip, isin, product_type, office_name,
-                            valor_bruto_brl, valor_bruto_usd, quantidade, maturity_date, is_liquidity
-                        )
-                    `)
-                    .in('id', idsAvenue)
-                    .order('data_referencia', { ascending: false }),
-
-                // 3: Ágora
-                supabase
-                    .from('posicao_agora_snapshots')
-                    .select(`
-                        conta_id, patrimonio_total, data_referencia,
-                        posicao_agora_ativos (
-                            id, ativo_canonico_id, tipo, sub_tipo, asset_class, instrument_type,
-                            emissor, ticker, security_code,
-                            valor_bruto, valor_liquido, custo, custo_total,
-                            quantidade, preco_mercado, preco_unitario,
-                            percentual_patrimonio, valorizacao_reais, valorizacao_pct,
-                            taxa, taxa_percentual, indexer_percentual,
-                            valorizacao, percent_valorizacao,
-                            ir_valor, iof_valor, ir_descricao, ir_percentual,
-                            data_vencimento, data_aplicacao, liquidez_diaria,
-                            posicao_agora_aquisicoes (
-                                tipo_aquisicao, application_date, reference_date,
-                                quantity, gross_value, net_value, ir_value, iof_value,
-                                operation_status, purchase_price, market_price, profit_value,
-                                tax_rate, days, market_type, issuer_name, bond_name, index_name
-                            )
-                        )
-                    `)
-                    .in('id', idsAgora)
-                    .order('data_referencia', { ascending: false }),
-
-                // 4, 5, 6, 7: Infraestrutura
-                selectAllRows('ativos_canonicos', 'id, nome_canonico, classe_avere, liquidez_avere, emissor_id, conglomerado_id, data_vencimento, taxa_canonica, benchmark_canonico, sub_tipo_canonico, is_fii, is_coe'),
-                selectAllRows('dicionario_emissores', 'id, nome_fantasia, cnpj_raiz, setor_id, setores(nome, cor_hex)'),
-                supabase.from('dicionario_classes').select('*').order('ordem_exibicao'),
-                supabase.from('instituicoes').select('*'),
-                // 8: Conglomerados (com porte) p/ visão de crédito bancário FGC
-                selectAllRows('dicionario_conglomerados', 'id, nome_lider, porte'),
-                // 9: Posições manuais (todas instituições/datas do cliente; latest por instituição é escolhido no metrics)
-                supabase
-                    .from('posicao_manual_snapshots')
-                    .select(`
-                        id, conta_id, instituicao, data_referencia, patrimonio_total,
-                        saldo_cc, saldo_rf, saldo_fundos, saldo_rv, saldo_prev, saldo_cripto, saldo_outros,
-                        posicao_manual_ativos (
-                            id, ativo_canonico_id, asset_class, tipo, sub_tipo, emissor, cnpj, ticker, isin,
-                            valor_bruto, valor_liquido, quantidade, preco_mercado,
-                            data_vencimento, data_aplicacao, benchmark, rentabilidade, yield_avg
-                        )
-                    `)
-                    .eq('cliente_id', clienteId!)
-                    .order('data_referencia', { ascending: false })
-                    .limit(60),
-            ];
-
-            const results = await Promise.all(queries);
-
-            // Erro em fonte de posição NUNCA pode ser silencioso — sem isto,
-            // uma query que falha vira "instituição sumiu da tela" com total menor
-            // e cara de completo (o pior estado possível de um consolidador).
-            const fontesComFalha: string[] = [];
-            (['BTG Pactual', 'XP Investimentos', 'Avenue', 'Ágora'] as const).forEach((nome, i) => {
-                if (results[i]?.error || falhaIds.has(i)) {
-                    console.error(`Home: snapshots ${nome} falharam`, results[i]?.error);
-                    fontesComFalha.push(nome);
-                }
-            });
-
-            // Contas do cliente (para rotular as fontes: XP 1 / XP 2, apelidos…)
-            const { data: contasData } = await supabase
-                .from('cliente_contas')
-                .select('id, instituicao_id, apelido, ordem')
-                .eq('cliente_id', clienteId!)
-                .order('ordem', { ascending: true });
-
-            // Liquidez padrão por subtipo (global + override do consultor da lente)
-            const { data: liqSubData } = await supabase
-                .from('liquidez_subtipo')
-                .select('consultor_id, sub_tipo, liquidez_dias, padronizar')
-                .or(consultorPerfilId ? `consultor_id.is.null,consultor_id.eq.${consultorPerfilId}` : 'consultor_id.is.null');
-
-            return {
-                snapshotData: {
-                    btg: results[0].data ?? [], xp: results[1].data ?? [],
-                    avenue: results[2].data ?? [], agora: results[3].data ?? [],
-                } as Record<'btg' | 'xp' | 'avenue' | 'agora', any[]>,
-                canonicos: (results[4].data ?? []) as AtivoCanonico[],
-                emissores: ((results[5].data ?? []) as any[]).map((r: any) => ({
-                    id: r.id,
-                    nome_fantasia: r.nome_fantasia,
-                    cnpj_raiz: r.cnpj_raiz,
-                    setor: r.setores?.nome ?? '',
-                    setorCor: r.setores?.cor_hex ?? null,
-                })) as Emissor[],
-                classesMaster: (results[6].data ?? []) as ClasseMaster[],
-                instituicoesDb: (results[7].data ?? []) as InstituicaoDb[],
-                conglomeradosDb: (results[8].data ?? []) as ConglomeradoDb[],
-                manualSnapshots: (results[9].data ?? []) as any[],
-                contas: contasData ?? [],
-                liquidezSubtipo: liqSubData ?? [],
-                fontesComFalha,
-            };
-        },
-    });
-
-    // ── Padrão Avere: a posição já resolvida no banco, com a lente do consultor ──
+    // ── Posição viva (cache por cliente + lente do consultor) ─────────────────
     // Personalizar um ativo invalida só esta consulta (~200 ms); os dicionários ficam.
     const juncaoQ = useQuery({
         queryKey: ['home', 'juncao', clienteId, consultorPerfilId],
-        enabled: !!clienteId && viaJuncao,
+        enabled: !!clienteId,
         queryFn: () => carregarPosicaoAvere(clienteId!, consultorPerfilId),
     });
     // Dicionários que os gráficos ainda leem por id (setor/cor do emissor, porte do
     // conglomerado, cor e ordem das classes, cor das instituições).
     const dicionariosQ = useQuery({
         queryKey: ['home', 'dicionarios'],
-        enabled: viaJuncao,
+        enabled: !!clienteId,
         staleTime: 5 * 60 * 1000,
         queryFn: async () => {
             const [em, cl, inst, cg] = await Promise.all([
@@ -843,42 +521,34 @@ export function useHomeMetrics({ fonte = 'legado' }: { fonte?: 'juncao' | 'legad
             };
         },
     });
-    const linhasJuncao = (viaJuncao ? juncaoQ.data : undefined) ?? (ARR_VAZIO as LinhaAvere[]);
-    const fontesJuncao = useMemo(() => montarFontesJuncao(linhasJuncao), [linhasJuncao]);
-
-    const d = dadosQ.data;
-    const dic = viaJuncao ? dicionariosQ.data : undefined;
-    const snapshotData = d?.snapshotData ?? SNAP_VAZIO;
-    const contas = d?.contas ?? (ARR_VAZIO as any[]);
-    const canonicos = d?.canonicos ?? (ARR_VAZIO as AtivoCanonico[]);
-    const emissores = (viaJuncao ? dic?.emissores : d?.emissores) ?? (ARR_VAZIO as Emissor[]);
-    const conglomeradosDb = (viaJuncao ? dic?.conglomeradosDb : d?.conglomeradosDb) ?? (ARR_VAZIO as ConglomeradoDb[]);
-    const manualSnapshots = d?.manualSnapshots ?? (ARR_VAZIO as any[]);
-    const classesMaster = (viaJuncao ? dic?.classesMaster : d?.classesMaster) ?? (ARR_VAZIO as ClasseMaster[]);
-    const instituicoesDb = (viaJuncao ? dic?.instituicoesDb : d?.instituicoesDb) ?? (ARR_VAZIO as InstituicaoDb[]);
-    const liquidezSubtipo = d?.liquidezSubtipo ?? (ARR_VAZIO as any[]);
-
-    const cargaQ = viaJuncao ? juncaoQ : dadosQ;
-    useEffect(() => {
-        if (cargaQ.error) console.error('Erro na carga da Home:', cargaQ.error);
-        if (dicionariosQ.error) console.error('Erro ao carregar dicionários:', dicionariosQ.error);
-    }, [cargaQ.error, dicionariosQ.error]);
-
-    // Exceções pela LENTE DO HEADER (consultor selecionado no topo) — query própria:
-    // personalizar um ativo invalida SÓ isto (o snapshot pesado fica no cache).
-    // 'Todos' → consultorPerfilId null → nenhuma exceção → visão master/genérica.
-    const excecoesQ = useQuery({
-        queryKey: ['home', 'excecoes', consultorPerfilId],
-        enabled: !!consultorPerfilId && !viaJuncao,
+    // Contas do cliente: só o mês fechado ainda rotula as fontes aqui (XP 1 / XP 2,
+    // apelidos); na posição viva o rótulo já vem da junção.
+    const contasQ = useQuery({
+        queryKey: ['home', 'contas', clienteId],
+        enabled: !!clienteId,
         queryFn: async () => {
             const { data, error } = await supabase
-                .from('excecoes_classificacao').select('*')
-                .eq('consultor_id', consultorPerfilId);
+                .from('cliente_contas').select('id, instituicao_id, apelido, ordem')
+                .eq('cliente_id', clienteId!).order('ordem', { ascending: true });
             if (error) throw error;
-            return (data ?? []) as ExcecaoClassificacao[];
+            return data ?? [];
         },
     });
-    const excecoes = consultorPerfilId ? (excecoesQ.data ?? (ARR_VAZIO as ExcecaoClassificacao[])) : (ARR_VAZIO as ExcecaoClassificacao[]);
+
+    const linhasJuncao = juncaoQ.data ?? (ARR_VAZIO as LinhaAvere[]);
+    const fontesJuncao = useMemo(() => montarFontesJuncao(linhasJuncao), [linhasJuncao]);
+    const dic = dicionariosQ.data;
+    const emissores = dic?.emissores ?? (ARR_VAZIO as Emissor[]);
+    const conglomeradosDb = dic?.conglomeradosDb ?? (ARR_VAZIO as ConglomeradoDb[]);
+    const classesMaster = dic?.classesMaster ?? (ARR_VAZIO as ClasseMaster[]);
+    const instituicoesDb = dic?.instituicoesDb ?? (ARR_VAZIO as InstituicaoDb[]);
+    const contas = contasQ.data ?? (ARR_VAZIO as any[]);
+
+    useEffect(() => {
+        if (juncaoQ.error) console.error('Erro na carga da posição:', juncaoQ.error);
+        if (dicionariosQ.error) console.error('Erro ao carregar dicionários:', dicionariosQ.error);
+        if (contasQ.error) console.error('Erro ao carregar contas:', contasQ.error);
+    }, [juncaoQ.error, dicionariosQ.error, contasQ.error]);
 
     // Carteiras personalizadas do cliente
     const carteirasQ = useQuery({
@@ -940,20 +610,17 @@ export function useHomeMetrics({ fonte = 'legado' }: { fonte?: 'juncao' | 'legad
         if (fechadoQ.error) console.error('Erro ao carregar relatório fechado:', fechadoQ.error);
     }, [fechadoQ.error]);
 
-    const loading = !!clienteId && (cargaQ.isPending || (viaJuncao && dicionariosQ.isPending) || (periodo !== 'LIVE' && fechadoQ.isPending));
+    const loading = !!clienteId && (juncaoQ.isPending || dicionariosQ.isPending || contasQ.isPending || (periodo !== 'LIVE' && fechadoQ.isPending));
 
-    // Fontes vivas no formato interno. Pela junção, uma fonte = uma conta com linhas;
-    // o total é a soma das linhas (D11) e não há "saldo por fora" (D14).
-    const fontesVivas = useMemo<FonteMeta[]>(() => {
-        if (!viaJuncao) return montarFontesMeta(snapshotData, contas, manualSnapshots, instituicoesDb);
-        return fontesJuncao.map(f => ({
-            key: f.key, grupoKey: f.grupoKey, baseInst: f.baseInst, label: f.label, contaId: f.contaId,
-            cor: (f.baseInst === 'MANUAL'
-                ? instituicoesDb.find(i => i.nome.toUpperCase() === f.instituicao.toUpperCase())?.cor_primaria
-                : instApiDb(f.baseInst, instituicoesDb)?.cor_primaria) || corDaBase(f.baseInst),
-            snapshot: { patrimonio_total: f.patrimonio }, dataRef: f.dataRef, ativosKey: '', saldoOutros: 0,
-        }));
-    }, [viaJuncao, fontesJuncao, snapshotData, contas, manualSnapshots, instituicoesDb]);
+    // Fontes vivas: uma fonte = uma conta com linhas; o total é a soma das linhas
+    // (D11) e não há "saldo por fora" (D14).
+    const fontesVivas = useMemo<FonteMeta[]>(() => fontesJuncao.map(f => ({
+        key: f.key, grupoKey: f.grupoKey, baseInst: f.baseInst, label: f.label, contaId: f.contaId,
+        cor: (f.baseInst === 'MANUAL'
+            ? instituicoesDb.find(i => i.nome.toUpperCase() === f.instituicao.toUpperCase())?.cor_primaria
+            : instApiDb(f.baseInst, instituicoesDb)?.cor_primaria) || corDaBase(f.baseInst),
+        snapshot: { patrimonio_total: f.patrimonio }, dataRef: f.dataRef, ativosKey: '', saldoOutros: 0,
+    })), [fontesJuncao, instituicoesDb]);
 
     const opcoesCarteira = useMemo(() => [
         { label: 'Consolidada', value: 'CONSOLIDADA' },
@@ -963,25 +630,11 @@ export function useHomeMetrics({ fonte = 'legado' }: { fonte?: 'juncao' | 'legad
 
     // Nomes distintos das instituições manuais (p/ montar carteiras personalizadas)
     const instituicoesManuais = useMemo(
-        () => viaJuncao
-            ? Array.from(new Set(fontesJuncao.filter(f => f.baseInst === 'MANUAL').map(f => f.instituicao)))
-            : Array.from(new Set((manualSnapshots || []).map((s: any) => s.instituicao))) as string[],
-        [viaJuncao, fontesJuncao, manualSnapshots],
+        () => Array.from(new Set(fontesJuncao.filter(f => f.baseInst === 'MANUAL').map(f => f.instituicao))),
+        [fontesJuncao],
     );
 
     const metrics = useMemo(() => {
-        // ── Maps de resolução ────────────────────────────────────────────────
-        const canonicoMap = new Map<string, AtivoCanonico>();
-        canonicos.forEach(c => canonicoMap.set(c.id, c));
-
-        const excecaoGlobalMap = new Map<string, ExcecaoClassificacao>();
-        const excecaoClienteMap = new Map<string, ExcecaoClassificacao>();
-        excecoes.forEach(e => {
-            if (!e.ativo_canonico_id) return;
-            if (e.cliente_id === null || e.cliente_id === undefined) excecaoGlobalMap.set(e.ativo_canonico_id, e);
-            else if (e.cliente_id === selectedClient?.id) excecaoClienteMap.set(e.ativo_canonico_id, e);
-        });
-
         const emissorMap = new Map<string, Emissor>();
         emissores.forEach(e => emissorMap.set(e.id, e));
         const conglomeradoMap = new Map<string, ConglomeradoDb>();
@@ -993,174 +646,43 @@ export function useHomeMetrics({ fonte = 'legado' }: { fonte?: 'juncao' | 'legad
             const k = c.nome.trim().toUpperCase();
             colorMap.set(k, c.cor_hex); orderMap.set(k, c.ordem_exibicao);
         });
+        const personalizada = carteirasPersonalizadas.find(c => c.id === carteiraAtiva);
 
         // ── Relatório FECHADO (read-only): classificação já carimbada, sem lente ──
         if (periodo !== 'LIVE') {
             if (!fechadoData) return computeMetrics({ fontesIncluidas: [], fontesTodas: [], ativosPorFonte: new Map(), emissores, emissorMap, conglomeradoMap, colorMap, orderMap, diasVencimento });
-            const personalizadaF = carteirasPersonalizadas.find(c => c.id === carteiraAtiva);
-            const fontesIncluidasF = filtrarFontes(fechadoData.fontes, carteiraAtiva, personalizadaF);
+            const fontesIncluidasF = filtrarFontes(fechadoData.fontes, carteiraAtiva, personalizada);
             const ativosPorFonteF = new Map<string, ConsolidatedAtivo[]>();
             fontesIncluidasF.forEach(f => ativosPorFonteF.set(f.key, fechadoData.ativos.get(f.key) || []));
             return computeMetrics({ fontesIncluidas: fontesIncluidasF, fontesTodas: fechadoData.fontes, ativosPorFonte: ativosPorFonteF, emissores, emissorMap, conglomeradoMap, colorMap, orderMap, diasVencimento });
         }
 
-        // ── Padrão Avere: linha já resolvida no banco — só agrupa por fonte ──
-        if (viaJuncao) {
-            const personalizadaJ = carteirasPersonalizadas.find(c => c.id === carteiraAtiva);
-            const fontesIncluidasJ = filtrarFontes(fontesVivas, carteiraAtiva, personalizadaJ);
-            const fonteJPorKey = new Map(fontesJuncao.map(f => [f.key, f]));
-            const ativosPorFonteJ = new Map<string, ConsolidatedAtivo[]>();
-            fontesIncluidasJ.forEach(f => ativosPorFonteJ.set(f.key, []));
-            linhasJuncao.forEach(l => {
-                const fj = fonteJPorKey.get(chaveFonte(l));
-                const lista = fj && ativosPorFonteJ.get(fj.key);
-                if (fj && lista) lista.push(linhaParaAtivo(l, fj));
-            });
-            return computeMetrics({ fontesIncluidas: fontesIncluidasJ, fontesTodas: fontesVivas, ativosPorFonte: ativosPorFonteJ, emissores, emissorMap, conglomeradoMap, colorMap, orderMap, diasVencimento });
-        }
-
-        // ── Resolução canônico + exceções (lookup O(1)) ──────────────────────
-        // Padronização de liquidez por subtipo (consultor override > global).
-        const subtipoLiqMap = new Map<string, { padronizar: boolean; dias: number | null }>();
-        liquidezSubtipo.filter((r: any) => !r.consultor_id).forEach((r: any) =>
-            subtipoLiqMap.set((r.sub_tipo || '').toUpperCase().trim(), { padronizar: !!r.padronizar, dias: r.liquidez_dias }));
-        liquidezSubtipo.filter((r: any) => r.consultor_id === consultorPerfilId).forEach((r: any) =>
-            subtipoLiqMap.set((r.sub_tipo || '').toUpperCase().trim(), { padronizar: !!r.padronizar, dias: r.liquidez_dias }));
-
-        const classificar = (ativoCanonicoId: string | null | undefined) => {
-            if (!ativoCanonicoId) {
-                return { classe: 'Classificar', liquidez: null, liquidezCustomizada: null, apelido: null, emissorId: null, conglomeradoId: null, vencimento: null, taxa: null, subTipo: null, benchmark: null };
-            }
-            const canonico = canonicoMap.get(ativoCanonicoId) ?? null;
-            const eCliente = excecaoClienteMap.get(ativoCanonicoId);
-            const eGlobal  = excecaoGlobalMap.get(ativoCanonicoId);
-            return {
-                classe:     eCliente?.classe_customizada     ?? eGlobal?.classe_customizada     ?? canonico?.classe_avere       ?? 'Classificar',
-                liquidez:   eCliente?.liquidez_customizada   ?? eGlobal?.liquidez_customizada   ?? canonico?.liquidez_avere     ?? null,
-                liquidezCustomizada: eCliente?.liquidez_customizada ?? eGlobal?.liquidez_customizada ?? null,
-                apelido:    eCliente?.apelido_ativo           ?? eGlobal?.apelido_ativo           ?? null,
-                emissorId:  eCliente?.emissor_customizado_id  ?? eGlobal?.emissor_customizado_id  ?? canonico?.emissor_id         ?? null,
-                conglomeradoId: canonico?.conglomerado_id ?? null,
-                vencimento: eCliente?.vencimento_customizado  ?? eGlobal?.vencimento_customizado  ?? canonico?.data_vencimento    ?? null,
-                taxa:       canonico?.taxa_canonica ?? null,
-                subTipo:    canonico?.sub_tipo_canonico ?? null,
-                benchmark:  canonico?.benchmark_canonico ?? null,
-            };
-        };
-
-        const isCash = (a: any) => a?.asset_class === 'CASH';
-        const classeComFallback = (a: any, cls: any) => (isCash(a) && cls.classe === 'Classificar') ? 'Conta Corrente' : cls.classe;
-        const liquidezComFallback = (a: any, cls: any) => (isCash(a) && !cls.liquidez) ? '0' : cls.liquidez;
-        const naoZerado = (a: ConsolidatedAtivo) => (a.valorLiquido && a.valorLiquido > 0) || (a.valorBruto && a.valorBruto > 0);
-
-        // Liquidez efetiva (alimenta só o gráfico de liquidez):
-        //   exceção per-ativo > padronização por subtipo > dias até o vencimento > D+ atual.
-        // Para renda fixa com vencimento, o D+ é os dias até a DATA de vencimento, calculados
-        // a cada render — a data é a verdade durável; o liquidez_avere do sync fica congelado
-        // no 1º sync (ignoreDuplicates) e drifta, então não o usamos quando há vencimento.
-        const resolverLiquidez = (at: ConsolidatedAtivo, a: any, cls: any): string | null => {
-            if (cls.liquidezCustomizada != null && cls.liquidezCustomizada !== '') return String(cls.liquidezCustomizada);
-            const venc = cls.vencimento || a.maturity_date || a.data_vencimento;
-            if (venc) {
-                const st = (cls.subTipo ?? a.sub_tipo ?? '').toUpperCase().trim();
-                const cfg = subtipoLiqMap.get(st);
-                if (cfg?.padronizar && cfg.dias != null) return String(cfg.dias);
-                const dias = diasAteVencimento(venc);
-                if (dias != null) return String(Math.max(0, dias));
-            }
-            return at.liquidez ?? null;
-        };
-
-        // ── Parser de ativos por base de instituição (instituicao = rótulo da fonte) ──
-        const parseFonteAtivos = (f: FonteMeta): ConsolidatedAtivo[] => {
-            const list = f.snapshot?.[f.ativosKey] || [];
-            const out: ConsolidatedAtivo[] = [];
-            list.forEach((a: any, i: number) => {
-                const cls = classificar(a.ativo_canonico_id);
-                const at: ConsolidatedAtivo = {
-                    rowId: `${f.key}-${i}`,
-                    nome: cls.apelido || a.emissor || a.nome || '-',
-                    tipo: classeComFallback(a, cls),
-                    subTipo: cls.subTipo ?? a.sub_tipo,
-                    valorLiquido: 0,
-                    valorBruto: 0,
-                    vencimento: cls.vencimento || a.maturity_date || a.data_vencimento,
-                    instituicao: f.label,
-                    instituicaoBase: f.baseInst,
-                    emissorId: cls.emissorId,
-                    conglomeradoId: cls.conglomeradoId,
-                    ativoCanonicoId: a.ativo_canonico_id,
-                    liquidez: liquidezComFallback(a, cls),
-                    rawData: a,
-                    benchmark: cls.benchmark || '-',
-                    taxa: cls.taxa,
-                };
-                at.apelido = cls.apelido ?? null;
-                at.emissorNome = cls.emissorId ? (emissorMap.get(cls.emissorId)?.nome_fantasia ?? null) : null;
-                if (f.baseInst === 'BTG') {
-                    at.nomeCru = a.emissor || null;          // BTG: o campo já é o emissor; o papel é o sub_tipo
-                    at.nome = cls.apelido || a.emissor || '-';
-                    at.valorLiquido = parseFloat(a.valor_liquido || 0);
-                    at.valorBruto = parseFloat(a.valor_bruto || 0);
-                } else if (f.baseInst === 'XP') {
-                    at.nomeCru = a.nome || a.emissor || null;  // XP: produto inteiro ("CDB BMG - NOV/2026")
-                    at.nome = cls.apelido || a.nome || a.emissor || '-';
-                    at.valorLiquido = parseFloat(a.valor_liquido || 0);
-                    at.valorBruto = parseFloat(a.valor_bruto || 0);
-                } else if (f.baseInst === 'AVENUE') {
-                    at.nomeCru = a.nome || null;
-                    at.nome = cls.apelido || a.nome || '-';
-                    at.valorLiquido = parseFloat(a.valor_bruto_brl || 0);
-                    at.valorBruto = parseFloat(a.valor_bruto_brl || 0);
-                    at.liquidez = a.is_liquidity ? '0' : liquidezComFallback(a, cls);
-                    at.benchmark = '-';
-                } else if (f.baseInst === 'AGORA') {
-                    at.nomeCru = a.emissor || null;
-                    at.nome = cls.apelido || a.emissor || '-';
-                    at.valorLiquido = parseFloat(a.valor_liquido || 0);
-                    at.valorBruto = parseFloat(a.valor_bruto || 0);
-                } else { // MANUAL
-                    at.nomeCru = a.emissor || null;
-                    at.nome = cls.apelido || a.emissor || '-';
-                    at.valorLiquido = parseFloat(a.valor_liquido ?? a.valor_bruto ?? 0);
-                    at.valorBruto = parseFloat(a.valor_bruto || 0);
-                    // Sem canônico = Camada 1: exibe o dado RASO da própria linha (ex.: o
-                    // benchmark "IPCA" que a IA extraiu) e marca como NÃO VERIFICADO. Com
-                    // canônico = Camada 2: já herdou o global acima. Ver posicao-manual-politica.
-                    if (!a.ativo_canonico_id) {
-                        at.benchmark = a.benchmark || '-';
-                        at.naoVerificado = true;
-                    }
-                }
-                at.liquidez = resolverLiquidez(at, a, cls);
-                if (naoZerado(at)) out.push(at);
-            });
-            return out;
-        };
-
-        // ── Fontes VIVAS (carteiras) + filtro pela carteira ativa ────────────
-        const fontes = fontesVivas;
-        const personalizada = carteirasPersonalizadas.find(c => c.id === carteiraAtiva);
-        const fontesIncluidas = filtrarFontes(fontes, carteiraAtiva, personalizada);
-
+        // ── Posição VIVA: linha já resolvida no banco — só agrupa por fonte ──
+        const fontesIncluidas = filtrarFontes(fontesVivas, carteiraAtiva, personalizada);
+        const fontePorKey = new Map(fontesJuncao.map(f => [f.key, f]));
         const ativosPorFonte = new Map<string, ConsolidatedAtivo[]>();
-        fontesIncluidas.forEach(f => ativosPorFonte.set(f.key, parseFonteAtivos(f)));
+        fontesIncluidas.forEach(f => ativosPorFonte.set(f.key, []));
+        linhasJuncao.forEach(l => {
+            const fonte = fontePorKey.get(chaveFonte(l));
+            const lista = fonte && ativosPorFonte.get(fonte.key);
+            if (fonte && lista) lista.push(linhaParaAtivo(l, fonte));
+        });
+        return computeMetrics({ fontesIncluidas, fontesTodas: fontesVivas, ativosPorFonte, emissores, emissorMap, conglomeradoMap, colorMap, orderMap, diasVencimento });
+    }, [periodo, fechadoData, linhasJuncao, fontesJuncao, fontesVivas, diasVencimento, carteiraAtiva, carteirasPersonalizadas, emissores, conglomeradosDb, classesMaster]);
 
-        return computeMetrics({ fontesIncluidas, fontesTodas: fontes, ativosPorFonte, emissores, emissorMap, conglomeradoMap, colorMap, orderMap, diasVencimento });
-    }, [periodo, fechadoData, viaJuncao, linhasJuncao, fontesJuncao, fontesVivas, liquidezSubtipo, consultorPerfilId, diasVencimento, carteiraAtiva, carteirasPersonalizadas, canonicos, emissores, conglomeradosDb, classesMaster, excecoes, selectedClient]);
-
-    // Re-busca o que muda ao personalizar um ativo pelo drawer da carteira: pela
-    // junção, a própria posição (a lente é aplicada no banco); no legado, só as
-    // exceções — o snapshot pesado fica no cache e o metrics recomputa sozinho.
+    // Personalizar um ativo pelo drawer da carteira: a lente é aplicada no banco,
+    // então basta rebuscar a posição (os dicionários ficam no cache).
     function recarregar() {
-        queryClient.invalidateQueries({ queryKey: viaJuncao ? ['home', 'juncao'] : ['home', 'excecoes'] });
+        queryClient.invalidateQueries({ queryKey: ['home', 'juncao'] });
     }
 
-    // Recarga completa (posições + exceções + carteiras). Usada quando a posição
-    // muda de canônico no banco (criação de rascunho) — o reload leve não basta.
+    // Recarga completa (posições + carteiras). Usada quando a posição muda de
+    // canônico no banco (criação de rascunho).
     function recarregarTudo() {
         queryClient.invalidateQueries({ queryKey: ['home'] });
     }
 
-    return { selectedClient, loading, erroCarga: !!cargaQ.error || !!dicionariosQ.error, semRede: cargaQ.fetchStatus === 'paused' && cargaQ.isPending, fontesComFalha: d?.fontesComFalha ?? (ARR_VAZIO as string[]), metrics, snapshotData, diasVencimento, setDiasVencimento, drawerCarteirasAberto, setDrawerCarteirasAberto, carteiraAtiva, setCarteiraAtiva, opcoesCarteira, instituicoesManuais, periodo, setPeriodo, mesesFechados, recarregar, recarregarTudo };
+    const erroCarga = !!juncaoQ.error || !!dicionariosQ.error || !!contasQ.error;
+    const semRede = juncaoQ.fetchStatus === 'paused' && juncaoQ.isPending;
+    return { selectedClient, loading, erroCarga, semRede, metrics, diasVencimento, setDiasVencimento, drawerCarteirasAberto, setDrawerCarteirasAberto, carteiraAtiva, setCarteiraAtiva, opcoesCarteira, instituicoesManuais, periodo, setPeriodo, mesesFechados, recarregar, recarregarTudo };
 }
