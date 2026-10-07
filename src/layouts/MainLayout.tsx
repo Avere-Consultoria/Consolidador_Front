@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, BellRing, ClipboardCheck, LayoutGrid, ListTodo, Search } from 'lucide-react';
 import { CommandPalette } from '../components/shared/CommandPalette';
 import { ErrorBoundary } from '../components/shared/ErrorBoundary';
-import { SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, type ComboboxLevel } from 'avere-ui';
+import { SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, MarcadorProblemas, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -204,6 +204,10 @@ export default function MainLayout() {
   return (
     <div className={styles.shell}>
       <Toaster position="top-right" richColors />
+      {/* Marcador de problemas (avere-ui): Alt+clique num elemento → print tarjado + relato
+          para a base própria do marcador. Só depois do login; quem relata é o perfil logado. */}
+      <MarcadorProblemas app="consolidador" versaoApp={__APP_VERSAO__}
+        usuario={perfil ? { id: perfil.id, nome: perfil.nome } : undefined} />
       <CommandPalette
         open={paletteOpen}
         onOpenChange={setPaletteOpen}

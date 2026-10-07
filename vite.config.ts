@@ -6,6 +6,11 @@ export default defineConfig({
   plugins: [
     react(),
   ],
+  define: {
+    // Versão que o Marcador de problemas carimba no relato: o commit do deploy
+    // (o Cloudflare Pages expõe CF_PAGES_COMMIT_SHA no build); no local, "dev".
+    __APP_VERSAO__: JSON.stringify(process.env.CF_PAGES_COMMIT_SHA?.slice(0, 7) ?? 'dev'),
+  },
   build: {
     rollupOptions: {
       output: {

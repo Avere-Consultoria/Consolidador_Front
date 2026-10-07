@@ -16,7 +16,9 @@ import * as PopoverPrimitive from '@radix-ui/react-popover';
 import * as RadioGroupPrimitive from '@radix-ui/react-radio-group';
 import * as React_2 from 'react';
 import { ReactNode } from 'react';
+import { ReactPortal } from 'react';
 import { RefAttributes } from 'react';
+import { RefObject } from 'react';
 import * as SliderPrimitive from '@radix-ui/react-slider';
 import * as SwitchPrimitives from '@radix-ui/react-switch';
 import { toast } from 'sonner';
@@ -43,6 +45,13 @@ export declare const badgeVariants: (props?: ({
     variant?: "solid" | "outline" | "ghost" | null | undefined;
 } & ClassProp) | undefined) => string;
 
+export declare function BotaoMesVigente({ ativo, onClick, rotulo }: {
+    /** true = a seleção já está no mês padrão (botão aceso, inerte). */
+    ativo: boolean;
+    onClick: () => void;
+    rotulo?: string;
+}): JSX.Element;
+
 export declare const Button: ForwardRefExoticComponent<ButtonProps & RefAttributes<HTMLButtonElement>>;
 
 export declare interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
@@ -60,6 +69,13 @@ export declare const buttonVariants: (props?: ({
 export declare function Calendar({ className, classNames, showOutsideDays, ...props }: CalendarProps): JSX.Element;
 
 declare type CalendarProps = React_2.ComponentProps<typeof DayPicker>;
+
+export declare function CampoData({ label, valor, onChange, placeholder }: {
+    label?: string;
+    valor: string;
+    onChange: (iso: string) => void;
+    placeholder?: string;
+}): JSX.Element;
 
 export declare const Card: ForwardRefExoticComponent<HTMLAttributes<HTMLDivElement> & RefAttributes<HTMLDivElement>>;
 
@@ -88,7 +104,12 @@ export declare interface ColumnDef<T> {
     sortable?: boolean;
 }
 
-export declare function Combobox({ options, value, onChange, label, error, placeholder, className, disabled, }: ComboboxProps): JSX.Element;
+/** Índice da célula sob o evento (para saber qual editor focar). */
+export declare function colunaDoEvento(e: {
+    target: EventTarget | null;
+}): number | null;
+
+export declare function Combobox({ options, value, onChange, label, error, placeholder, className, disabled, side, avoidCollisions, onCriar, rotuloCriar, }: ComboboxProps): JSX.Element;
 
 export declare namespace Combobox {
     var displayName: string;
@@ -120,6 +141,18 @@ export declare interface ComboboxProps {
     placeholder?: string;
     className?: string;
     disabled?: boolean;
+    /** Lado preferido do popover (default 'bottom'). */
+    side?: 'top' | 'bottom' | 'left' | 'right';
+    /** Radix inverte o lado quando falta espaço (default true). Passe false
+     *  para SEMPRE abrir no `side` pedido — ex.: dropdown no fim de um modal
+     *  que deve abrir para baixo mesmo com pouco espaço. */
+    avoidCollisions?: boolean;
+    /** Ação "criar" no rodapé da lista, para cadastro na hora sem sair do
+     *  formulário (ex.: projeto M#### novo ao lançar um mútuo). Recebe o texto
+     *  digitado na busca. O componente só avisa; quem cadastra é o chamador. */
+    onCriar?: (texto: string) => void;
+    /** Rótulo da ação (default 'Novo…'); o texto digitado entra entre aspas. */
+    rotuloCriar?: string;
 }
 
 export declare function DataTable<T>({ data, columns, keyExtractor, actions, onSelectionChange, className, selectable, }: DataTableProps<T>): JSX.Element;
@@ -144,9 +177,46 @@ export declare interface DatePickerProps {
     placeholder?: string;
     className?: string;
     id?: string;
+    /** Formato date-fns do valor exibido (default 'PPP' → "18 de setembro de 2026").
+     *  Em barras de filtro, 'dd/MM/yyyy' mantém a largura estável. */
+    formato?: string;
+    /** Texto fixo antes da data no botão (ex.: "Saldo em"). */
+    prefixo?: string;
+    /** Limites: dias fora de [minDate, maxDate] ficam desabilitados e a
+     *  navegação de meses não sai desse intervalo. */
+    minDate?: Date;
+    maxDate?: Date;
+    /** Regra extra de bloqueio, dia a dia (ex.: período de meses não
+     *  contíguos — ago e out selecionados, set fica fora). true = desabilita. */
+    desabilitar?: (dia: Date) => boolean;
 }
 
 export { DateRange }
+
+declare interface DescricaoElemento {
+    tag: string;
+    seletor: string;
+    texto: string;
+    role?: string;
+    rotulo?: string;
+    testid?: string;
+    /** Cadeia de componentes React (do mais próximo para fora). Nomes só são legíveis em dev. */
+    componentes: string[];
+    retangulo: {
+        x: number;
+        y: number;
+        largura: number;
+        altura: number;
+    };
+}
+
+declare interface DestinoRelatos {
+    url: string;
+    chave: string;
+}
+
+/** Valor decimal em string → exibição mascarada. Ex.: '1881.05' → 'R$ 1.881,05' */
+export declare function displayMoeda(valor: string): string;
 
 export declare const Drawer: React_2.FC<DialogPrimitive.DialogProps>;
 
@@ -227,6 +297,11 @@ export declare const DropdownMenuSubTrigger: React_2.ForwardRefExoticComponent<O
 
 export declare const DropdownMenuTrigger: React_2.ForwardRefExoticComponent<DropdownMenuPrimitive.DropdownMenuTriggerProps & React_2.RefAttributes<HTMLButtonElement>>;
 
+declare interface ErroConsole {
+    em: string;
+    mensagem: string;
+}
+
 export declare const FileUpload: default_2.ForwardRefExoticComponent<FileUploadProps & default_2.RefAttributes<HTMLDivElement>>;
 
 export declare interface FileUploadProps extends Omit<default_2.HTMLAttributes<HTMLDivElement>, 'onDrop'> {
@@ -237,6 +312,27 @@ export declare interface FileUploadProps extends Omit<default_2.HTMLAttributes<H
     error?: string;
 }
 
+export declare function FiltroLista({ opcoes, selecionadas, onChange, focoInicial }: {
+    opcoes: Opcao[];
+    selecionadas: string[];
+    onChange: (v: string[]) => void;
+    /** Valor em que a lista deve abrir centralizada (ex.: o mês vigente).
+     *  Sem ele, abre no primeiro item marcado. */
+    focoInicial?: string;
+}): JSX.Element;
+
+export declare function formatBRL(v: number): string;
+
+/** Notação compacta pt-BR para eixos de gráfico: 950 mil, 1,9 mi, 3,8 mi.
+ *  Cada valor escolhe a unidade certa — a escala se adapta ao recorte. */
+export declare function formatCompacto(v: number): string;
+
+/** '2026-08-21' → '21/08/2026' (sem risco de fuso: corta a string ISO). */
+export declare function formatData(iso: string): string;
+
+/** Valor sem "R$" — para colunas densas de tabela (o header nomeia a moeda). */
+export declare function formatValor(v: number): string;
+
 export declare function HierarchicalCombobox({ levels, className }: HierarchicalComboboxProps): JSX.Element;
 
 export declare interface HierarchicalComboboxProps {
@@ -244,10 +340,38 @@ export declare interface HierarchicalComboboxProps {
     className?: string;
 }
 
+/** Variante compacta para células de edição inline (mesma máscara, sem
+ *  label/moldura da TextField — recebe a classe da célula). */
+export declare function InputDataInline({ valor, onChange, className, style }: {
+    valor: string;
+    onChange: (iso: string) => void;
+    className?: string;
+    style?: React.CSSProperties;
+}): JSX.Element;
+
 export declare const inputVariants: (props?: ({
     hasError?: boolean | null | undefined;
     hasIcon?: boolean | null | undefined;
 } & ClassProp) | undefined) => string;
+
+export declare function MarcadorProblemas({ app, versaoApp, usuario, habilitado, destino, }: MarcadorProblemasProps): ReactPortal | null;
+
+export declare interface MarcadorProblemasProps {
+    /** Identificador do app hospedeiro (ex.: "painel", "financeiro"). */
+    app: string;
+    versaoApp: string;
+    /** Declarado pelo app hospedeiro; não é verificado. */
+    usuario?: {
+        id: string;
+        nome: string;
+    };
+    /** Desliga o marcador sem desmontar (ex.: só para alguns perfis). */
+    habilitado?: boolean;
+    /** Base que recebe os relatos. Padrão: o projeto exclusivo do marcador. */
+    destino?: DestinoRelatos;
+}
+
+export declare const MESES_CURTOS: string[];
 
 export declare const Modal: React_2.FC<DialogPrimitive.DialogProps>;
 
@@ -286,11 +410,28 @@ export declare interface MultiSelectProps extends Omit<default_2.InputHTMLAttrib
     error?: string;
 }
 
+export declare interface Opcao {
+    value: string;
+    label: string;
+}
+
+export declare interface OpcaoSegmentada<T extends string> {
+    value: T;
+    /** Ícone ou texto curto; com `rotulo` vira também o title/aria-label. */
+    icone?: ReactNode;
+    rotulo: string;
+    /** Mostra o rótulo ao lado do ícone (padrão: só ícone quando há ícone). */
+    mostrarRotulo?: boolean;
+}
+
 declare interface Option_2 {
     label: string;
     value: string;
 }
 export { Option_2 as Option }
+
+/** Texto cru digitado → valor decimal em string ('' se vazio). Ex.: 'R$ 1.881,05' → '1881.05' */
+export declare function parseMoedaDigitada(raw: string): string;
 
 export declare const Popover: React_2.FC<PopoverPrimitive.PopoverProps>;
 
@@ -306,11 +447,55 @@ export declare interface RadioItemProps extends React_2.ComponentPropsWithoutRef
     label?: string;
 }
 
+export declare interface Relato {
+    schema_versao: 1;
+    app: string;
+    versao_app: string;
+    versao_avere_ui: string;
+    ambiente: 'dev' | 'producao';
+    rota: string;
+    titulo_tela: string;
+    tipo: TipoRelato | null;
+    descricao: string;
+    usuario_id: string | null;
+    usuario_nome: string | null;
+    /** Hora do clique, no navegador (a hora de gravação é do servidor). */
+    capturado_em: string;
+    contexto: {
+        fuso: string;
+        elemento: DescricaoElemento;
+        viewport: {
+            largura: number;
+            altura: number;
+            dpr: number;
+        };
+        navegador: string;
+        idioma: string;
+        erros_console: ErroConsole[];
+        requisicoes_falhas: RequisicaoFalha[];
+    };
+}
+
+declare interface RequisicaoFalha {
+    em: string;
+    metodo: string;
+    url: string;
+    status: number;
+    duracao_ms: number;
+}
+
 export declare interface RowAction<T> {
     label: string;
     onClick: (item: T) => void;
     isDestructive?: boolean;
 }
+
+export declare function Segmentado<T extends string>({ opcoes, valor, onChange, altura }: {
+    opcoes: OpcaoSegmentada<T>[];
+    valor: T;
+    onChange: (v: T) => void;
+    altura?: number;
+}): JSX.Element;
 
 export declare const Select: default_2.FC<SelectProps>;
 
@@ -318,6 +503,19 @@ export declare interface SelectItem {
     label: string;
     value: string;
 }
+
+export declare function SelectMulti({ opcoes, valores, onChange, largura, rotuloVazio, substantivo, focoInicial, }: {
+    opcoes: Opcao[];
+    valores: string[];
+    onChange: (v: string[]) => void;
+    largura?: number;
+    rotuloVazio?: string;
+    /** Para o resumo plural: "3 <substantivo> selecionados". */
+    substantivo?: string;
+    /** Valor em que a lista abre centralizada (ex.: mês vigente), quando
+     *  nada está marcado. */
+    focoInicial?: string;
+}): JSX.Element;
 
 export declare interface SelectOption {
     value: string;
@@ -337,6 +535,15 @@ export declare interface SelectProps {
     placeholder?: string;
     className?: string;
 }
+
+export declare function SeletorMes({ opcoes, valor, mesVigente, onChange, largura }: {
+    opcoes: Opcao[];
+    valor: string;
+    /** Mês do atalho do botão de calendário (ex.: vigente, ou o anterior). */
+    mesVigente: string;
+    onChange: (v: string) => void;
+    largura?: number;
+}): JSX.Element;
 
 export declare function SideBar({ isCollapsed, onToggle, isOpenMobile, onCloseMobile, logo, children, userName, userRole, userAvatarUrl, onLogout, className, ...props }: SideBarProps): JSX.Element;
 
@@ -413,6 +620,8 @@ export declare interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInp
     leftIcon?: LucideIcon;
 }
 
+export declare type TipoRelato = 'erro' | 'estranho' | 'sugestao';
+
 export { toast }
 
 export declare const Toaster: ({ ...props }: ToasterProps) => JSX.Element;
@@ -443,5 +652,31 @@ export declare interface TypographyProps extends HTMLAttributes<HTMLElement>, Va
 export declare const typographyVariants: (props?: ({
     variant?: "h1" | "h2" | "h3" | "h4" | "p" | null | undefined;
 } & ClassProp) | undefined) => string;
+
+/** Tab que cai num combobox/select ABRE a lista, em qualquer lugar do sistema
+ *  — linha em edição, modal, drawer. Montado uma vez no layout.
+ *  Clique do mouse não dispara: quem clica no gatilho já abre pelo Radix. */
+export declare function useAbrirComboboxNoTab(): void;
+
+/**
+ * Altura disponível do elemento até a borda inferior da janela, descontando o
+ * padding real do container de rolagem do layout. Usada como MAX-HEIGHT:
+ * conteúdo curto encolhe, conteúdo longo rola internamente sem estourar a
+ * página. Recalcula em resize e em qualquer mudança de tamanho do layout
+ * (sidebar, fontes, quebra de linha dos filtros).
+ */
+export declare function useAlturaDisponivel(minimo?: number): {
+    ref: RefObject<HTMLDivElement | null>;
+    altura: number | undefined;
+};
+
+export declare function useEdicaoInline({ ativo, seletorLinha, coluna }: {
+    /** Há linha em edição? */
+    ativo: boolean;
+    /** Como achar a linha em edição no DOM (ex.: 'tr.em-edicao'). */
+    seletorLinha: string;
+    /** Índice da célula clicada; null = não focar nada. */
+    coluna: number | null;
+}): void;
 
 export { }
