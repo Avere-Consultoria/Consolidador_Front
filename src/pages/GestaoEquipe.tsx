@@ -3,8 +3,9 @@ import {
     Typography, Card, Button, DataTable, Spinner, Badge, toast,
     Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, TextField
 } from 'avere-ui';
-import { Users, Plus, Save, Trash2, Edit2, Search, Mail, Loader2, KeyRound } from 'lucide-react';
+import { Users, Search, Mail, Loader2, KeyRound } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { AvisoCadastroHub } from '../components/shared/AvisoCadastroHub';
 
 interface Consultor {
     id: string;
@@ -14,56 +15,16 @@ interface Consultor {
     perfil_id: string;
 }
 
-// Padrão de e-mail institucional: <primeiro nome>@averepartners.com.br
-const DOMINIO_AVERE = '@averepartners.com.br';
-const emailValido = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
-const primeiroNomeSlug = (nome: string) =>
-    (nome.trim().split(/\s+/)[0] ?? '')
-        .toLowerCase()
-        .normalize('NFD').replace(/[̀-ͯ]/g, '')   // remove acentos
-        .replace(/[^a-z0-9]/g, '');
+// Consultores vêm do HUB Avere (espelho-core) desde 08/10/2026: nome, e-mail e
+// status não se editam aqui. O vínculo de LOGIN (perfil_id, Criar acesso) continua
+// local até o login único do HUB (SPEC core-identidade F1–F4).
 
 export default function GestaoEquipe() {
     const [loading, setLoading] = useState(true);
     const [consultores, setConsultores] = useState<Consultor[]>([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [salvando, setSalvando] = useState(false);
-    const [editId, setEditId] = useState<string | null>(null);
-    const [formData, setFormData] = useState({ nome: '', email_professional: '', perfil_id: '', ativo: true });
     const [busca, setBusca] = useState('');
     const [convite, setConvite] = useState<string | null>(null); // id do consultor sendo provisionado
     const [acessoResult, setAcessoResult] = useState<{ email: string; senha: string } | null>(null);
-    const [emailTocado, setEmailTocado] = useState(false);       // e-mail editado manualmente?
-    const [erros, setErros] = useState<{ nome?: string; email?: string }>({});
-
-    // Nome muda → sugere e-mail institucional (enquanto não for editado à mão)
-    const onChangeNome = (v: string) => {
-        setFormData(p => {
-            const next = { ...p, nome: v };
-            if (!emailTocado) {
-                const slug = primeiroNomeSlug(v);
-                next.email_professional = slug ? slug + DOMINIO_AVERE : '';
-            }
-            return next;
-        });
-        if (erros.nome) setErros(e => ({ ...e, nome: undefined }));
-    };
-
-    const onChangeEmail = (v: string) => {
-        setEmailTocado(true);
-        setFormData(p => ({ ...p, email_professional: v }));
-        if (erros.email) setErros(e => ({ ...e, email: undefined }));
-    };
-
-    const validar = () => {
-        const e: { nome?: string; email?: string } = {};
-        if (!formData.nome.trim()) e.nome = 'Nome é obrigatório.';
-        else if (formData.nome.trim().length < 3) e.nome = 'Nome muito curto.';
-        if (!formData.email_professional.trim()) e.email = 'E-mail é obrigatório.';
-        else if (!emailValido(formData.email_professional)) e.email = 'E-mail inválido.';
-        setErros(e);
-        return Object.keys(e).length === 0;
-    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -73,56 +34,6 @@ export default function GestaoEquipe() {
     };
 
     useEffect(() => { fetchData(); }, []);
-
-    const handleSave = async () => {
-        if (!validar()) return;
-        setSalvando(true);
-        // perfil_id vazio não é UUID válido — converte para null
-        const payload = {
-            ...formData,
-            email_professional: formData.email_professional.trim(),
-            perfil_id: formData.perfil_id || null,
-        };
-        try {
-            const { error } = editId
-                ? await supabase.from('consultores').update(payload).eq('id', editId)
-                : await supabase.from('consultores').insert([payload]);
-            if (error) {
-                if (error.code === '23505') {
-                    setErros(e => ({ ...e, email: 'E-mail já cadastrado para outro consultor.' }));
-                    toast.error('E-mail já cadastrado para outro consultor.');
-                } else {
-                    toast.error(`Erro ao salvar: ${error.message}`);
-                }
-                return;
-            }
-            setIsModalOpen(false);
-            toast.success(editId
-                ? `Consultor "${payload.nome}" atualizado com sucesso.`
-                : `Consultor "${payload.nome}" cadastrado com sucesso.`);
-            fetchData();
-        } catch (err: any) {
-            toast.error(`Erro ao salvar: ${err?.message ?? 'tente novamente.'}`);
-        } finally {
-            setSalvando(false);
-        }
-    };
-
-    const handleEditar = (item: Consultor) => {
-        setFormData({ nome: item.nome, email_professional: item.email_professional, perfil_id: item.perfil_id, ativo: item.ativo });
-        setEditId(item.id);
-        setEmailTocado(true);   // não sobrescreve e-mail existente ao digitar o nome
-        setErros({});
-        setIsModalOpen(true);
-    };
-
-    const handleNovo = () => {
-        setEditId(null);
-        setFormData({ nome: '', email_professional: '', perfil_id: '', ativo: true });
-        setEmailTocado(false);
-        setErros({});
-        setIsModalOpen(true);
-    };
 
     // Senha temporária forte (sem caracteres ambíguos).
     const gerarSenhaTemp = () => {
@@ -174,11 +85,10 @@ export default function GestaoEquipe() {
                         onChange={e => setBusca(e.target.value)}
                         style={{ width: '240px' }}
                     />
-                    <Button variant="solid" onClick={handleNovo}>
-                        <Plus size={16} style={{ marginRight: 8 }} /> Novo Consultor
-                    </Button>
                 </div>
             </header>
+
+            <AvisoCadastroHub caminhoHub="/equipe" />
 
             <Card style={{ padding: 0, overflow: 'hidden' }}>
                 <DataTable
@@ -235,80 +145,12 @@ export default function GestaoEquipe() {
                                                 });
                                             }}
                                         ><Mail size={16} color="var(--color-primaria)" style={{ opacity: 0.7 }} /></span>)}
-                                    <Edit2
-                                        size={16} color="var(--color-text-muted)" style={{ cursor: 'pointer' }}
-                                        onClick={() => handleEditar(item)}
-                                    />
-                                    <Trash2
-                                        size={16} color="var(--color-danger-solid)" style={{ cursor: 'pointer', opacity: 0.8 }}
-                                        onClick={() => {
-                                            toast(`Excluir o consultor ${item.nome}?`, {
-                                                action: { label: 'Excluir', onClick: async () => {
-                                                    const { error } = await supabase.from('consultores').delete().eq('id', item.id);
-                                                    if (error) {
-                                                        toast.error(`Não foi possível excluir: ${error.message}`);
-                                                        return;
-                                                    }
-                                                    toast.success('Consultor excluído.');
-                                                    fetchData();
-                                                }},
-                                                cancel: { label: 'Cancelar', onClick: () => {} },
-                                            });
-                                        }}
-                                    />
                                 </div>
                             )
                         }
                     ]}
                 />
             </Card>
-
-            <Modal open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <ModalContent>
-                    <ModalHeader>
-                        <ModalTitle>{editId ? 'Editar Consultor' : 'Novo Consultor'}</ModalTitle>
-                        <ModalDescription>Preencha os dados do consultor. O vínculo de acesso pode ser configurado depois.</ModalDescription>
-                    </ModalHeader>
-
-                    <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        <div>
-                            <TextField
-                                label="Nome Completo"
-                                placeholder="Ex: João Silva"
-                                value={formData.nome}
-                                onChange={e => onChangeNome(e.target.value)}
-                            />
-                            {erros.nome && (
-                                <p style={{ margin: '4px 0 0', fontSize: '11px', color: 'var(--color-danger-solid)' }}>{erros.nome}</p>
-                            )}
-                        </div>
-                        <div>
-                            <TextField
-                                label="E-mail Profissional"
-                                placeholder={`joao${DOMINIO_AVERE}`}
-                                value={formData.email_professional}
-                                onChange={e => onChangeEmail(e.target.value)}
-                            />
-                            {erros.email
-                                ? <p style={{ margin: '4px 0 0', fontSize: '11px', color: 'var(--color-danger-solid)' }}>{erros.email}</p>
-                                : <p style={{ margin: '4px 0 0', fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                                    Sugerido pelo padrão <strong>{`primeironome${DOMINIO_AVERE}`}</strong> — ajuste se necessário.
-                                  </p>}
-                        </div>
-                        <p style={{ margin: '0', fontSize: '12px', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
-                            Após salvar, use o ícone <strong style={{ color: 'var(--color-primaria)' }}>✉ Criar acesso</strong> na tabela. Será gerada uma <strong>senha temporária</strong> e o vínculo de login criado na hora — você repassa a senha ao consultor (peça para trocá-la no primeiro acesso).
-                        </p>
-                    </div>
-
-                    <ModalFooter>
-                        <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                        <Button variant="solid" onClick={handleSave} disabled={salvando}>
-                            {salvando ? <Spinner size="sm" /> : <Save size={16} style={{ marginRight: 8 }} />}
-                            Salvar
-                        </Button>
-                    </ModalFooter>
-                </ModalContent>
-            </Modal>
 
             <Modal open={!!acessoResult} onOpenChange={(o) => { if (!o) setAcessoResult(null); }}>
                 <ModalContent>
