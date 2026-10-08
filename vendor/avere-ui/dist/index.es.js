@@ -12493,30 +12493,137 @@ async function dS(e, t) {
 }
 //#endregion
 //#region src/components/MarcadorProblemas/print.ts
-async function fS(e) {
-	let t = document.documentElement, n = t.clientWidth, r = t.clientHeight;
-	return {
-		canvas: await dS(t, {
-			width: n,
-			height: r,
-			scale: Math.min(window.devicePixelRatio || 1, 2),
-			filter: (t) => !(t instanceof Element && e(t)),
-			style: {
-				marginTop: `${-window.scrollY}px`,
-				marginLeft: `${-window.scrollX}px`
+var fS = 50, pS = "data-avere-desloc", mS = "data-avere-encolher", hS = "data-avere-grudado", gS = "data-avere-placeholder", _S = [
+	pS,
+	mS,
+	hS,
+	gS
+];
+function vS(e) {
+	let t = getComputedStyle(e).position;
+	return t === "static" || t === "relative";
+}
+function yS(e, t, n) {
+	let r = document.createTreeWalker(e, NodeFilter.SHOW_ELEMENT);
+	for (let e = r.nextNode(); e; e = r.nextNode()) {
+		let r = e.getBoundingClientRect();
+		if (r.height > 0 && r.bottom >= t && r.top <= n) return !0;
+	}
+	return !1;
+}
+function bS(e) {
+	if (e.scrollHeight <= e.clientHeight && e.scrollWidth <= e.clientWidth) return !1;
+	let t = getComputedStyle(e);
+	return /auto|scroll|overlay/.test(t.overflowY + t.overflowX);
+}
+function xS(e) {
+	let t = document.scrollingElement ?? document.documentElement, n = /* @__PURE__ */ new Set(), r = /* @__PURE__ */ new Map(), i = (e, t, n) => {
+		r.set(e, [...r.get(e) ?? [], {
+			inicio: t,
+			altura: n
+		}]);
+	}, a = (e) => (r.get(e) ?? []).reduce((e, t) => e + t.altura, 0), o = [], s = /* @__PURE__ */ new Set(), c = [], l = [], u = (e, t) => {
+		for (let n = e; n && n !== t && !s.has(n); n = n.parentElement) s.add(n);
+	}, d = (t, r, a, s) => {
+		let f = !0, p = null, m = null, h = 0;
+		for (let g of Array.from(t.children)) {
+			if (e(g)) continue;
+			let _ = g.getBoundingClientRect(), v = _.width === 0 && _.height === 0;
+			if (!v && _.top > a + fS && !yS(g, r, a)) {
+				n.add(g), u(t, s), f = !1;
+				continue;
 			}
-		}),
-		largura: n,
-		altura: r
+			if (f && !v && _.bottom < r - fS && !yS(g, r, a)) {
+				n.add(g), u(t, s), vS(g) && (p === null && (p = _.top, m = g), h = _.bottom);
+				continue;
+			}
+			f && p !== null && (i(s, m, _.top - p), p = null), f = !1, g instanceof HTMLElement && getComputedStyle(g).position === "sticky" && c.push({
+				el: g,
+				rolavel: s
+			}), (g instanceof HTMLInputElement || g instanceof HTMLTextAreaElement) && g.placeholder && !g.value && l.push(g);
+			let y = r, b = a, x = s;
+			bS(g) && (y = Math.max(r, _.top), b = Math.min(a, _.bottom), x = g, o.push(g)), d(g, y, b, x);
+		}
+		f && p !== null && i(s, m, h - p);
+	};
+	d(document.body, 0, t.clientHeight, t);
+	let f = [];
+	for (let e of o) {
+		let t = -e.scrollLeft, r = -(e.scrollTop - a(e));
+		if (!(!t && !r)) for (let i of Array.from(e.children)) n.has(i) || (i.setAttribute(pS, `${t},${r}`), f.push(i));
+	}
+	for (let e of s) e.setAttribute(mS, ""), f.push(e);
+	if (c.length) {
+		let e = c.map((e) => e.el.getBoundingClientRect()), t = c.map((e) => [e.el.style.getPropertyValue("position"), e.el.style.getPropertyPriority("position")]);
+		for (let e of c) e.el.style.setProperty("position", "static", "important");
+		let n = c.map((e) => e.el.getBoundingClientRect());
+		c.forEach((e, n) => {
+			let [r, i] = t[n];
+			r ? e.el.style.setProperty("position", r, i) : e.el.style.removeProperty("position");
+		}), c.forEach(({ el: t, rolavel: i }, a) => {
+			let o = (r.get(i) ?? []).filter((e) => t.compareDocumentPosition(e.inicio) & Node.DOCUMENT_POSITION_FOLLOWING).reduce((e, t) => e + t.altura, 0), s = e[a].left - n[a].left, c = e[a].top - n[a].top - o;
+			Math.abs(s) < .5 && Math.abs(c) < .5 || (t.setAttribute(hS, `${s},${c}`), f.push(t));
+		});
+	}
+	for (let e of l) e.setAttribute(gS, getComputedStyle(e, "::placeholder").color), f.push(e);
+	return {
+		remover: n,
+		pagina: {
+			x: window.scrollX,
+			y: window.scrollY - a(t)
+		},
+		marcados: f
 	};
 }
-function pS(e) {
+var SS = /Chrome|Chromium|Edg\//.test(navigator.userAgent) && !/Firefox/.test(navigator.userAgent);
+async function CS(e) {
+	let t = document.documentElement, n = t.clientWidth, r = t.clientHeight, i = xS(e);
+	try {
+		return {
+			canvas: await dS(t, {
+				width: n,
+				height: r,
+				scale: Math.min(window.devicePixelRatio || 1, 2),
+				filter: (t) => !(t instanceof Element && (e(t) || i.remover.has(t))),
+				style: {
+					marginTop: `${-i.pagina.y}px`,
+					marginLeft: `${-i.pagina.x}px`
+				},
+				onCloneEachNode: (e) => {
+					if (!(e instanceof HTMLElement)) return;
+					e.hasAttribute(mS) && (e.removeAttribute(mS), e.style.height = "auto", e.style.blockSize = "auto");
+					let t = e.getAttribute(gS);
+					t && (e.removeAttribute(gS), e.style.color = t, e.style.setProperty("-webkit-text-fill-color", t));
+					let n = 0, r = 0;
+					for (let t of [pS, hS]) {
+						let i = e.getAttribute(t);
+						if (!i) continue;
+						e.removeAttribute(t);
+						let [a, o] = i.split(",").map(Number);
+						n += a, r += o;
+					}
+					if (n || r) {
+						let t = e.style.transform;
+						e.style.transform = `translate(${n}px, ${r}px)${t && t !== "none" ? " " + t : ""}`;
+					}
+				},
+				features: { fixSvgXmlDecode: !SS },
+				timeout: 8e3
+			}),
+			largura: n,
+			altura: r
+		};
+	} finally {
+		for (let e of i.marcados) for (let t of _S) e.removeAttribute(t);
+	}
+}
+function wS(e) {
 	return new Promise((t, n) => e.toBlob((e) => e ? t(e) : n(/* @__PURE__ */ Error("Falha ao gerar a imagem")), "image/png"));
 }
 //#endregion
 //#region src/components/MarcadorProblemas/desenho.ts
-var mS = "#E7343F", hS = "rgb(255 255 255 / 0.9)", gS = "#111";
-function _S(e, t) {
+var TS = "#E7343F", ES = "rgb(255 255 255 / 0.9)", DS = "#111";
+function OS(e, t) {
 	return {
 		x: Math.min(e[0], t[0]),
 		y: Math.min(e[1], t[1]),
@@ -12524,7 +12631,7 @@ function _S(e, t) {
 		h: Math.abs(e[1] - t[1])
 	};
 }
-function vS(e, t) {
+function kS(e, t) {
 	let n = 4 * t;
 	switch (e.tipo) {
 		case "tarja":
@@ -12534,34 +12641,34 @@ function vS(e, t) {
 		case "numero": return !0;
 	}
 }
-function yS(e, t, n) {
+function AS(e, t, n) {
 	e.lineJoin = "round", e.lineCap = "round";
-	for (let [r, i] of [[hS, 6], [mS, 3]]) e.strokeStyle = r, e.lineWidth = i * t, e.beginPath(), n(), e.stroke();
+	for (let [r, i] of [[ES, 6], [TS, 3]]) e.strokeStyle = r, e.lineWidth = i * t, e.beginPath(), n(), e.stroke();
 }
-function bS(e, [t, n], r, i) {
-	e.beginPath(), e.arc(t, n, 13 * i, 0, Math.PI * 2), e.fillStyle = mS, e.fill(), e.lineWidth = 2.5 * i, e.strokeStyle = "#fff", e.stroke(), e.fillStyle = "#fff", e.font = `700 ${(r > 9 ? 12 : 15) * i}px system-ui, sans-serif`, e.textAlign = "center", e.textBaseline = "middle", e.fillText(String(r), t, n + .5 * i);
+function jS(e, [t, n], r, i) {
+	e.beginPath(), e.arc(t, n, 13 * i, 0, Math.PI * 2), e.fillStyle = TS, e.fill(), e.lineWidth = 2.5 * i, e.strokeStyle = "#fff", e.stroke(), e.fillStyle = "#fff", e.font = `700 ${(r > 9 ? 12 : 15) * i}px system-ui, sans-serif`, e.textAlign = "center", e.textBaseline = "middle", e.fillText(String(r), t, n + .5 * i);
 }
-function xS(e, t, n) {
-	if (t.tipo === "caixa") yS(e, n, () => e.rect(t.x, t.y, t.w, t.h));
-	else if (t.tipo === "livre") yS(e, n, () => {
+function MS(e, t, n) {
+	if (t.tipo === "caixa") AS(e, n, () => e.rect(t.x, t.y, t.w, t.h));
+	else if (t.tipo === "livre") AS(e, n, () => {
 		e.moveTo(...t.pontos[0]);
 		for (let n of t.pontos.slice(1)) e.lineTo(...n);
 	});
 	else {
 		let [r, i] = t.de, [a, o] = t.ate, s = Math.atan2(o - i, a - r), c = 16 * n;
-		yS(e, n, () => {
+		AS(e, n, () => {
 			e.moveTo(r, i), e.lineTo(a, o), e.moveTo(a - c * Math.cos(s - Math.PI / 7), o - c * Math.sin(s - Math.PI / 7)), e.lineTo(a, o), e.lineTo(a - c * Math.cos(s + Math.PI / 7), o - c * Math.sin(s + Math.PI / 7));
 		});
 	}
 }
-function SS(e, t, n, r) {
+function NS(e, t, n, r) {
 	let { comIndicacoes: i, contorno: a, k: o } = r;
-	e.clearRect(0, 0, e.canvas.width, e.canvas.height), e.drawImage(t, 0, 0), e.fillStyle = gS;
+	e.clearRect(0, 0, e.canvas.width, e.canvas.height), e.drawImage(t, 0, 0), e.fillStyle = DS;
 	for (let t of n) t.tipo === "tarja" && e.fillRect(t.x, t.y, t.w, t.h);
 	if (!i) return;
 	if (a) {
 		let t = 4 * o;
-		xS(e, {
+		MS(e, {
 			tipo: "caixa",
 			x: a.x - t,
 			y: a.y - t,
@@ -12569,16 +12676,16 @@ function SS(e, t, n, r) {
 			h: a.h + t * 2
 		}, o);
 	}
-	for (let t of n) t.tipo !== "tarja" && t.tipo !== "numero" && xS(e, t, o);
+	for (let t of n) t.tipo !== "tarja" && t.tipo !== "numero" && MS(e, t, o);
 	let s = 0;
-	for (let t of n) t.tipo === "numero" && bS(e, t.p, ++s, o);
+	for (let t of n) t.tipo === "numero" && jS(e, t.p, ++s, o);
 }
-function CS(e) {
+function PS(e) {
 	return e.filter((e) => e.tipo === "numero").length;
 }
-function wS(...e) {
+function FS(...e) {
 	let [t] = e, n = document.createElement("canvas");
-	return n.width = t.width, n.height = t.height, SS(n.getContext("2d"), ...e), n;
+	return n.width = t.width, n.height = t.height, NS(n.getContext("2d"), ...e), n;
 }
 var Q = {
 	barra: "_barra_1ib3x_5",
@@ -12617,7 +12724,7 @@ var Q = {
 	dica: "_dica_1ib3x_668",
 	enviado: "_enviado_1ib3x_674",
 	erroEnvio: "_erroEnvio_1ib3x_694"
-}, TS = [
+}, IS = [
 	{
 		value: "seta",
 		rotulo: "Seta",
@@ -12648,7 +12755,7 @@ var Q = {
 		icone: /* @__PURE__ */ p(pe, { size: 16 }),
 		mostrarRotulo: !0
 	}
-], ES = [{
+], LS = [{
 	value: "indicacoes",
 	rotulo: "Com indicações",
 	mostrarRotulo: !0
@@ -12657,11 +12764,11 @@ var Q = {
 	rotulo: "Original",
 	mostrarRotulo: !0
 }];
-function DS({ base: e, contorno: t, k: n, formasIniciais: r, onConcluir: i, onCancelar: a, marcador: o }) {
+function RS({ base: e, contorno: t, k: n, formasIniciais: r, onConcluir: i, onCancelar: a, marcador: o }) {
 	let [c, l] = d("seta"), [f, h] = d("indicacoes"), [g, _] = d(r), [v, y] = d(null), b = u(null), x = u(null);
 	s(() => {
 		let r = b.current?.getContext("2d");
-		r && SS(r, e, v ? [...g, v] : g, {
+		r && NS(r, e, v ? [...g, v] : g, {
 			comIndicacoes: f === "indicacoes",
 			contorno: t,
 			k: n
@@ -12702,7 +12809,7 @@ function DS({ base: e, contorno: t, k: n, formasIniciais: r, onConcluir: i, onCa
 			};
 			default: return {
 				tipo: c,
-				..._S(t, e)
+				...OS(t, e)
 			};
 		}
 	}, T = f === "indicacoes" || c === "tarja";
@@ -12716,7 +12823,7 @@ function DS({ base: e, contorno: t, k: n, formasIniciais: r, onConcluir: i, onCa
 				className: Q.editorBarra,
 				children: [
 					/* @__PURE__ */ p(gb, {
-						opcoes: TS,
+						opcoes: IS,
 						valor: c,
 						onChange: l,
 						altura: 34
@@ -12741,7 +12848,7 @@ function DS({ base: e, contorno: t, k: n, formasIniciais: r, onConcluir: i, onCa
 					}),
 					/* @__PURE__ */ p("span", { className: Q.editorEspaco }),
 					/* @__PURE__ */ p(gb, {
-						opcoes: ES,
+						opcoes: LS,
 						valor: f,
 						onChange: h,
 						altura: 34
@@ -12784,7 +12891,7 @@ function DS({ base: e, contorno: t, k: n, formasIniciais: r, onConcluir: i, onCa
 						} : w(t));
 					},
 					onPointerUp: () => {
-						v && vS(v, n) && _((e) => [...e, v]), x.current = null, y(null);
+						v && kS(v, n) && _((e) => [...e, v]), x.current = null, y(null);
 					}
 				})
 			})
@@ -12793,11 +12900,11 @@ function DS({ base: e, contorno: t, k: n, formasIniciais: r, onConcluir: i, onCa
 }
 //#endregion
 //#region src/components/MarcadorProblemas/envio.ts
-var OS = {
+var zS = {
 	url: "https://qntjjvhryeosedjcydun.supabase.co",
 	chave: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudGpqdmhyeWVvc2VkamN5ZHVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzOTQwNDEsImV4cCI6MjEwNjk3MDA0MX0.F7VP7pFxLDxQ8OkTwAUSawarHMt0ajhVDDLk50Oh5SU"
-}, kS = "relatos-prints";
-async function AS(e, t) {
+}, BS = "relatos-prints";
+async function VS(e, t) {
 	let n = "";
 	try {
 		let t = await e.json();
@@ -12805,7 +12912,7 @@ async function AS(e, t) {
 	} catch {}
 	throw Error(`${t}: ${n || `HTTP ${e.status}`}`);
 }
-async function jS(e, t, n) {
+async function HS(e, t, n) {
 	let r = crypto.randomUUID(), i = {
 		apikey: e.chave,
 		Authorization: `Bearer ${e.chave}`
@@ -12817,7 +12924,7 @@ async function jS(e, t, n) {
 		print_final: `${r}/final.png`,
 		print_limpo: `${r}/limpo.png`
 	}, await Promise.all([["final", n.final], ["limpo", n.limpo]].map(async ([t, n]) => {
-		let a = await fetch(`${e.url}/storage/v1/object/${kS}/${r}/${t}.png`, {
+		let a = await fetch(`${e.url}/storage/v1/object/${BS}/${r}/${t}.png`, {
 			method: "POST",
 			headers: {
 				...i,
@@ -12826,7 +12933,7 @@ async function jS(e, t, n) {
 			},
 			body: n
 		});
-		a.ok || await AS(a, `Imagem ${t}`);
+		a.ok || await VS(a, `Imagem ${t}`);
 	})));
 	let o = await fetch(`${e.url}/rest/v1/relatos`, {
 		method: "POST",
@@ -12841,15 +12948,15 @@ async function jS(e, t, n) {
 			...a
 		})
 	});
-	return o.ok || await AS(o, "Relato"), r;
+	return o.ok || await VS(o, "Relato"), r;
 }
 //#endregion
 //#region src/components/MarcadorProblemas/coleta.ts
-var MS = 10, NS = 300, PS = "__avereMarcadorColeta";
-function FS(e, t) {
-	e.push(t), e.length > MS && e.shift();
+var US = 10, WS = 300, GS = "__avereMarcadorColeta";
+function KS(e, t) {
+	e.push(t), e.length > US && e.shift();
 }
-function IS(e) {
+function qS(e) {
 	return vb(e.map((e) => {
 		if (e instanceof Error) return `${e.name}: ${e.message}`;
 		if (typeof e == "string") return e;
@@ -12858,36 +12965,36 @@ function IS(e) {
 		} catch {
 			return String(e);
 		}
-	}).join(" ")).slice(0, NS);
+	}).join(" ")).slice(0, WS);
 }
-function LS() {
+function JS() {
 	let e = window;
-	if (e[PS]) return e[PS];
+	if (e[GS]) return e[GS];
 	let t = {
 		erros: [],
 		requisicoes: []
 	};
-	e[PS] = t;
+	e[GS] = t;
 	let n = () => (/* @__PURE__ */ new Date()).toISOString(), r = console.error.bind(console);
 	console.error = (...e) => {
-		FS(t.erros, {
+		KS(t.erros, {
 			em: n(),
-			mensagem: IS(e)
+			mensagem: qS(e)
 		}), r(...e);
 	}, window.addEventListener("error", (e) => {
-		FS(t.erros, {
+		KS(t.erros, {
 			em: n(),
-			mensagem: IS([e.error ?? e.message])
+			mensagem: qS([e.error ?? e.message])
 		});
 	}), window.addEventListener("unhandledrejection", (e) => {
-		FS(t.erros, {
+		KS(t.erros, {
 			em: n(),
-			mensagem: IS(["Promise rejeitada:", e.reason])
+			mensagem: qS(["Promise rejeitada:", e.reason])
 		});
 	});
 	let i = window.fetch.bind(window);
 	window.fetch = async (e, r) => {
-		let a = performance.now(), o = (r?.method ?? (e instanceof Request ? e.method : "GET")).toUpperCase(), s = e instanceof Request ? e.url : String(e), c = (e) => FS(t.requisicoes, {
+		let a = performance.now(), o = (r?.method ?? (e instanceof Request ? e.method : "GET")).toUpperCase(), s = e instanceof Request ? e.url : String(e), c = (e) => KS(t.requisicoes, {
 			em: n(),
 			metodo: o,
 			url: yb(s),
@@ -12910,7 +13017,7 @@ function LS() {
 	}, XMLHttpRequest.prototype.send = function(e) {
 		let r = performance.now();
 		return this.addEventListener("loadend", () => {
-			!this.__marcador || this.status > 0 && this.status < 400 || FS(t.requisicoes, {
+			!this.__marcador || this.status > 0 && this.status < 400 || KS(t.requisicoes, {
 				em: n(),
 				metodo: this.__marcador.metodo,
 				url: yb(this.__marcador.url),
@@ -12920,10 +13027,10 @@ function LS() {
 		}), o.call(this, e);
 	}, t;
 }
-var RS = /^radix-|^:r|_r_|«r|\d{3,}/;
-function zS(e) {
+var YS = /^radix-|^:r|_r_|«r|\d{3,}/;
+function XS(e) {
 	let t = e.tagName.toLowerCase();
-	if (e.id && !RS.test(e.id)) return `${t}#${CSS.escape(e.id)}`;
+	if (e.id && !YS.test(e.id)) return `${t}#${CSS.escape(e.id)}`;
 	let n = e.getAttribute("data-testid");
 	if (n) return `${t}[data-testid="${n}"]`;
 	let r = e.parentElement;
@@ -12931,17 +13038,17 @@ function zS(e) {
 	let i = [...r.children].filter((t) => t.tagName === e.tagName);
 	return i.length > 1 ? `${t}:nth-of-type(${i.indexOf(e) + 1})` : t;
 }
-function BS(e) {
+function ZS(e) {
 	let t = [], n = e;
 	for (; n && n !== document.body && t.length < 5;) {
-		let e = zS(n);
+		let e = XS(n);
 		if (t.unshift(e), e.includes("#") || e.includes("data-testid")) break;
 		n = n.parentElement;
 	}
 	return t.join(" > ");
 }
-var VS = /^(Primitive|Slot|Presence|Portal|DismissableLayer|FocusScope|Popper|Collection|RovingFocus|VisuallyHidden|Anchor)|Provider$|SlotClone$/;
-function HS(e) {
+var QS = /^(Primitive|Slot|Presence|Portal|DismissableLayer|FocusScope|Popper|Collection|RovingFocus|VisuallyHidden|Anchor)|Provider$|SlotClone$/;
+function $S(e) {
 	let t = Object.keys(e).find((e) => e.startsWith("__reactFiber$"));
 	if (!t) return [];
 	let n = e[t], r = [], i = 0;
@@ -12949,28 +13056,28 @@ function HS(e) {
 		let e = n.type;
 		if (e && typeof e != "string") {
 			let t = e.displayName || e.name || e.render?.name;
-			t && t.length > 2 && !VS.test(t) && r[r.length - 1] !== t && r.push(t);
+			t && t.length > 2 && !QS.test(t) && r[r.length - 1] !== t && r.push(t);
 		}
 		n = n.return ?? null;
 	}
 	return r;
 }
-var US = "button, a[href], [role=option], [role=menuitem], [role=tab], [role=button], input, select, textarea, label, td, th, li";
-function WS(e) {
+var eC = "button, a[href], [role=option], [role=menuitem], [role=tab], [role=button], input, select, textarea, label, td, th, li";
+function tC(e) {
 	let t = e;
-	for (let e = 0; t && e <= 3; e++, t = t.parentElement) if (t.matches(US)) return t;
+	for (let e = 0; t && e <= 3; e++, t = t.parentElement) if (t.matches(eC)) return t;
 	return e;
 }
-function GS(e) {
+function nC(e) {
 	let t = e.getBoundingClientRect(), n = e.innerText ?? e.textContent ?? "";
 	return {
 		tag: e.tagName.toLowerCase(),
-		seletor: BS(e),
+		seletor: ZS(e),
 		texto: vb(n.replace(/\s+/g, " ").trim()).slice(0, 80),
 		role: e.getAttribute("role") ?? void 0,
 		rotulo: e.getAttribute("aria-label") ? vb(e.getAttribute("aria-label")) : void 0,
 		testid: e.getAttribute("data-testid") ?? void 0,
-		componentes: HS(e),
+		componentes: $S(e),
 		retangulo: {
 			x: Math.round(t.x),
 			y: Math.round(t.y),
@@ -12979,13 +13086,13 @@ function GS(e) {
 		}
 	};
 }
-function KS() {
+function rC() {
 	let e = window.location.hostname;
 	return e === "localhost" || e === "127.0.0.1" || e === "[::1]" || e.endsWith(".localhost") || e.endsWith(".test") ? "dev" : "producao";
 }
 //#endregion
 //#region src/components/MarcadorProblemas/index.tsx
-var qS = [
+var iC = [
 	{
 		value: "erro",
 		rotulo: "Erro",
@@ -13001,21 +13108,21 @@ var qS = [
 		rotulo: "Sugestão",
 		mostrarRotulo: !0
 	}
-], JS = "data-avere-marcador";
-function YS(e) {
-	return !!e?.closest(`[${JS}]`);
+], aC = "data-avere-marcador";
+function oC(e) {
+	return !!e?.closest(`[${aC}]`);
 }
-function XS({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i = OS }) {
+function sC({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i = zS }) {
 	let [o, c] = d({ estado: "ocioso" }), [h, g] = d(!1), [v, y] = d(!1), [b, x] = d(null), [S, C] = d(null), [w, T] = d(null), [E, D] = d(""), [O, k] = d(!1), [A, j] = d(null), M = u(null), N = u(null), P = u(null), [F, I] = d([]), [L, R] = d(!1), z = u(0), te = a(async (e, t) => {
 		let n = P.current;
 		if (!n) return;
 		let r = {
 			contorno: n.contorno,
 			k: n.k
-		}, [i, a] = await Promise.all([pS(wS(n.canvas, e, {
+		}, [i, a] = await Promise.all([wS(FS(n.canvas, e, {
 			...r,
 			comIndicacoes: !1
-		})), pS(wS(n.canvas, e, {
+		})), wS(FS(n.canvas, e, {
 			...r,
 			comIndicacoes: !0
 		}))]);
@@ -13034,7 +13141,7 @@ function XS({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i =
 		let t = ++z.current;
 		j({ estado: "capturando" }), I([]);
 		try {
-			let n = await fS(YS), r = n.canvas.width / n.largura;
+			let n = await CS(oC), r = n.canvas.width / n.largura;
 			P.current = {
 				canvas: n.canvas,
 				k: r,
@@ -13062,7 +13169,7 @@ function XS({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i =
 	}, [A]);
 	let oe = r && !S && (h || v);
 	s(() => {
-		r && (M.current = LS());
+		r && (M.current = JS());
 	}, [r]), s(() => {
 		if (!r) return;
 		let e = (e) => {
@@ -13086,15 +13193,15 @@ function XS({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i =
 		}
 		let e = (e) => {
 			let t = document.elementFromPoint(e.clientX, e.clientY);
-			x(t && !YS(t) ? WS(t) : null);
+			x(t && !oC(t) ? tC(t) : null);
 		}, t = (e) => {
-			YS(e.target) || (e.preventDefault(), e.stopPropagation());
+			oC(e.target) || (e.preventDefault(), e.stopPropagation());
 		}, n = (e) => {
-			if (YS(e.target)) return;
+			if (oC(e.target)) return;
 			e.preventDefault(), e.stopPropagation();
 			let t = document.elementFromPoint(e.clientX, e.clientY);
-			if (!t || YS(t)) return;
-			let n = WS(t), r = M.current, i = GS(n);
+			if (!t || oC(t)) return;
+			let n = tC(t), r = M.current, i = nC(n);
 			C({
 				elemento: n,
 				descricao: i,
@@ -13120,8 +13227,8 @@ function XS({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i =
 		schema_versao: 1,
 		app: e,
 		versao_app: t,
-		versao_avere_ui: "1.2.0",
-		ambiente: KS(),
+		versao_avere_ui: "1.2.2",
+		ambiente: rC(),
 		rota: yb(window.location.href),
 		titulo_tela: vb(document.title),
 		tipo: w,
@@ -13155,7 +13262,7 @@ function XS({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i =
 		if (!(!B || !B.descricao)) {
 			c({ estado: "enviando" });
 			try {
-				await jS(i, { ...B }, N.current), c({ estado: "enviado" });
+				await HS(i, { ...B }, N.current), c({ estado: "enviado" });
 			} catch (e) {
 				c({
 					estado: "erro",
@@ -13169,7 +13276,7 @@ function XS({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i =
 		let e = setTimeout(se, 2500);
 		return () => clearTimeout(e);
 	}, [o, se]), !r) return null;
-	let pe = !S && b?.isConnected ? b.getBoundingClientRect() : null, me = { [JS]: "" }, he = !!S && (!A || A.estado === "capturando");
+	let pe = !S && b?.isConnected ? b.getBoundingClientRect() : null, me = { [aC]: "" }, he = !!S && (!A || A.estado === "capturando");
 	return _(/* @__PURE__ */ m(f, { children: [
 		pe && /* @__PURE__ */ p("div", {
 			...me,
@@ -13182,7 +13289,7 @@ function XS({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i =
 			},
 			children: /* @__PURE__ */ p("span", {
 				className: Q.etiqueta,
-				children: GS(b).seletor
+				children: nC(b).seletor
 			})
 		}),
 		(!S || he) && /* @__PURE__ */ p("div", {
@@ -13275,7 +13382,7 @@ function XS({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i =
 									children: ["Não foi possível capturar a tela.", /* @__PURE__ */ p("button", {
 										type: "button",
 										className: Q.link,
-										onClick: () => void ne(GS(S.elemento).retangulo),
+										onClick: () => void ne(nC(S.elemento).retangulo),
 										children: "Tentar de novo"
 									})]
 								})
@@ -13307,7 +13414,7 @@ function XS({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i =
 							})]
 						}),
 						/* @__PURE__ */ p(gb, {
-							opcoes: qS,
+							opcoes: iC,
 							valor: w ?? "",
 							altura: 32,
 							onChange: (e) => T(e || null)
@@ -13326,12 +13433,12 @@ function XS({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i =
 							value: E,
 							onChange: (e) => D(e.target.value)
 						}),
-						CS(F) > 0 && /* @__PURE__ */ m("span", {
+						PS(F) > 0 && /* @__PURE__ */ m("span", {
 							className: Q.dica,
 							children: [
 								"Cite os números marcados no print:",
 								" ",
-								Array.from({ length: CS(F) }, (e, t) => t + 1).join(", ")
+								Array.from({ length: PS(F) }, (e, t) => t + 1).join(", ")
 							]
 						}),
 						/* @__PURE__ */ m("details", {
@@ -13435,7 +13542,7 @@ function XS({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i =
 				})
 			] })]
 		}),
-		L && P.current && /* @__PURE__ */ p(DS, {
+		L && P.current && /* @__PURE__ */ p(RS, {
 			base: P.current.canvas,
 			contorno: P.current.contorno,
 			k: P.current.k,
@@ -13448,7 +13555,7 @@ function XS({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i =
 }
 //#endregion
 //#region src/components/FiltroLista/index.tsx
-function ZS(e, t, n) {
+function cC(e, t, n) {
 	if (n) {
 		let t = e.findIndex((e) => e.value === n);
 		if (t >= 0) return t;
@@ -13456,8 +13563,8 @@ function ZS(e, t, n) {
 	let r = e.findIndex((e) => t.includes(e.value));
 	return r >= 0 ? r : 0;
 }
-function QS({ opcoes: e, selecionadas: t, onChange: n, focoInicial: r }) {
-	let [i, a] = d(""), [o, c] = d(() => ZS(e, t, r)), l = u(o), f = u(null), h = u(null), g = u(!0), _ = i.trim() ? e.filter((e) => e.label.toLowerCase().includes(i.trim().toLowerCase())) : e;
+function lC({ opcoes: e, selecionadas: t, onChange: n, focoInicial: r }) {
+	let [i, a] = d(""), [o, c] = d(() => cC(e, t, r)), l = u(o), f = u(null), h = u(null), g = u(!0), _ = i.trim() ? e.filter((e) => e.label.toLowerCase().includes(i.trim().toLowerCase())) : e;
 	s(() => {
 		g.current || (c(0), l.current = 0);
 	}, [i]), s(() => {
@@ -13582,7 +13689,7 @@ function QS({ opcoes: e, selecionadas: t, onChange: n, focoInicial: r }) {
 }
 //#endregion
 //#region src/components/SelectMulti/index.tsx
-function $S({ opcoes: e, valores: t, onChange: n, largura: r = 210, rotuloVazio: i = "Todos", substantivo: a = "itens", focoInicial: o }) {
+function uC({ opcoes: e, valores: t, onChange: n, largura: r = 210, rotuloVazio: i = "Todos", substantivo: a = "itens", focoInicial: o }) {
 	let s = t.length === 0 ? i : t.length === 1 ? e.find((e) => e.value === t[0])?.label ?? t[0] : `${t.length} ${a} selecionados`;
 	return /* @__PURE__ */ m(k_, { children: [/* @__PURE__ */ p(A_, {
 		asChild: !0,
@@ -13625,7 +13732,7 @@ function $S({ opcoes: e, valores: t, onChange: n, largura: r = 210, rotuloVazio:
 			padding: "var(--space-3)",
 			zIndex: 9999
 		},
-		children: /* @__PURE__ */ p(QS, {
+		children: /* @__PURE__ */ p(lC, {
 			opcoes: e,
 			selecionadas: t,
 			onChange: n,
@@ -13635,7 +13742,7 @@ function $S({ opcoes: e, valores: t, onChange: n, largura: r = 210, rotuloVazio:
 }
 //#endregion
 //#region src/components/BotaoMesVigente/index.tsx
-function eC({ ativo: e, onClick: t, rotulo: n = "mês vigente" }) {
+function dC({ ativo: e, onClick: t, rotulo: n = "mês vigente" }) {
 	return /* @__PURE__ */ p("button", {
 		type: "button",
 		title: e ? `${n[0].toUpperCase()}${n.slice(1)} selecionado` : `Voltar ao ${n}`,
@@ -13660,7 +13767,7 @@ function eC({ ativo: e, onClick: t, rotulo: n = "mês vigente" }) {
 }
 //#endregion
 //#region src/components/SeletorMes/index.tsx
-function tC({ opcoes: e, valor: t, mesVigente: n, onChange: r, largura: i = 220 }) {
+function fC({ opcoes: e, valor: t, mesVigente: n, onChange: r, largura: i = 220 }) {
 	let [a, o] = d(!1), [c, l] = d(""), [f, h] = d(() => Math.max(0, e.findIndex((e) => e.value === t))), g = u(f), _ = u(null), v = u(null), y = u(!0), b = e.find((e) => e.value === t)?.label ?? t, x = c.trim() ? e.filter((e) => e.label.toLowerCase().includes(c.trim().toLowerCase())) : e;
 	s(() => {
 		y.current || (h(0), g.current = 0);
@@ -13820,7 +13927,7 @@ function tC({ opcoes: e, valor: t, mesVigente: n, onChange: r, largura: i = 220 
 					})]
 				})
 			})]
-		}), /* @__PURE__ */ p(eC, {
+		}), /* @__PURE__ */ p(dC, {
 			ativo: w,
 			rotulo: "mês padrão",
 			onClick: () => S(n)
@@ -13829,16 +13936,16 @@ function tC({ opcoes: e, valor: t, mesVigente: n, onChange: r, largura: i = 220 
 }
 //#endregion
 //#region src/components/CampoData/index.tsx
-function nC(e) {
+function pC(e) {
 	if (!e) return "";
 	let [t, n, r] = e.split("-");
 	return !t || !n || !r ? "" : `${r}/${n}/${t}`;
 }
-function rC(e) {
+function mC(e) {
 	let t = e.slice(0, 8);
 	return t.length <= 2 ? t : t.length <= 4 ? `${t.slice(0, 2)}/${t.slice(2)}` : `${t.slice(0, 2)}/${t.slice(2, 4)}/${t.slice(4)}`;
 }
-function iC(e) {
+function hC(e) {
 	let t = e.replace(/\D/g, "");
 	if (t.length !== 8) return null;
 	let n = Number(t.slice(0, 2)), r = Number(t.slice(2, 4)), i = Number(t.slice(4));
@@ -13846,15 +13953,15 @@ function iC(e) {
 	let a = new Date(i, r, 0).getDate();
 	return n < 1 || n > a ? null : `${i}-${String(r).padStart(2, "0")}-${String(n).padStart(2, "0")}`;
 }
-function aC({ label: e, valor: t, onChange: n, placeholder: r }) {
-	let [i, a] = d(() => nC(t));
+function gC({ label: e, valor: t, onChange: n, placeholder: r }) {
+	let [i, a] = d(() => pC(t));
 	s(() => {
 		a((e) => {
-			let n = nC(t);
-			return iC(e) === (t || null) && e !== "" ? e : n;
+			let n = pC(t);
+			return hC(e) === (t || null) && e !== "" ? e : n;
 		});
 	}, [t]);
-	let o = i.replace(/\D/g, "").length === 8 && !iC(i), c = i !== "" && i.replace(/\D/g, "").length < 8;
+	let o = i.replace(/\D/g, "").length === 8 && !hC(i), c = i !== "" && i.replace(/\D/g, "").length < 8;
 	return /* @__PURE__ */ p(Le, {
 		label: e,
 		inputMode: "numeric",
@@ -13862,25 +13969,25 @@ function aC({ label: e, valor: t, onChange: n, placeholder: r }) {
 		value: i,
 		error: o ? "Data inválida" : void 0,
 		onChange: (e) => {
-			let t = rC(e.target.value.replace(/\D/g, ""));
+			let t = mC(e.target.value.replace(/\D/g, ""));
 			a(t);
-			let r = iC(t);
+			let r = hC(t);
 			r ? n(r) : t === "" && n("");
 		},
 		onBlur: () => {
-			c && a(nC(t));
+			c && a(pC(t));
 		}
 	});
 }
-function oC({ valor: e, onChange: t, className: n, style: r }) {
-	let [i, a] = d(() => nC(e));
+function _C({ valor: e, onChange: t, className: n, style: r }) {
+	let [i, a] = d(() => pC(e));
 	s(() => {
 		a((t) => {
-			let n = nC(e);
-			return iC(t) === (e || null) && t !== "" ? t : n;
+			let n = pC(e);
+			return hC(t) === (e || null) && t !== "" ? t : n;
 		});
 	}, [e]);
-	let o = i.replace(/\D/g, "").length === 8 && !iC(i);
+	let o = i.replace(/\D/g, "").length === 8 && !hC(i);
 	return /* @__PURE__ */ p("input", {
 		className: n,
 		inputMode: "numeric",
@@ -13891,19 +13998,19 @@ function oC({ valor: e, onChange: t, className: n, style: r }) {
 			...o ? { borderColor: "var(--color-danger-solid)" } : {}
 		},
 		onChange: (e) => {
-			let n = rC(e.target.value.replace(/\D/g, ""));
+			let n = mC(e.target.value.replace(/\D/g, ""));
 			a(n);
-			let r = iC(n);
+			let r = hC(n);
 			r && t(r);
 		},
 		onBlur: () => {
-			i.replace(/\D/g, "").length < 8 && a(nC(e));
+			i.replace(/\D/g, "").length < 8 && a(pC(e));
 		}
 	});
 }
 //#endregion
 //#region src/hooks/useAlturaDisponivel.ts
-function sC(e = 260) {
+function vC(e = 260) {
 	let t = u(null), [n, r] = d();
 	return s(() => {
 		let n = () => {
@@ -13924,16 +14031,16 @@ function sC(e = 260) {
 }
 //#endregion
 //#region src/hooks/useEdicaoInline.ts
-function cC(e) {
+function yC(e) {
 	return !!e && e.matches("button[class*=\"cbTrigger\"], button[role=\"combobox\"]");
 }
-var lC = "input:not([type=\"hidden\"]):not([disabled]), button[class*=\"cbTrigger\"], button[role=\"combobox\"], [role=\"switch\"]";
-function uC({ ativo: e, seletorLinha: t, coluna: n }) {
+var bC = "input:not([type=\"hidden\"]):not([disabled]), button[class*=\"cbTrigger\"], button[role=\"combobox\"], [role=\"switch\"]";
+function xC({ ativo: e, seletorLinha: t, coluna: n }) {
 	s(() => {
 		if (!e || n == null) return;
 		let r = requestAnimationFrame(() => {
-			let e = (document.querySelector(t)?.children[n])?.querySelector(lC);
-			e && (e.focus(), e instanceof HTMLInputElement ? e.select() : cC(e) && e.click());
+			let e = (document.querySelector(t)?.children[n])?.querySelector(bC);
+			e && (e.focus(), e instanceof HTMLInputElement ? e.select() : yC(e) && e.click());
 		});
 		return () => cancelAnimationFrame(r);
 	}, [
@@ -13942,7 +14049,7 @@ function uC({ ativo: e, seletorLinha: t, coluna: n }) {
 		n
 	]);
 }
-function dC() {
+function SC() {
 	s(() => {
 		let e = !1, t = (t) => {
 			t.key === "Tab" && (e = !0);
@@ -13952,55 +14059,55 @@ function dC() {
 			if (!e) return;
 			e = !1;
 			let n = t.target;
-			cC(n) && n.getAttribute("aria-expanded") !== "true" && (n.hasAttribute("disabled") || setTimeout(() => n.click(), 0));
+			yC(n) && n.getAttribute("aria-expanded") !== "true" && (n.hasAttribute("disabled") || setTimeout(() => n.click(), 0));
 		};
 		return document.addEventListener("keydown", t, !0), document.addEventListener("mousedown", n, !0), document.addEventListener("focusin", r), () => {
 			document.removeEventListener("keydown", t, !0), document.removeEventListener("mousedown", n, !0), document.removeEventListener("focusin", r);
 		};
 	}, []);
 }
-function fC(e) {
+function CC(e) {
 	let t = e.target?.closest?.("td");
 	return t?.parentElement ? [...t.parentElement.children].indexOf(t) : null;
 }
 //#endregion
 //#region src/utils/format.ts
-var pC = new Intl.NumberFormat("pt-BR", {
+var wC = new Intl.NumberFormat("pt-BR", {
 	style: "currency",
 	currency: "BRL"
-}), mC = new Intl.NumberFormat("pt-BR", {
+}), TC = new Intl.NumberFormat("pt-BR", {
 	minimumFractionDigits: 2,
 	maximumFractionDigits: 2
 });
-function hC(e) {
-	return pC.format(e);
+function EC(e) {
+	return wC.format(e);
 }
-function gC(e) {
-	return mC.format(e);
+function DC(e) {
+	return TC.format(e);
 }
-var _C = new Intl.NumberFormat("pt-BR", {
+var OC = new Intl.NumberFormat("pt-BR", {
 	notation: "compact",
 	maximumFractionDigits: 1
 });
-function vC(e) {
-	return _C.format(e);
+function kC(e) {
+	return OC.format(e);
 }
-function yC(e) {
+function AC(e) {
 	let [t, n, r] = e.slice(0, 10).split("-");
 	return `${r}/${n}/${t}`;
 }
-function bC(e) {
+function jC(e) {
 	let t = e.includes("-"), n = e.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
 	if (!n) return "";
 	let r = parseInt(n.slice(0, 15), 10);
 	return ((t ? -r : r) / 100).toFixed(2);
 }
-function xC(e) {
+function MC(e) {
 	if (e === "" || e == null) return "";
 	let t = Number(e);
-	return Number.isNaN(t) ? "" : `R$ ${mC.format(t)}`;
+	return Number.isNaN(t) ? "" : `R$ ${TC.format(t)}`;
 }
-var SC = [
+var NC = [
 	"Jan",
 	"Fev",
 	"Mar",
@@ -14013,49 +14120,49 @@ var SC = [
 	"Out",
 	"Nov",
 	"Dez"
-], CC = {
+], PC = {
 	card: "_card_buvlb_1",
 	header: "_header_buvlb_21",
 	title: "_title_buvlb_35",
 	description: "_description_buvlb_51",
 	content: "_content_buvlb_63",
 	footer: "_footer_buvlb_81"
-}, wC = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
+}, FC = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
 	ref: n,
-	className: S(CC.card, e),
+	className: S(PC.card, e),
 	...t
 }));
-wC.displayName = "Card";
-var TC = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
+FC.displayName = "Card";
+var IC = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
 	ref: n,
-	className: S(CC.header, e),
+	className: S(PC.header, e),
 	...t
 }));
-TC.displayName = "CardHeader";
-var EC = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("h3", {
+IC.displayName = "CardHeader";
+var LC = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("h3", {
 	ref: n,
-	className: S(CC.title, e),
+	className: S(PC.title, e),
 	...t
 }));
-EC.displayName = "CardTitle";
-var DC = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("p", {
+LC.displayName = "CardTitle";
+var RC = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("p", {
 	ref: n,
-	className: S(CC.description, e),
+	className: S(PC.description, e),
 	...t
 }));
-DC.displayName = "CardDescription";
-var OC = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
+RC.displayName = "CardDescription";
+var zC = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
 	ref: n,
-	className: S(CC.content, e),
+	className: S(PC.content, e),
 	...t
 }));
-OC.displayName = "CardContent";
-var kC = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
+zC.displayName = "CardContent";
+var BC = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
 	ref: n,
-	className: S(CC.footer, e),
+	className: S(PC.footer, e),
 	...t
 }));
-kC.displayName = "CardFooter";
+BC.displayName = "CardFooter";
 var $ = {
 	overlay: "_overlay_1ygay_3",
 	sidebar: "_sidebar_1ygay_23",
@@ -14090,13 +14197,13 @@ var $ = {
 	mobileOpen: "_mobileOpen_1ygay_667",
 	logoPlaceholder: "_logoPlaceholder_1ygay_693",
 	logoPulse: "_logoPulse_1ygay_1"
-}, AC = n({ isCollapsed: !1 });
-function jC(e) {
+}, VC = n({ isCollapsed: !1 });
+function HC(e) {
 	let t = e.trim().split(/\s+/);
 	return t.length === 1 ? t[0].substring(0, 2).toUpperCase() : (t[0][0] + t[t.length - 1][0]).toUpperCase();
 }
-function MC({ icon: e, label: t, active: n, badge: r, href: i, className: a, ...s }) {
-	let { isCollapsed: c } = o(AC), l = /* @__PURE__ */ m(i ? "a" : "button", {
+function UC({ icon: e, label: t, active: n, badge: r, href: i, className: a, ...s }) {
+	let { isCollapsed: c } = o(VC), l = /* @__PURE__ */ m(i ? "a" : "button", {
 		href: i,
 		className: S($.item, n && $.itemActive, c ? $.itemCollapsed : $.itemExpanded, a),
 		"aria-current": n ? "page" : void 0,
@@ -14130,8 +14237,8 @@ function MC({ icon: e, label: t, active: n, badge: r, href: i, className: a, ...
 		})] })
 	}) : l;
 }
-function NC({ label: e }) {
-	let { isCollapsed: t } = o(AC);
+function WC({ label: e }) {
+	let { isCollapsed: t } = o(VC);
 	return /* @__PURE__ */ m("div", {
 		className: S($.section, t && $.sectionCollapsed),
 		children: [!t && /* @__PURE__ */ p("span", {
@@ -14140,7 +14247,7 @@ function NC({ label: e }) {
 		}), /* @__PURE__ */ p("span", { className: $.sectionRule })]
 	});
 }
-function PC({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, logo: i, children: a, userName: o = "Usuário", userRole: s = "Colaborador", userAvatarUrl: c, onLogout: l, className: u, ...d }) {
+function GC({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, logo: i, children: a, userName: o = "Usuário", userRole: s = "Colaborador", userAvatarUrl: c, onLogout: l, className: u, ...d }) {
 	return /* @__PURE__ */ m(f, { children: [n && /* @__PURE__ */ p("div", {
 		className: $.overlay,
 		onClick: r
@@ -14161,7 +14268,7 @@ function PC({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, lo
 					children: p(e ? oe : ae, { size: 15 })
 				})]
 			}),
-			/* @__PURE__ */ p(AC.Provider, {
+			/* @__PURE__ */ p(VC.Provider, {
 				value: { isCollapsed: e },
 				children: /* @__PURE__ */ p("nav", {
 					className: $.nav,
@@ -14176,7 +14283,7 @@ function PC({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, lo
 					children: [
 						/* @__PURE__ */ p(N, {
 							src: c,
-							initials: jC(o),
+							initials: HC(o),
 							size: e ? "sm" : "md",
 							className: $.brandAvatar
 						}),
@@ -14211,7 +14318,7 @@ function PC({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, lo
 		]
 	})] });
 }
-var FC = {
+var KC = {
 	header: "_header_u5732_1",
 	buttonGroup: "_buttonGroup_u5732_43",
 	contextArea: "_contextArea_u5732_53",
@@ -14220,25 +14327,25 @@ var FC = {
 };
 //#endregion
 //#region src/components/TopBar/index.tsx
-function IC({ onToggleMobile: e, className: t, children: n, ...r }) {
+function qC({ onToggleMobile: e, className: t, children: n, ...r }) {
 	return /* @__PURE__ */ m("header", {
-		className: S(FC.header, t),
+		className: S(KC.header, t),
 		...r,
 		children: [/* @__PURE__ */ p("div", {
-			className: FC.buttonGroup,
+			className: KC.buttonGroup,
 			children: /* @__PURE__ */ p(Pe, {
 				variant: "ghost",
 				intent: "secundaria",
-				className: S(FC.mobileOnly),
+				className: S(KC.mobileOnly),
 				onClick: e,
 				"aria-label": "Abrir menu",
 				children: /* @__PURE__ */ p(ve, { size: 20 })
 			})
 		}), /* @__PURE__ */ p("div", {
-			className: FC.contextArea,
+			className: KC.contextArea,
 			children: n
 		})]
 	});
 }
 //#endregion
-export { N as Avatar, j as Badge, eC as BotaoMesVigente, Pe as Button, M_ as Calendar, aC as CampoData, wC as Card, OC as CardContent, DC as CardDescription, kC as CardFooter, TC as CardHeader, EC as CardTitle, ze as Checkbox, Ic as Combobox, mp as DataTable, N_ as DatePicker, ib as Drawer, db as DrawerBody, sb as DrawerClose, lb as DrawerContent, mb as DrawerDescription, fb as DrawerFooter, ub as DrawerHeader, cb as DrawerOverlay, ob as DrawerPortal, hb as DrawerSeparator, pb as DrawerTitle, ab as DrawerTrigger, Qf as DropdownMenu, cp as DropdownMenuCheckboxItem, op as DropdownMenuContent, ep as DropdownMenuGroup, sp as DropdownMenuItem, up as DropdownMenuLabel, tp as DropdownMenuPortal, rp as DropdownMenuRadioGroup, lp as DropdownMenuRadioItem, dp as DropdownMenuSeparator, fp as DropdownMenuShortcut, np as DropdownMenuSub, ap as DropdownMenuSubContent, ip as DropdownMenuSubTrigger, $f as DropdownMenuTrigger, Rc as FileUpload, QS as FiltroLista, mu as HierarchicalCombobox, oC as InputDataInline, SC as MESES_CURTOS, XS as MarcadorProblemas, qy as Modal, Xy as ModalClose, Qy as ModalContent, nb as ModalDescription, eb as ModalFooter, $y as ModalHeader, Zy as ModalOverlay, Yy as ModalPortal, tb as ModalTitle, Jy as ModalTrigger, xr as MultiSelect, k_ as Popover, j_ as PopoverContent, A_ as PopoverTrigger, mn as RadioGroup, hn as RadioItem, gb as Segmentado, F_ as Select, $S as SelectMulti, tC as SeletorMes, PC as SideBar, MC as SideBarItem, NC as SideBarSection, je as Skeleton, ir as Slider, Ae as Spinner, yr as Switch, gu as TagInput, Le as TextField, ry as Toaster, Sv as Tooltip, wv as TooltipContent, xv as TooltipProvider, Cv as TooltipTrigger, IC as TopBar, O as Typography, A as badgeVariants, Ne as buttonVariants, S as cn, fC as colunaDoEvento, xC as displayMoeda, hC as formatBRL, vC as formatCompacto, yC as formatData, gC as formatValor, Ie as inputVariants, bC as parseMoedaDigitada, Bv as toast, D as typographyVariants, dC as useAbrirComboboxNoTab, sC as useAlturaDisponivel, uC as useEdicaoInline };
+export { N as Avatar, j as Badge, dC as BotaoMesVigente, Pe as Button, M_ as Calendar, gC as CampoData, FC as Card, zC as CardContent, RC as CardDescription, BC as CardFooter, IC as CardHeader, LC as CardTitle, ze as Checkbox, Ic as Combobox, mp as DataTable, N_ as DatePicker, ib as Drawer, db as DrawerBody, sb as DrawerClose, lb as DrawerContent, mb as DrawerDescription, fb as DrawerFooter, ub as DrawerHeader, cb as DrawerOverlay, ob as DrawerPortal, hb as DrawerSeparator, pb as DrawerTitle, ab as DrawerTrigger, Qf as DropdownMenu, cp as DropdownMenuCheckboxItem, op as DropdownMenuContent, ep as DropdownMenuGroup, sp as DropdownMenuItem, up as DropdownMenuLabel, tp as DropdownMenuPortal, rp as DropdownMenuRadioGroup, lp as DropdownMenuRadioItem, dp as DropdownMenuSeparator, fp as DropdownMenuShortcut, np as DropdownMenuSub, ap as DropdownMenuSubContent, ip as DropdownMenuSubTrigger, $f as DropdownMenuTrigger, Rc as FileUpload, lC as FiltroLista, mu as HierarchicalCombobox, _C as InputDataInline, NC as MESES_CURTOS, sC as MarcadorProblemas, qy as Modal, Xy as ModalClose, Qy as ModalContent, nb as ModalDescription, eb as ModalFooter, $y as ModalHeader, Zy as ModalOverlay, Yy as ModalPortal, tb as ModalTitle, Jy as ModalTrigger, xr as MultiSelect, k_ as Popover, j_ as PopoverContent, A_ as PopoverTrigger, mn as RadioGroup, hn as RadioItem, gb as Segmentado, F_ as Select, uC as SelectMulti, fC as SeletorMes, GC as SideBar, UC as SideBarItem, WC as SideBarSection, je as Skeleton, ir as Slider, Ae as Spinner, yr as Switch, gu as TagInput, Le as TextField, ry as Toaster, Sv as Tooltip, wv as TooltipContent, xv as TooltipProvider, Cv as TooltipTrigger, qC as TopBar, O as Typography, A as badgeVariants, Ne as buttonVariants, S as cn, CC as colunaDoEvento, MC as displayMoeda, EC as formatBRL, kC as formatCompacto, AC as formatData, DC as formatValor, Ie as inputVariants, jC as parseMoedaDigitada, Bv as toast, D as typographyVariants, SC as useAbrirComboboxNoTab, vC as useAlturaDisponivel, xC as useEdicaoInline };
