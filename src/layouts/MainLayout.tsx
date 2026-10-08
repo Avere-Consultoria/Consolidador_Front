@@ -52,7 +52,9 @@ export default function MainLayout() {
   // 2. Carrega Clientes filtrados pelo Consultor selecionado na TopBar
   useEffect(() => {
     async function loadClientes() {
-      let query = supabase.from('clientes').select('*').order('nome');
+      // Só ativos no seletor: inativo (ex-cliente, marcado no HUB) segue no banco com o histórico,
+      // visível na Base de Clientes com "Mostrar inativos".
+      let query = supabase.from('clientes').select('*').eq('ativo', true).order('nome');
 
       // Se for Master e selecionou um consultor específico
       if (isMaster && consultorSelecionado !== "todos" && consultorSelecionado !== "meus") {

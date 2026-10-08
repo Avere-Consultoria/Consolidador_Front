@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import {
-    Typography, Card, Button, Spinner, toast, Combobox,
-    Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, TextField,
-} from 'avere-ui';
-import { Plus, Trash2, Pencil, Search, ChevronDown, GripVertical } from 'lucide-react';
+import { Typography, Card, TextField, Spinner } from 'avere-ui';
+import { Search, ExternalLink, Users as UsersIcon2 } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
-import { Users as UsersIcon2 } from 'lucide-react';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { HUB_URL } from '../config/hub';
+import { AvisoCadastroHub } from '../components/shared/AvisoCadastroHub';
+
+// Base de Clientes — SOMENTE LEITURA desde 08/10/2026.
+// Clientes, consultores e contas nascem e mudam no HUB Avere (avere-core); a
+// edge function espelho-core copia para cá. Editar aqui seria desfeito na
+// próxima rodada do espelho, por isso não há mais formulário nesta tela.
 
 interface Consultor { id: string; nome: string; }
 interface Instituicao { id: string; nome: string; tipo: string; }
@@ -18,12 +19,11 @@ interface Cliente {
     nome: string;
     consultor_id: string | null;
     codigo_avere: string | null;
-    documento: string | null;   // CPF/CNPJ (só dígitos) — opcional; chave p/ casar fontes (ex.: Avenue)
-    data_nascimento?: string | null;   // yyyy-MM-dd — alimenta as notificações de aniversário
+    documento: string | null;
+    ativo: boolean;
 }
 interface Conta {
-    id?: string;
-    uid?: string;          // id estável só para o drag-and-drop no formulário
+    id: string;
     instituicao_id: string;
     apelido: string | null;
     codigo: string | null;
@@ -31,20 +31,6 @@ interface Conta {
     ordem?: number;
 }
 
-// CPF: máscara 000.000.000-00
-const maskCPF = (v: string) => {
-    const d = (v || '').replace(/\D/g, '').slice(0, 11);
-    return d.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-};
-// CNPJ: máscara 00.000.000/0000-00
-const maskCNPJ = (v: string) => {
-    const d = (v || '').replace(/\D/g, '').slice(0, 14);
-    return d.replace(/(\d{2})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1/$2').replace(/(\d{4})(\d{1,2})$/, '$1-$2');
-};
-const apenasDigitos = (v: string | null | undefined) => (v || '').replace(/\D/g, '');
-const ehCnpj = (v: string | null | undefined) => apenasDigitos(v).length > 11;
-const maskDoc = (v: string, tipo: 'PF' | 'PJ') => (tipo === 'PJ' ? maskCNPJ(v) : maskCPF(v));
-const nomeTemNumero = (s: string) => /\d/.test(s);
 const isAgoraNome = (nome: string | undefined) => /agora|ágora/i.test(nome || '');
 
 const thStyle: React.CSSProperties = {
@@ -52,78 +38,16 @@ const thStyle: React.CSSProperties = {
     letterSpacing: '0.05em', color: 'var(--color-text-muted)', textAlign: 'left', whiteSpace: 'nowrap',
 };
 const tdStyle: React.CSSProperties = { padding: '12px 16px', verticalAlign: 'middle' };
-
-// Select nativo estilizado como input avere — clicável dentro da modal (sem o
-// conflito Radix Select × Dialog) e com dropdown do SO (nunca recortado).
-const selectNativo: React.CSSProperties = {
-    width: '100%', height: '40px', padding: '0 32px 0 12px', borderRadius: '8px',
-    border: '1px solid var(--color-border-default)', fontSize: '14px', fontFamily: 'var(--font-family)',
-    background: 'var(--color-white)', outline: 'none', cursor: 'pointer', appearance: 'none',
+const selectFiltro: React.CSSProperties = {
+    height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--color-border-default)',
+    fontSize: '13px', fontFamily: 'var(--font-family)', background: 'var(--color-white)', outline: 'none',
+    cursor: 'pointer', appearance: 'auto',
 };
 
-// Card de conta arrastável (a ordem é persistida em cliente_contas.ordem)
-function ContaSortable({ conta, instituicoes, tipoDoc, onChange, onRemove }: {
-    conta: Conta;
-    instituicoes: Instituicao[];
-    tipoDoc: 'PF' | 'PJ';
-    onChange: (patch: Partial<Conta>) => void;
-    onRemove: () => void;
-}) {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: conta.uid! });
-    const agora = isAgoraNome(instituicoes.find(i => i.id === conta.instituicao_id)?.nome);
-    const style: React.CSSProperties = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        zIndex: isDragging ? 10 : 1,
-        opacity: isDragging ? 0.7 : 1,
-        border: '1px solid var(--color-border-subtle)', borderRadius: '10px', padding: '12px',
-        background: isDragging ? 'var(--color-white)' : (agora ? 'var(--color-accent-subtle)' : 'rgba(0,0,0,0.015)'),
-        boxShadow: isDragging ? '0 6px 16px var(--color-border-default)' : 'none',
-    };
-    return (
-        <div ref={setNodeRef} style={style}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1.3fr 1fr 1fr auto', gap: '10px', alignItems: 'end' }}>
-                <div {...attributes} {...listeners} style={{ cursor: 'grab', opacity: 0.3, alignSelf: 'center', paddingBottom: '2px', touchAction: 'none' }} title="Arraste para reordenar">
-                    <GripVertical size={18} />
-                </div>
-                <div>
-                    <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--color-text-muted)', marginBottom: '4px' }}>Instituição</label>
-                    <div style={{ position: 'relative' }}>
-                        <select
-                            value={conta.instituicao_id}
-                            onChange={e => onChange({ instituicao_id: e.target.value })}
-                            style={{ ...selectNativo, color: conta.instituicao_id ? 'var(--color-secundaria)' : 'var(--color-text-muted)' }}
-                        >
-                            <option value="">Selecione...</option>
-                            {instituicoes.map(i => (
-                                <option key={i.id} value={i.id}>{i.tipo === 'API' ? i.nome : `${i.nome} (manual)`}</option>
-                            ))}
-                        </select>
-                        <ChevronDown size={16} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.5 }} />
-                    </div>
-                </div>
-                <TextField label="Apelido (opcional)" placeholder="ex.: XP Trader" value={conta.apelido || ''} onChange={e => onChange({ apelido: e.target.value })} />
-                <TextField label={agora ? 'Conta (CLBC)' : 'Código da conta'} value={conta.codigo || ''} onChange={e => onChange({ codigo: e.target.value })} />
-                <Trash2 size={18} color="var(--color-danger-solid)" style={{ cursor: 'pointer', marginBottom: '10px' }} onClick={onRemove} />
-            </div>
-            {agora && (
-                <div style={{ marginTop: '10px', paddingLeft: '28px' }}>
-                    <TextField
-                        label={tipoDoc === 'PJ' ? 'CNPJ (Ágora)' : 'CPF (Ágora)'}
-                        placeholder={tipoDoc === 'PJ' ? '00.000.000/0000-00' : '000.000.000-00'}
-                        value={conta.documento || ''}
-                        onChange={e => onChange({ documento: maskDoc(e.target.value, tipoDoc) })}
-                    />
-                    <p style={{ margin: '4px 0 0', fontSize: '10px', color: 'var(--color-text-muted)' }}>A Ágora identifica a conta pelo documento + conta. As demais usam só o código.</p>
-                </div>
-            )}
-        </div>
-    );
-}
-
 export default function CadastroClientes() {
+    const { perfil } = useAuth();
+    const isMaster = perfil?.role === 'MASTER';
     const [loading, setLoading] = useState(true);
-    const [salvando, setSalvando] = useState(false);
     const [consultores, setConsultores] = useState<Consultor[]>([]);
     const [instituicoes, setInstituicoes] = useState<Instituicao[]>([]);
     const [linhas, setLinhas] = useState<Cliente[]>([]);
@@ -131,226 +55,85 @@ export default function CadastroClientes() {
     const [busca, setBusca] = useState('');
     const [filtroConsultor, setFiltroConsultor] = useState('');
     const [filtroInstituicao, setFiltroInstituicao] = useState('');
-
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [clienteEmEdicao, setClienteEmEdicao] = useState<string | null>(null);
-    const [formCliente, setFormCliente] = useState<Partial<Cliente>>({ nome: '', consultor_id: null, codigo_avere: '' });
-    const [formContas, setFormContas] = useState<Conta[]>([]);
-    const [erros, setErros] = useState<{ nome?: string; codigo_avere?: string }>({});
-    const [tipoDoc, setTipoDoc] = useState<'PF' | 'PJ'>('PF');
+    const [mostrarInativos, setMostrarInativos] = useState(false);
 
     const instMap = new Map(instituicoes.map(i => [i.id, i]));
-    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
-    const handleContasDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event;
-        if (!over || active.id === over.id) return;
-        setFormContas(prev => {
-            const oldIndex = prev.findIndex(c => c.uid === active.id);
-            const newIndex = prev.findIndex(c => c.uid === over.id);
-            if (oldIndex < 0 || newIndex < 0) return prev;
-            return arrayMove(prev, oldIndex, newIndex);
-        });
-    };
-
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-            const [consRes, clisRes, instRes, contasRes] = await Promise.all([
-                supabase.from('consultores').select('id, nome').eq('ativo', true).order('nome'),
-                supabase.from('clientes').select('id, nome, consultor_id, codigo_avere, documento, data_nascimento').order('nome'),
-                supabase.from('instituicoes').select('id, nome, tipo').order('tipo').order('nome'),
-                supabase.from('cliente_contas').select('id, cliente_id, instituicao_id, apelido, codigo, documento, ordem').order('ordem'),
-            ]);
-            if (consRes.data) setConsultores(consRes.data);
-            if (clisRes.data) setLinhas(clisRes.data);
-            if (instRes.data) setInstituicoes(instRes.data);
-            const map: Record<string, Conta[]> = {};
-            (contasRes.data || []).forEach((r: any) => {
-                (map[r.cliente_id] = map[r.cliente_id] || []).push({
-                    id: r.id, instituicao_id: r.instituicao_id, apelido: r.apelido,
-                    codigo: r.codigo, documento: r.documento, ordem: r.ordem,
+    useEffect(() => {
+        (async () => {
+            setLoading(true);
+            try {
+                const [consRes, clisRes, instRes, contasRes] = await Promise.all([
+                    supabase.from('consultores').select('id, nome').order('nome'),
+                    supabase.from('clientes').select('id, nome, consultor_id, codigo_avere, documento, ativo').order('nome'),
+                    supabase.from('instituicoes').select('id, nome, tipo').order('tipo').order('nome'),
+                    supabase.from('cliente_contas').select('id, cliente_id, instituicao_id, apelido, codigo, documento, ordem')
+                        .eq('ativo', true).order('ordem'),
+                ]);
+                if (consRes.data) setConsultores(consRes.data);
+                if (clisRes.data) setLinhas(clisRes.data);
+                if (instRes.data) setInstituicoes(instRes.data);
+                const map: Record<string, Conta[]> = {};
+                (contasRes.data || []).forEach((r: Conta & { cliente_id: string }) => {
+                    (map[r.cliente_id] = map[r.cliente_id] || []).push(r);
                 });
-            });
-            setContasPorCliente(map);
-        } catch (err) { console.error(err); } finally { setLoading(false); }
-    };
-
-    useEffect(() => { fetchData(); }, []);
+                setContasPorCliente(map);
+            } catch (err) { console.error(err); } finally { setLoading(false); }
+        })();
+    }, []);
 
     // Rótulo de uma conta: apelido > "Inst N" (se houver >1 da mesma inst) > "Inst"
     const labelConta = (conta: Conta, irmas: Conta[]) => {
-        const inst = instMap.get(conta.instituicao_id);
-        const nomeInst = inst?.nome ?? 'Instituição';
+        const nomeInst = instMap.get(conta.instituicao_id)?.nome ?? 'Instituição';
         if (conta.apelido && conta.apelido.trim()) return conta.apelido.trim();
         const mesmas = irmas.filter(c => c.instituicao_id === conta.instituicao_id);
         if (mesmas.length <= 1) return nomeInst;
-        const idx = mesmas.findIndex(c => c === conta);
-        return `${nomeInst} ${idx + 1}`;
-    };
-
-    const handleNovoCliente = () => {
-        setClienteEmEdicao(null);
-        setFormCliente({ nome: '', consultor_id: null, codigo_avere: '', documento: '' });
-        setFormContas([]);
-        setErros({});
-        setTipoDoc('PF');
-        setIsModalOpen(true);
-    };
-
-    const handleEditarNoModal = (cliente: Cliente) => {
-        setClienteEmEdicao(cliente.id);
-        const docCliente = cliente.documento ? maskDoc(cliente.documento, ehCnpj(cliente.documento) ? 'PJ' : 'PF') : '';
-        setFormCliente({ id: cliente.id, nome: cliente.nome, consultor_id: cliente.consultor_id, codigo_avere: cliente.codigo_avere, documento: docCliente, data_nascimento: cliente.data_nascimento ?? null });
-        const contas = (contasPorCliente[cliente.id] || []).map(c => ({ ...c, uid: c.id || crypto.randomUUID() }));
-        setFormContas(contas);
-        // infere PF/PJ pelo documento do cliente (prioridade) ou de alguma conta (Ágora)
-        const docExistente = cliente.documento || contas.find(c => c.documento)?.documento;
-        setTipoDoc(ehCnpj(docExistente) ? 'PJ' : 'PF');
-        setErros({});
-        setIsModalOpen(true);
-    };
-
-    const validarModal = () => {
-        const e: { nome?: string; codigo_avere?: string } = {};
-        const nome = (formCliente.nome ?? '').trim();
-        if (!nome) e.nome = 'Nome é obrigatório.';
-        else if (tipoDoc === 'PF' && nomeTemNumero(nome)) e.nome = 'Nome não deve conter números.';
-        else if (nome.length < 3) e.nome = 'Nome muito curto.';
-        if (!(formCliente.codigo_avere ?? '').trim()) e.codigo_avere = 'Código Avere é obrigatório.';
-        setErros(e);
-        if (Object.keys(e).length > 0) return false;
-        // toda conta preenchida precisa de instituição
-        const semInst = formContas.find(c => (c.codigo || c.documento || c.apelido) && !c.instituicao_id);
-        if (semInst) { toast.error('Há uma conta sem instituição selecionada.'); return false; }
-        return true;
-    };
-
-    const handleSalvarModal = async () => {
-        if (!validarModal()) return;
-        setSalvando(true);
-        try {
-            let clienteId = clienteEmEdicao;
-            const payload = {
-                nome: (formCliente.nome ?? '').trim(),
-                consultor_id: formCliente.consultor_id || null,
-                codigo_avere: (formCliente.codigo_avere ?? '').trim() || null,
-                documento: apenasDigitos(formCliente.documento) || null,   // opcional, só dígitos
-                data_nascimento: formCliente.data_nascimento || null,
-            };
-            if (clienteEmEdicao) {
-                const { error } = await supabase.from('clientes').update(payload).eq('id', clienteEmEdicao);
-                if (error) throw error;
-            } else {
-                const { data: novo, error } = await supabase.from('clientes').insert([payload]).select('id').single();
-                if (error) throw error;
-                clienteId = novo!.id;
-            }
-
-            // Sincroniza contas PRESERVANDO os ids (NÃO apagar+recriar): os snapshots
-            // de posição têm conta_id ON DELETE CASCADE — apagar uma conta apaga o
-            // histórico dela. Então: UPDATE nas mantidas, INSERT nas novas, DELETE só
-            // nas que o usuário removeu de fato. O trigger sincroniza colunas legadas.
-            const contasValidas = formContas.filter(c => c.instituicao_id);
-            const idsMantidos = contasValidas.filter(c => c.id).map(c => c.id as string);
-
-            const { data: atuais } = await supabase.from('cliente_contas').select('id').eq('cliente_id', clienteId);
-            const removidos = (atuais || []).map((r: any) => r.id).filter((id: string) => !idsMantidos.includes(id));
-            if (removidos.length > 0) {
-                const { error: delErr } = await supabase.from('cliente_contas').delete().in('id', removidos);
-                if (delErr) throw delErr;
-            }
-
-            for (let i = 0; i < contasValidas.length; i++) {
-                const c = contasValidas[i];
-                const row = {
-                    cliente_id: clienteId,
-                    instituicao_id: c.instituicao_id,
-                    apelido: (c.apelido || '').trim() || null,
-                    codigo: (c.codigo || '').trim() || null,
-                    documento: (c.documento || '').trim() || null,
-                    ordem: i + 1,
-                };
-                const { error: upErr } = c.id
-                    ? await supabase.from('cliente_contas').update(row).eq('id', c.id)
-                    : await supabase.from('cliente_contas').insert(row);
-                if (upErr) throw upErr;
-            }
-
-            setIsModalOpen(false);
-            toast.success(clienteEmEdicao ? `Cliente "${payload.nome}" atualizado.` : `Cliente "${payload.nome}" cadastrado.`);
-            fetchData();
-        } catch (err: any) {
-            if (err?.code === '23505') {
-                toast.error('Código de conta já usado por outro cliente (número de conta deve ser único na instituição).');
-            } else {
-                console.error(err);
-                toast.error(`Erro ao salvar: ${err?.message ?? 'tente novamente.'}`);
-            }
-        } finally { setSalvando(false); }
-    };
-
-    const handleExcluirCliente = (id: string, nome: string) => {
-        toast(`Excluir o cliente ${nome}?`, {
-            action: { label: 'Excluir', onClick: async () => {
-                const { error } = await supabase.from('clientes').delete().eq('id', id);
-                if (error) {
-                    toast.error(error.code === '23503'
-                        ? 'Não é possível excluir: o cliente possui posições/carteiras vinculadas.'
-                        : `Erro ao excluir: ${error.message}`);
-                    return;
-                }
-                toast.success('Cliente excluído.');
-                fetchData();
-            }},
-            cancel: { label: 'Cancelar', onClick: () => {} },
-        });
+        return `${nomeInst} ${mesmas.findIndex(c => c === conta) + 1}`;
     };
 
     if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
 
-    const opcoesConsultores = [{ value: '', label: 'Sem consultor' }, ...consultores.map(c => ({ value: c.id, label: c.nome }))];
     const nomeConsultor = (id: string | null) => consultores.find(c => c.id === id)?.nome || '—';
+    const inativos = linhas.filter(l => !l.ativo).length;
 
     const linhasFiltradas = linhas.filter(l => {
         const termo = busca.toLowerCase();
         const matchBusca = !termo || l.nome.toLowerCase().includes(termo) || (l.codigo_avere?.toLowerCase().includes(termo) ?? false);
         const matchConsultor = !filtroConsultor || l.consultor_id === filtroConsultor;
         const matchInstituicao = !filtroInstituicao || (contasPorCliente[l.id] || []).some(c => c.instituicao_id === filtroInstituicao);
-        return matchBusca && matchConsultor && matchInstituicao;
+        return (mostrarInativos || l.ativo) && matchBusca && matchConsultor && matchInstituicao;
     });
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px', gap: '16px', flexWrap: 'wrap' }}>
                 <div>
                     <Typography variant="h1" style={{ fontWeight: 700 }}>Base de Clientes</Typography>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>Gestão de vínculos e contas por instituição.</Typography>
+                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>Vínculos e contas por instituição, vindos do HUB Avere.</Typography>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <TextField leftIcon={Search} placeholder="Pesquisar por nome ou cód. Avere..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '280px' }} />
-                    <select
-                        value={filtroConsultor}
-                        onChange={e => setFiltroConsultor(e.target.value)}
-                        style={{ height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--color-border-default)', fontSize: '13px', fontFamily: 'var(--font-family)', color: filtroConsultor ? 'var(--color-secundaria)' : 'var(--color-text-muted)', background: 'var(--color-white)', outline: 'none', cursor: 'pointer', minWidth: '200px', appearance: 'auto' }}
-                    >
+                    <select value={filtroConsultor} onChange={e => setFiltroConsultor(e.target.value)}
+                        style={{ ...selectFiltro, minWidth: '200px', color: filtroConsultor ? 'var(--color-secundaria)' : 'var(--color-text-muted)' }}>
                         <option value="">Todos os consultores</option>
                         {consultores.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                     </select>
-                    <select
-                        value={filtroInstituicao}
-                        onChange={e => setFiltroInstituicao(e.target.value)}
-                        style={{ height: '40px', padding: '0 12px', borderRadius: '8px', border: '1px solid var(--color-border-default)', fontSize: '13px', fontFamily: 'var(--font-family)', color: filtroInstituicao ? 'var(--color-secundaria)' : 'var(--color-text-muted)', background: 'var(--color-white)', outline: 'none', cursor: 'pointer', minWidth: '180px', appearance: 'auto' }}
-                    >
+                    <select value={filtroInstituicao} onChange={e => setFiltroInstituicao(e.target.value)}
+                        style={{ ...selectFiltro, minWidth: '180px', color: filtroInstituicao ? 'var(--color-secundaria)' : 'var(--color-text-muted)' }}>
                         <option value="">Todas as instituições</option>
                         {instituicoes.map(i => <option key={i.id} value={i.id}>{i.tipo === 'API' ? i.nome : `${i.nome} (manual)`}</option>)}
                     </select>
-                    <Button variant="solid" onClick={handleNovoCliente}>
-                        <Plus size={16} style={{ marginRight: 8 }} /> Novo Cliente
-                    </Button>
+                    {inativos > 0 && (
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--color-text-secondary)', cursor: 'pointer' }}>
+                            <input type="checkbox" checked={mostrarInativos} onChange={e => setMostrarInativos(e.target.checked)} />
+                            Mostrar inativos ({inativos})
+                        </label>
+                    )}
                 </div>
             </header>
+
+            <AvisoCadastroHub caminhoHub="/clientes" />
 
             <Card style={{ padding: 0, overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -360,16 +143,17 @@ export default function CadastroClientes() {
                             <th style={thStyle}>Cód. Avere</th>
                             <th style={thStyle}>Consultor</th>
                             <th style={thStyle}>Contas</th>
-                            <th style={{ ...thStyle, textAlign: 'center' }}>Ações</th>
+                            {isMaster && <th style={{ ...thStyle, textAlign: 'center' }}>HUB</th>}
                         </tr>
                     </thead>
                     <tbody>
                         {linhasFiltradas.map(l => {
                             const contas = contasPorCliente[l.id] || [];
                             return (
-                                <tr key={l.id} style={{ borderBottom: '1px solid var(--color-surface-sunken)' }}>
+                                <tr key={l.id} style={{ borderBottom: '1px solid var(--color-surface-sunken)', opacity: l.ativo ? 1 : 0.5 }}>
                                     <td style={{ ...tdStyle, minWidth: '160px' }}>
                                         <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-secundaria)' }}>{l.nome}</span>
+                                        {!l.ativo && <span style={{ marginLeft: 8, fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>inativo</span>}
                                     </td>
                                     <td style={{ ...tdStyle, minWidth: '110px' }}>
                                         <span style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 600, color: 'var(--color-primaria)' }}>{l.codigo_avere || '—'}</span>
@@ -382,15 +166,13 @@ export default function CadastroClientes() {
                                             <span style={{ opacity: 0.3, fontSize: '12px' }}>nenhuma conta</span>
                                         ) : (
                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                                {contas.map((c, i) => {
-                                                    const inst = instMap.get(c.instituicao_id);
-                                                    const agora = isAgoraNome(inst?.nome);
+                                                {contas.map(c => {
+                                                    const agora = isAgoraNome(instMap.get(c.instituicao_id)?.nome);
                                                     const detalhe = agora ? [c.documento, c.codigo].filter(Boolean).join(' · ') : c.codigo;
                                                     return (
-                                                        <span key={c.id || i} title={detalhe || ''} style={{
+                                                        <span key={c.id} title={detalhe || ''} style={{
                                                             display: 'inline-flex', alignItems: 'baseline', gap: '6px',
-                                                            background: 'var(--color-surface-sunken)', borderRadius: '6px', padding: '3px 8px',
-                                                            fontSize: '11px',
+                                                            background: 'var(--color-surface-sunken)', borderRadius: '6px', padding: '3px 8px', fontSize: '11px',
                                                         }}>
                                                             <strong style={{ color: 'var(--color-secundaria)' }}>{labelConta(c, contas)}</strong>
                                                             <span style={{ fontFamily: 'monospace', opacity: 0.6 }}>{detalhe || '—'}</span>
@@ -400,146 +182,23 @@ export default function CadastroClientes() {
                                             </div>
                                         )}
                                     </td>
-                                    <td style={tdStyle}>
-                                        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-                                            <Pencil size={16} color="var(--color-text-muted)" style={{ cursor: 'pointer' }} onClick={() => handleEditarNoModal(l)} />
-                                            <Trash2 size={16} color="var(--color-danger-solid)" style={{ cursor: 'pointer', opacity: 0.8 }} onClick={() => handleExcluirCliente(l.id, l.nome)} />
-                                        </div>
-                                    </td>
+                                    {isMaster && (
+                                        <td style={{ ...tdStyle, textAlign: 'center' }}>
+                                            <a href={`${HUB_URL}/clientes/${l.id}`} target="_blank" rel="noopener noreferrer" title="Editar no HUB Avere"
+                                                style={{ color: 'var(--color-text-muted)', display: 'inline-flex' }}>
+                                                <ExternalLink size={16} />
+                                            </a>
+                                        </td>
+                                    )}
                                 </tr>
                             );
                         })}
                         {linhasFiltradas.length === 0 && (
-                            <tr><td colSpan={5}><EstadoVazio compacto icon={UsersIcon2} titulo="Nenhum cliente encontrado" dica="Ajuste a busca — ou cadastre um cliente novo pela ação acima." /></td></tr>
+                            <tr><td colSpan={isMaster ? 5 : 4}><EstadoVazio compacto icon={UsersIcon2} titulo="Nenhum cliente encontrado" dica="Ajuste a busca ou os filtros." /></td></tr>
                         )}
                     </tbody>
                 </table>
             </Card>
-
-            <Modal open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <ModalContent style={{ maxWidth: '760px', width: '92vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}>
-                    <ModalHeader>
-                        <ModalTitle>{clienteEmEdicao ? 'Editar Cliente' : 'Novo Cliente'}</ModalTitle>
-                        <ModalDescription>Identificação do cliente e suas contas por instituição.</ModalDescription>
-                    </ModalHeader>
-
-                    <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
-                        {/* Perfil PF/PJ — governa labels e a máscara do documento (Ágora) */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tipo de cliente</label>
-                            <div style={{ display: 'flex', gap: '4px', background: 'var(--color-surface-sunken)', padding: '3px', borderRadius: '8px' }}>
-                                {([['PF', 'Pessoa Física'], ['PJ', 'Pessoa Jurídica']] as const).map(([t, rotulo]) => (
-                                    <button key={t} type="button"
-                                        onClick={() => {
-                                            setTipoDoc(t);
-                                            setFormCliente(p => ({ ...p, documento: p.documento ? maskDoc(p.documento, t) : p.documento }));
-                                            setFormContas(prev => prev.map(c => ({ ...c, documento: c.documento ? maskDoc(c.documento, t) : c.documento })));
-                                        }}
-                                        style={{
-                                            border: 'none', cursor: 'pointer', height: '26px', padding: '0 14px', borderRadius: '6px',
-                                            fontSize: '11px', fontWeight: 700,
-                                            background: tipoDoc === t ? 'var(--color-white)' : 'transparent',
-                                            color: tipoDoc === t ? 'var(--color-secundaria)' : 'var(--color-text-muted)',
-                                            boxShadow: tipoDoc === t ? '0 1px 3px var(--color-border-default)' : 'none',
-                                        }}>
-                                        {rotulo}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div>
-                            <TextField
-                                label={tipoDoc === 'PJ' ? 'Razão Social' : 'Nome Completo'}
-                                value={formCliente.nome || ''}
-                                onChange={e => { setFormCliente(p => ({ ...p, nome: e.target.value })); if (erros.nome) setErros(er => ({ ...er, nome: undefined })); }}
-                            />
-                            {erros.nome && <p style={{ margin: '4px 0 0', fontSize: '11px', color: 'var(--color-danger-solid)' }}>{erros.nome}</p>}
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'start' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Consultor Responsável</label>
-                                <Combobox options={opcoesConsultores} value={formCliente.consultor_id || ''} onChange={(val) => setFormCliente(p => ({ ...p, consultor_id: val || null }))} placeholder="Selecione um consultor..." />
-                            </div>
-                            <div>
-                                <TextField
-                                    label="Cód. Avere"
-                                    value={formCliente.codigo_avere || ''}
-                                    onChange={e => { setFormCliente(p => ({ ...p, codigo_avere: e.target.value })); if (erros.codigo_avere) setErros(er => ({ ...er, codigo_avere: undefined })); }}
-                                />
-                                {erros.codigo_avere && <p style={{ margin: '4px 0 0', fontSize: '11px', color: 'var(--color-danger-solid)' }}>{erros.codigo_avere}</p>}
-                            </div>
-                        </div>
-
-                        <div>
-                            <TextField
-                                label={tipoDoc === 'PJ' ? 'CNPJ (opcional)' : 'CPF (opcional)'}
-                                value={formCliente.documento || ''}
-                                onChange={e => setFormCliente(p => ({ ...p, documento: maskDoc(e.target.value, tipoDoc) }))}
-                            />
-                            <p style={{ margin: '4px 0 0', fontSize: '10px', color: 'var(--color-text-muted)' }}>
-                                Opcional. Identifica o cliente em fontes que indexam por documento (ex.: Avenue por CPF).
-                            </p>
-                        </div>
-
-                        {tipoDoc !== 'PJ' && (
-                            <div>
-                                <TextField
-                                    label="Data de nascimento (opcional)"
-                                    type="date"
-                                    value={formCliente.data_nascimento || ''}
-                                    onChange={e => setFormCliente(p => ({ ...p, data_nascimento: e.target.value || null }))}
-                                    style={{ maxWidth: 220 }}
-                                />
-                                <p style={{ margin: '4px 0 0', fontSize: '10px', color: 'var(--color-text-muted)' }}>
-                                    Alimenta o lembrete de aniversário do consultor (Notificações).
-                                </p>
-                            </div>
-                        )}
-
-                        {/* ── Contas por instituição ── */}
-                        <div style={{ borderTop: '1px solid var(--color-border-subtle)', paddingTop: '16px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Contas</label>
-                                <span style={{ fontSize: '10px', color: 'var(--color-text-muted)' }}>Um cliente pode ter várias contas na mesma instituição.</span>
-                            </div>
-
-                            {formContas.length === 0 && (
-                                <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', margin: '0 0 10px' }}>Nenhuma conta. Adicione abaixo.</p>
-                            )}
-
-                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleContasDragEnd}>
-                                <SortableContext items={formContas.map(c => c.uid!)} strategy={verticalListSortingStrategy}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                        {formContas.map((c, i) => (
-                                            <ContaSortable
-                                                key={c.uid}
-                                                conta={c}
-                                                instituicoes={instituicoes}
-                                                tipoDoc={tipoDoc}
-                                                onChange={(patch) => setFormContas(prev => prev.map((x, j) => j === i ? { ...x, ...patch } : x))}
-                                                onRemove={() => setFormContas(prev => prev.filter((_, j) => j !== i))}
-                                            />
-                                        ))}
-                                    </div>
-                                </SortableContext>
-                            </DndContext>
-
-                            <Button variant="outline" onClick={() => setFormContas(prev => [...prev, { uid: crypto.randomUUID(), instituicao_id: '', apelido: '', codigo: '', documento: '' }])} style={{ marginTop: '10px' }}>
-                                <Plus size={14} style={{ marginRight: 6 }} /> Adicionar conta
-                            </Button>
-                        </div>
-                    </div>
-
-                    <ModalFooter>
-                        <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                        <Button variant="solid" onClick={handleSalvarModal} disabled={salvando}>
-                            {salvando ? <Spinner size="sm" /> : 'Confirmar'}
-                        </Button>
-                    </ModalFooter>
-                </ModalContent>
-            </Modal>
         </div>
     );
 }
