@@ -97,6 +97,8 @@ export declare interface CheckboxProps extends InputHTMLAttributes<HTMLInputElem
 
 export declare function cn(...inputs: ClassValue[]): string;
 
+export declare type CodigoModulo = 'hub' | 'consolidador' | 'financeiro';
+
 export declare interface ColumnDef<T> {
     header: string;
     accessorKey?: keyof T;
@@ -399,6 +401,16 @@ export declare const ModalTitle: React_2.ForwardRefExoticComponent<Omit<DialogPr
 
 export declare const ModalTrigger: React_2.ForwardRefExoticComponent<DialogPrimitive.DialogTriggerProps & React_2.RefAttributes<HTMLButtonElement>>;
 
+export declare interface ModuloAvere {
+    codigo: CodigoModulo;
+    nome: string;
+    descricao: string;
+    url: string;
+    icone: LucideIcon;
+}
+
+export declare const MODULOS_AVERE: ModuloAvere[];
+
 export declare const MultiSelect: default_2.ForwardRefExoticComponent<MultiSelectProps & default_2.RefAttributes<HTMLInputElement>>;
 
 export declare interface MultiSelectProps extends Omit<default_2.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
@@ -641,6 +653,21 @@ export declare function TopBar({ onToggleMobile, className, children, ...props }
 export declare interface TopBarProps extends HTMLAttributes<HTMLElement> {
     onToggleMobile: () => void;
     children?: ReactNode;
+}
+
+/** Trocador de sistemas da Avere para a barra de cima: mostra o nome do sistema
+ *  atual e, ao clicar, os outros. Cada sistema tem login próprio — se aquele
+ *  navegador nunca entrou no destino, ele pede login uma vez (decisão 09/10/2026:
+ *  login único adiado). Com um só sistema visível, vira rótulo estático. */
+export declare function TrocadorModulos({ atual, modulos, className }: TrocadorModulosProps): JSX.Element | null;
+
+export declare interface TrocadorModulosProps {
+    /** Sistema em que o usuário está. */
+    atual: CodigoModulo;
+    /** Quais sistemas listar (o atual entra sempre). Padrão: todos.
+     *  O front decide pelo papel do usuário — ex.: consultor só vê o Consolidador. */
+    modulos?: CodigoModulo[];
+    className?: string;
 }
 
 export declare const Typography: ForwardRefExoticComponent<TypographyProps & RefAttributes<HTMLElement>>;
