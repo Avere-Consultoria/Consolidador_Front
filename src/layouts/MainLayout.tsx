@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, BellRing, ClipboardCheck, LayoutGrid, ListTodo, Search } from 'lucide-react';
 import { CommandPalette } from '../components/shared/CommandPalette';
 import { ErrorBoundary } from '../components/shared/ErrorBoundary';
-import { SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, MarcadorProblemas, type ComboboxLevel } from 'avere-ui';
+import { SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, MarcadorProblemas, TrocadorModulos, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -342,7 +342,11 @@ export default function MainLayout() {
                 borderRadius: 'var(--radius-sm)', padding: '1px 6px',
               }}>Ctrl K</kbd>
             </button>
-            <HierarchicalCombobox levels={comboboxLevels} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
+              <HierarchicalCombobox levels={comboboxLevels} />
+              {/* Só o master circula entre sistemas; consultor usa só o Consolidador */}
+              {isMaster && <TrocadorModulos atual="consolidador" />}
+            </div>
           </div>
         </TopBar>
         <div style={{ padding: '32px', flex: 1, overflowY: 'auto' }}>
