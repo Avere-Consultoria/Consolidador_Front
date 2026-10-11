@@ -4,6 +4,7 @@ import { Typography, Card, Badge, Button, Spinner } from 'avere-ui';
 import { ClipboardCheck, ArrowRight, Inbox } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import CercaPosicao from '../components/pendencias/CercaPosicao';
+import FilaEmails from '../components/pendencias/FilaEmails';
 
 interface Pendencia {
     id: string;
@@ -86,6 +87,7 @@ export default function Pendencias() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <FilaEmails />
             <CercaPosicao />
 
             <header style={{ borderBottom: '1px solid var(--color-borda)', paddingBottom: '20px' }}>
