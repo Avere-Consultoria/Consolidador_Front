@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, BellRing, ClipboardCheck, LayoutGrid, ListTodo, Search } from 'lucide-react';
 import { CommandPalette } from '../components/shared/CommandPalette';
 import { ErrorBoundary } from '../components/shared/ErrorBoundary';
-import { SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, MarcadorProblemas, type ComboboxLevel } from 'avere-ui';
+import { IndicadorAmbiente, OutrosSistemas, SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, MarcadorProblemas, type ComboboxLevel } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,8 +11,6 @@ import { useAuth } from '../contexts/AuthContext';
 import 'avere-ui/dist/avere-ui.css';
 import styles from '../App.module.css';
 import { supabase } from '../services/supabase';
-import LogoAvereIcone from '../assets/A_Azul.svg';
-import LogoAvereCompleta from '../assets/B_Azul.svg';
 
 export default function MainLayout() {
   // ?menu=fechado (deep-links da prévia de Notificações / e-mail): abre com a sidebar recolhida
@@ -229,13 +227,7 @@ export default function MainLayout() {
           setIsCollapsed(novo);
           localStorage.setItem('sidebar:collapsed', novo ? '1' : '0');
         }}
-        logo={
-          isCollapsed ? (
-            <img src={LogoAvereIcone} alt="Avere" className={styles.logoIcon} />
-          ) : (
-            <img src={LogoAvereCompleta} alt="Avere UI" className={styles.logoFull} />
-          )
-        }
+        logo={c => <IndicadorAmbiente atual="consolidador" compacto={c} />}
         isOpenMobile={false}
         onCloseMobile={() => { }}
       >
@@ -308,6 +300,8 @@ export default function MainLayout() {
             />
           </>
         )}
+        {/* Navegação entre sistemas: só o master circula (sem login único, consultor usa só o Consolidador) */}
+        {isMaster && <OutrosSistemas atual="consolidador" />}
       </SideBar>
 
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', background: 'var(--color-fundo)' }}>
