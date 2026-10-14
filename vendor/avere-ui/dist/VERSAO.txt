@@ -1,3 +1,3 @@
-versao: 1.5.1
-commit: 59ed32e (com alterações não commitadas)
+versao: 1.5.2
+commit: 1c0d7b4 (com alterações não commitadas)
 build: 2026-10-14

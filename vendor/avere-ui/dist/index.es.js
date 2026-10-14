@@ -13485,7 +13485,7 @@ function SC({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i =
 		schema_versao: 1,
 		app: e,
 		versao_app: t,
-		versao_avere_ui: "1.5.1",
+		versao_avere_ui: "1.5.2",
 		ambiente: vC(),
 		rota: Pb(window.location.href),
 		titulo_tela: Nb(document.title),
@@ -14721,16 +14721,16 @@ var Dw = {
 	detalhe: "_detalhe_ujyjy_148",
 	rodape: "_rodape_ujyjy_163",
 	somenteLeitor: "_somenteLeitor_ujyjy_183"
-}, kw = (e) => e.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(), Aw = "\0", jw = (e, t, n) => {
-	let r = e.split(Aw)[0], i = kw(t).trim().split(/\s+/).filter(Boolean);
-	if (!i.length) return 1;
-	let a = n?.length ? `${r} ${n.join(" ")}` : r;
-	if (i.every((e) => a.includes(e))) return i.every((e) => ` ${a}`.includes(` ${e}`)) ? 1 : .9;
-	if (i.every((e) => /^\d+$/.test(e))) return 0;
-	let o = tw(r, i.join(" "), n);
-	return o >= Mw ? o * .5 : 0;
-}, Mw = .1, Nw = (e, t) => `${e}${Aw}${t}`;
-function Pw(e) {
+}, kw = (e) => e.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(), Aw = "\0", jw = (e) => kw(e).trim().split(/\s+/).filter(Boolean), Mw = (e, t) => t.every((t) => e.includes(t)), Nw = (e, t, n, r) => {
+	let i = e.split(Aw)[0], a = jw(t);
+	if (!a.length) return 1;
+	let o = n?.length ? `${i} ${n.join(" ")}` : i;
+	if (Mw(o, a)) return a.every((e) => ` ${o}`.includes(` ${e}`)) ? 1 : .9;
+	if (!r || a.every((e) => /^\d+$/.test(e))) return 0;
+	let s = tw(i, a.join(" "), n);
+	return s >= Pw ? s * .5 : 0;
+}, Pw = .1, Fw = (e, t) => `${e}${Aw}${t}`;
+function Iw(e) {
 	try {
 		let t = JSON.parse(localStorage.getItem(e) ?? "[]");
 		return Array.isArray(t) ? t : [];
@@ -14738,14 +14738,14 @@ function Pw(e) {
 		return [];
 	}
 }
-function Fw(e, t, n) {
+function Lw(e, t, n) {
 	try {
-		let r = [t, ...Pw(e).filter((e) => e !== t)].slice(0, n);
+		let r = [t, ...Iw(e).filter((e) => e !== t)].slice(0, n);
 		localStorage.setItem(e, JSON.stringify(r));
 	} catch {}
 }
-var Iw = typeof navigator < "u" && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
-function Lw({ lista: e }) {
+var Rw = typeof navigator < "u" && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+function zw({ lista: e }) {
 	return s(() => {
 		let t = e.current;
 		if (!t) return;
@@ -14754,7 +14754,7 @@ function Lw({ lista: e }) {
 		return () => cancelAnimationFrame(n);
 	}, [Sw((e) => e.search), e]), null;
 }
-function Rw() {
+function Bw() {
 	let e = Sw((e) => e.filtered.count), t = Sw((e) => e.search);
 	return /* @__PURE__ */ p("div", {
 		"aria-live": "polite",
@@ -14762,7 +14762,7 @@ function Rw() {
 		children: t ? `${e} ${e === 1 ? "resultado" : "resultados"}` : ""
 	});
 }
-function zw({ grupos: e, placeholder: t = "Buscar…", textoVazio: n = (e) => `Nada encontrado para "${e}".`, mostrarBotao: r = !0, rotuloBotao: i = "Buscar…", atalho: o = !0, maxRecentes: c = 6, chaveRecentes: h = "avere-ui:busca-recentes", aberto: g, onAbertoChange: _ }) {
+function Vw({ grupos: e, placeholder: t = "Buscar…", textoVazio: n = (e) => `Nada encontrado para "${e}".`, mostrarBotao: r = !0, rotuloBotao: i = "Buscar…", atalho: o = !0, maxRecentes: c = 6, chaveRecentes: h = "avere-ui:busca-recentes", aberto: g, onAbertoChange: _ }) {
 	let [v, y] = d(!1), b = g ?? v, x = u(null), S = a((e) => {
 		e && !b && (x.current = document.activeElement), g === void 0 && y(e), _?.(e);
 	}, [
@@ -14796,14 +14796,14 @@ function zw({ grupos: e, placeholder: t = "Buscar…", textoVazio: n = (e) => `N
 	let E = l(() => {
 		if (!b) return [];
 		let t = /* @__PURE__ */ new Map();
-		for (let n of e) if (n.recentes) for (let e of n.itens) t.set(Nw(n.titulo, e.id), e);
-		return Pw(h).map((e) => t.get(e)).filter((e) => !!e);
+		for (let n of e) if (n.recentes) for (let e of n.itens) t.set(Fw(n.titulo, e.id), e);
+		return Iw(h).map((e) => t.get(e)).filter((e) => !!e);
 	}, [
 		b,
 		e,
 		h
 	]), D = (e, t) => {
-		e.recentes && Fw(h, Nw(e.titulo, t.id), c), S(!1), t.aoEscolher();
+		e.recentes && Lw(h, Fw(e.titulo, t.id), c), S(!1), t.aoEscolher();
 	}, O = (e) => kw(`${e.rotulo} ${e.detalhe ?? ""}`), k = (e, t) => /* @__PURE__ */ m(f, { children: [
 		t && /* @__PURE__ */ p(t, { size: 16 }),
 		/* @__PURE__ */ p("span", {
@@ -14814,19 +14814,22 @@ function zw({ grupos: e, placeholder: t = "Buscar…", textoVazio: n = (e) => `N
 			className: Ow.detalhe,
 			children: e.detalhe
 		})
-	] }), A = C.trim() === "";
+	] }), A = C.trim() === "", j = l(() => {
+		let t = jw(C);
+		return t.length ? e.some((e) => e.itens.some((e) => Mw(`${O(e)} ${(e.palavrasChave ?? []).map(kw).join(" ")}`, t))) : !0;
+	}, [C, e]), M = a((e, t, n) => Nw(e, t, n, !j), [j]);
 	return /* @__PURE__ */ m(f, { children: [r && /* @__PURE__ */ m("button", {
 		type: "button",
 		className: Ow.botao,
 		onClick: () => S(!0),
-		"aria-label": `Busca rápida (${Iw ? "⌘K" : "Ctrl+K"})`,
-		"aria-keyshortcuts": o ? Iw ? "Meta+K" : "Control+K" : void 0,
+		"aria-label": `Busca rápida (${Rw ? "⌘K" : "Ctrl+K"})`,
+		"aria-keyshortcuts": o ? Rw ? "Meta+K" : "Control+K" : void 0,
 		children: [
 			/* @__PURE__ */ p(je, { size: 15 }),
 			/* @__PURE__ */ p("span", { children: i }),
 			o && /* @__PURE__ */ p("kbd", {
 				className: Ow.tecla,
-				children: Iw ? "⌘K" : "Ctrl K"
+				children: Rw ? "⌘K" : "Ctrl K"
 			})
 		]
 	}), /* @__PURE__ */ m(gw.Dialog, {
@@ -14834,7 +14837,7 @@ function zw({ grupos: e, placeholder: t = "Buscar…", textoVazio: n = (e) => `N
 		onOpenChange: S,
 		label: "Busca rápida",
 		shouldFilter: !A,
-		filter: jw,
+		filter: M,
 		loop: !0,
 		overlayClassName: Ow.fundo,
 		contentClassName: Ow.janela,
@@ -14860,7 +14863,7 @@ function zw({ grupos: e, placeholder: t = "Buscar…", textoVazio: n = (e) => `N
 						children: E.map((t) => {
 							let n = e.find((e) => e.recentes && e.itens.includes(t));
 							return /* @__PURE__ */ p(gw.Item, {
-								value: `${O(t)}${Aw}recente${Aw}${Nw(n.titulo, t.id)}`,
+								value: `${O(t)}${Aw}recente${Aw}${Fw(n.titulo, t.id)}`,
 								onSelect: () => D(n, t),
 								children: k(t, pe)
 							}, `recente-${n.titulo}-${t.id}`);
@@ -14869,7 +14872,7 @@ function zw({ grupos: e, placeholder: t = "Buscar…", textoVazio: n = (e) => `N
 					e.map((e) => e.itens.length > 0 && /* @__PURE__ */ p(gw.Group, {
 						heading: e.titulo,
 						children: e.itens.map((t) => /* @__PURE__ */ p(gw.Item, {
-							value: `${O(t)}${Aw}${Nw(e.titulo, t.id)}`,
+							value: `${O(t)}${Aw}${Fw(e.titulo, t.id)}`,
 							keywords: t.palavrasChave?.map(kw),
 							onSelect: () => D(e, t),
 							children: k(t, t.icone)
@@ -14890,14 +14893,14 @@ function zw({ grupos: e, placeholder: t = "Buscar…", textoVazio: n = (e) => `N
 					/* @__PURE__ */ m("span", { children: [/* @__PURE__ */ p("kbd", { children: "esc" }), " fechar"] })
 				]
 			}),
-			/* @__PURE__ */ p(Rw, {}),
-			/* @__PURE__ */ p(Lw, { lista: T })
+			/* @__PURE__ */ p(Bw, {}),
+			/* @__PURE__ */ p(zw, { lista: T })
 		]
 	})] });
 }
 //#endregion
 //#region src/hooks/useAlturaDisponivel.ts
-function Bw(e = 260) {
+function Hw(e = 260) {
 	let t = u(null), [n, r] = d();
 	return s(() => {
 		let n = () => {
@@ -14918,16 +14921,16 @@ function Bw(e = 260) {
 }
 //#endregion
 //#region src/hooks/useEdicaoInline.ts
-function Vw(e) {
+function Uw(e) {
 	return !!e && e.matches("button[class*=\"cbTrigger\"], button[role=\"combobox\"]");
 }
-var Hw = "input:not([type=\"hidden\"]):not([disabled]), button[class*=\"cbTrigger\"], button[role=\"combobox\"], [role=\"switch\"]";
-function Uw({ ativo: e, seletorLinha: t, coluna: n }) {
+var Ww = "input:not([type=\"hidden\"]):not([disabled]), button[class*=\"cbTrigger\"], button[role=\"combobox\"], [role=\"switch\"]";
+function Gw({ ativo: e, seletorLinha: t, coluna: n }) {
 	s(() => {
 		if (!e || n == null) return;
 		let r = requestAnimationFrame(() => {
-			let e = (document.querySelector(t)?.children[n])?.querySelector(Hw);
-			e && (e.focus(), e instanceof HTMLInputElement ? e.select() : Vw(e) && e.click());
+			let e = (document.querySelector(t)?.children[n])?.querySelector(Ww);
+			e && (e.focus(), e instanceof HTMLInputElement ? e.select() : Uw(e) && e.click());
 		});
 		return () => cancelAnimationFrame(r);
 	}, [
@@ -14936,7 +14939,7 @@ function Uw({ ativo: e, seletorLinha: t, coluna: n }) {
 		n
 	]);
 }
-function Ww() {
+function Kw() {
 	s(() => {
 		let e = !1, t = (t) => {
 			t.key === "Tab" && (e = !0);
@@ -14946,55 +14949,55 @@ function Ww() {
 			if (!e) return;
 			e = !1;
 			let n = t.target;
-			Vw(n) && n.getAttribute("aria-expanded") !== "true" && (n.hasAttribute("disabled") || setTimeout(() => n.click(), 0));
+			Uw(n) && n.getAttribute("aria-expanded") !== "true" && (n.hasAttribute("disabled") || setTimeout(() => n.click(), 0));
 		};
 		return document.addEventListener("keydown", t, !0), document.addEventListener("mousedown", n, !0), document.addEventListener("focusin", r), () => {
 			document.removeEventListener("keydown", t, !0), document.removeEventListener("mousedown", n, !0), document.removeEventListener("focusin", r);
 		};
 	}, []);
 }
-function Gw(e) {
+function qw(e) {
 	let t = e.target?.closest?.("td");
 	return t?.parentElement ? [...t.parentElement.children].indexOf(t) : null;
 }
 //#endregion
 //#region src/utils/format.ts
-var Kw = new Intl.NumberFormat("pt-BR", {
+var Jw = new Intl.NumberFormat("pt-BR", {
 	style: "currency",
 	currency: "BRL"
-}), qw = new Intl.NumberFormat("pt-BR", {
+}), Yw = new Intl.NumberFormat("pt-BR", {
 	minimumFractionDigits: 2,
 	maximumFractionDigits: 2
 });
-function Jw(e) {
-	return Kw.format(e);
+function Xw(e) {
+	return Jw.format(e);
 }
-function Yw(e) {
-	return qw.format(e);
+function Zw(e) {
+	return Yw.format(e);
 }
-var Xw = new Intl.NumberFormat("pt-BR", {
+var Qw = new Intl.NumberFormat("pt-BR", {
 	notation: "compact",
 	maximumFractionDigits: 1
 });
-function Zw(e) {
-	return Xw.format(e);
+function $w(e) {
+	return Qw.format(e);
 }
-function Qw(e) {
+function eT(e) {
 	let [t, n, r] = e.slice(0, 10).split("-");
 	return `${r}/${n}/${t}`;
 }
-function $w(e) {
+function tT(e) {
 	let t = e.includes("-"), n = e.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
 	if (!n) return "";
 	let r = parseInt(n.slice(0, 15), 10);
 	return ((t ? -r : r) / 100).toFixed(2);
 }
-function eT(e) {
+function nT(e) {
 	if (e === "" || e == null) return "";
 	let t = Number(e);
-	return Number.isNaN(t) ? "" : `R$ ${qw.format(t)}`;
+	return Number.isNaN(t) ? "" : `R$ ${Yw.format(t)}`;
 }
-var tT = [
+var rT = [
 	"Jan",
 	"Fev",
 	"Mar",
@@ -15007,49 +15010,49 @@ var tT = [
 	"Out",
 	"Nov",
 	"Dez"
-], nT = {
+], iT = {
 	card: "_card_buvlb_1",
 	header: "_header_buvlb_21",
 	title: "_title_buvlb_35",
 	description: "_description_buvlb_51",
 	content: "_content_buvlb_63",
 	footer: "_footer_buvlb_81"
-}, rT = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
+}, aT = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
 	ref: n,
-	className: S(nT.card, e),
+	className: S(iT.card, e),
 	...t
 }));
-rT.displayName = "Card";
-var iT = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
+aT.displayName = "Card";
+var oT = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
 	ref: n,
-	className: S(nT.header, e),
+	className: S(iT.header, e),
 	...t
 }));
-iT.displayName = "CardHeader";
-var aT = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("h3", {
+oT.displayName = "CardHeader";
+var sT = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("h3", {
 	ref: n,
-	className: S(nT.title, e),
+	className: S(iT.title, e),
 	...t
 }));
-aT.displayName = "CardTitle";
-var oT = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("p", {
+sT.displayName = "CardTitle";
+var cT = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("p", {
 	ref: n,
-	className: S(nT.description, e),
+	className: S(iT.description, e),
 	...t
 }));
-oT.displayName = "CardDescription";
-var sT = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
+cT.displayName = "CardDescription";
+var lT = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
 	ref: n,
-	className: S(nT.content, e),
+	className: S(iT.content, e),
 	...t
 }));
-sT.displayName = "CardContent";
-var cT = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
+lT.displayName = "CardContent";
+var uT = i(({ className: e, ...t }, n) => /* @__PURE__ */ p("div", {
 	ref: n,
-	className: S(nT.footer, e),
+	className: S(iT.footer, e),
 	...t
 }));
-cT.displayName = "CardFooter";
+uT.displayName = "CardFooter";
 var $ = {
 	overlay: "_overlay_18fpy_3",
 	sidebar: "_sidebar_18fpy_23",
@@ -15085,18 +15088,18 @@ var $ = {
 	mobileOpen: "_mobileOpen_18fpy_681",
 	logoPlaceholder: "_logoPlaceholder_18fpy_707",
 	logoPulse: "_logoPulse_18fpy_1"
-}, lT = n({ isCollapsed: !1 });
-function uT() {
-	return o(lT);
+}, dT = n({ isCollapsed: !1 });
+function fT() {
+	return o(dT);
 }
 //#endregion
 //#region src/components/SideBar/index.tsx
-function dT(e) {
+function pT(e) {
 	let t = e.trim().split(/\s+/);
 	return t.length === 1 ? t[0].substring(0, 2).toUpperCase() : (t[0][0] + t[t.length - 1][0]).toUpperCase();
 }
-function fT({ icon: e, label: t, active: n, badge: r, href: i, externo: a, className: s, ...c }) {
-	let { isCollapsed: l } = o(lT), u = /* @__PURE__ */ m(i ? "a" : "button", {
+function mT({ icon: e, label: t, active: n, badge: r, href: i, externo: a, className: s, ...c }) {
+	let { isCollapsed: l } = o(dT), u = /* @__PURE__ */ m(i ? "a" : "button", {
 		href: i,
 		className: S($.item, n && $.itemActive, l ? $.itemCollapsed : $.itemExpanded, s),
 		"aria-current": n ? "page" : void 0,
@@ -15135,8 +15138,8 @@ function fT({ icon: e, label: t, active: n, badge: r, href: i, externo: a, class
 		})] })
 	}) : u;
 }
-function pT({ label: e }) {
-	let { isCollapsed: t } = o(lT);
+function hT({ label: e }) {
+	let { isCollapsed: t } = o(dT);
 	return /* @__PURE__ */ m("div", {
 		className: S($.section, t && $.sectionCollapsed),
 		children: [!t && /* @__PURE__ */ p("span", {
@@ -15145,7 +15148,7 @@ function pT({ label: e }) {
 		}), /* @__PURE__ */ p("span", { className: $.sectionRule })]
 	});
 }
-function mT({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, logo: i, children: a, userName: o = "Usuário", userRole: s = "Colaborador", userAvatarUrl: c, onLogout: l, className: u, ...d }) {
+function gT({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, logo: i, children: a, userName: o = "Usuário", userRole: s = "Colaborador", userAvatarUrl: c, onLogout: l, className: u, ...d }) {
 	return /* @__PURE__ */ m(f, { children: [n && /* @__PURE__ */ p("div", {
 		className: $.overlay,
 		onClick: r
@@ -15166,7 +15169,7 @@ function mT({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, lo
 					children: p(e ? le : V, { size: 15 })
 				})]
 			}),
-			/* @__PURE__ */ p(lT.Provider, {
+			/* @__PURE__ */ p(dT.Provider, {
 				value: { isCollapsed: e },
 				children: /* @__PURE__ */ p("nav", {
 					className: $.nav,
@@ -15181,7 +15184,7 @@ function mT({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, lo
 					children: [
 						/* @__PURE__ */ p(N, {
 							src: c,
-							initials: dT(o),
+							initials: pT(o),
 							size: e ? "sm" : "md",
 							className: $.brandAvatar
 						}),
@@ -15216,7 +15219,7 @@ function mT({ isCollapsed: e, onToggle: t, isOpenMobile: n, onCloseMobile: r, lo
 		]
 	})] });
 }
-var hT = {
+var _T = {
 	header: "_header_u5732_1",
 	buttonGroup: "_buttonGroup_u5732_43",
 	contextArea: "_contextArea_u5732_53",
@@ -15225,29 +15228,29 @@ var hT = {
 };
 //#endregion
 //#region src/components/TopBar/index.tsx
-function gT({ onToggleMobile: e, className: t, children: n, ...r }) {
+function vT({ onToggleMobile: e, className: t, children: n, ...r }) {
 	return /* @__PURE__ */ m("header", {
-		className: S(hT.header, t),
+		className: S(_T.header, t),
 		...r,
 		children: [/* @__PURE__ */ p("div", {
-			className: hT.buttonGroup,
+			className: _T.buttonGroup,
 			children: /* @__PURE__ */ p(Je, {
 				variant: "ghost",
 				intent: "secundaria",
-				className: S(hT.mobileOnly),
+				className: S(_T.mobileOnly),
 				onClick: e,
 				"aria-label": "Abrir menu",
 				children: /* @__PURE__ */ p(De, { size: 20 })
 			})
 		}), /* @__PURE__ */ p("div", {
-			className: hT.contextArea,
+			className: _T.contextArea,
 			children: n
 		})]
 	});
 }
 //#endregion
 //#region src/components/NavegacaoSistemas/modulos.ts
-var _T = [
+var yT = [
 	{
 		codigo: "consolidador",
 		nome: "Consolidador",
@@ -15330,7 +15333,7 @@ var _T = [
 			}
 		]
 	}
-], vT = {
+], bT = {
 	ambiente: "_ambiente_1faxr_2",
 	ambienteCompacto: "_ambienteCompacto_1faxr_11",
 	ambienteIcone: "_ambienteIcone_1faxr_16",
@@ -15344,49 +15347,49 @@ var _T = [
 };
 //#endregion
 //#region src/components/NavegacaoSistemas/index.tsx
-function yT({ atual: e, compacto: t }) {
-	let n = _T.find((t) => t.codigo === e);
+function xT({ atual: e, compacto: t }) {
+	let n = yT.find((t) => t.codigo === e);
 	return n ? /* @__PURE__ */ m("div", {
-		className: S(vT.ambiente, t && vT.ambienteCompacto),
+		className: S(bT.ambiente, t && bT.ambienteCompacto),
 		title: t ? `Avere · ${n.nome}` : void 0,
 		children: [/* @__PURE__ */ p("span", {
-			className: vT.ambienteIcone,
+			className: bT.ambienteIcone,
 			children: /* @__PURE__ */ p(n.icone, {
 				size: 18,
 				"aria-hidden": "true"
 			})
 		}), !t && /* @__PURE__ */ m("span", {
-			className: vT.ambienteTextos,
+			className: bT.ambienteTextos,
 			children: [/* @__PURE__ */ p("small", { children: "Avere" }), /* @__PURE__ */ p("b", { children: n.nome })]
 		})]
 	}) : null;
 }
-var bT = "avere-ui:sistemas-abertos";
-function xT() {
+var ST = "avere-ui:sistemas-abertos";
+function CT() {
 	try {
-		return JSON.parse(localStorage.getItem(bT) ?? "[]");
+		return JSON.parse(localStorage.getItem(ST) ?? "[]");
 	} catch {
 		return [];
 	}
 }
-function ST({ atual: e, sistemas: t }) {
-	let { isCollapsed: n } = uT(), r = _T.filter((n) => n.codigo !== e && (!t || t.includes(n.codigo))), [i, a] = d(xT);
+function wT({ atual: e, sistemas: t }) {
+	let { isCollapsed: n } = fT(), r = yT.filter((n) => n.codigo !== e && (!t || t.includes(n.codigo))), [i, a] = d(CT);
 	if (s(() => {
 		try {
-			localStorage.setItem(bT, JSON.stringify(i));
+			localStorage.setItem(ST, JSON.stringify(i));
 		} catch {}
 	}, [i]), r.length === 0) return null;
 	let o = (e) => a((t) => t.includes(e) ? t.filter((t) => t !== e) : [...t, e]);
 	return /* @__PURE__ */ m("div", {
-		className: vT.outros,
+		className: bT.outros,
 		role: "group",
 		"aria-label": "Outros sistemas Avere",
 		children: [/* @__PURE__ */ p("span", {
-			className: vT.divisor,
+			className: bT.divisor,
 			"aria-hidden": "true"
 		}), r.map((e) => {
 			let t = (t) => e.url + t;
-			if (n) return /* @__PURE__ */ p(fT, {
+			if (n) return /* @__PURE__ */ p(mT, {
 				icon: e.icone,
 				label: e.nome,
 				href: t(e.principais[0]?.path ?? "/"),
@@ -15394,10 +15397,10 @@ function ST({ atual: e, sistemas: t }) {
 			}, e.codigo);
 			let r = i.includes(e.codigo);
 			return /* @__PURE__ */ m("div", {
-				className: vT.bloco,
+				className: bT.bloco,
 				children: [/* @__PURE__ */ m("button", {
 					type: "button",
-					className: vT.blocoCabecalho,
+					className: bT.blocoCabecalho,
 					onClick: () => o(e.codigo),
 					"aria-expanded": r,
 					children: [
@@ -15408,11 +15411,11 @@ function ST({ atual: e, sistemas: t }) {
 						/* @__PURE__ */ p("span", { children: e.nome }),
 						/* @__PURE__ */ p(ce, {
 							size: 14,
-							className: S(vT.chevron, r && vT.chevronAberto),
+							className: S(bT.chevron, r && bT.chevronAberto),
 							"aria-hidden": "true"
 						})
 					]
-				}), r && e.principais.map((n) => /* @__PURE__ */ p(fT, {
+				}), r && e.principais.map((n) => /* @__PURE__ */ p(mT, {
 					icon: n.icone,
 					label: n.label,
 					href: t(n.path),
@@ -15424,4 +15427,4 @@ function ST({ atual: e, sistemas: t }) {
 	});
 }
 //#endregion
-export { N as Avatar, j as Badge, EC as BotaoMesVigente, zw as BuscaRapida, Je as Button, q_ as Calendar, jC as CampoData, rT as Card, sT as CardContent, oT as CardDescription, cT as CardFooter, iT as CardHeader, aT as CardTitle, $e as Checkbox, Xc as Combobox, Op as DataTable, J_ as DatePicker, yb as Drawer, Eb as DrawerBody, Sb as DrawerClose, wb as DrawerContent, kb as DrawerDescription, Db as DrawerFooter, Tb as DrawerHeader, Cb as DrawerOverlay, xb as DrawerPortal, Ab as DrawerSeparator, Ob as DrawerTitle, bb as DrawerTrigger, fp as DropdownMenu, Sp as DropdownMenuCheckboxItem, bp as DropdownMenuContent, mp as DropdownMenuGroup, xp as DropdownMenuItem, wp as DropdownMenuLabel, hp as DropdownMenuPortal, _p as DropdownMenuRadioGroup, Cp as DropdownMenuRadioItem, Tp as DropdownMenuSeparator, Ep as DropdownMenuShortcut, gp as DropdownMenuSub, yp as DropdownMenuSubContent, vp as DropdownMenuSubTrigger, pp as DropdownMenuTrigger, Qc as FileUpload, wC as FiltroLista, Ou as HierarchicalCombobox, yT as IndicadorAmbiente, MC as InputDataInline, tT as MESES_CURTOS, _T as MODULOS_AVERE, SC as MarcadorProblemas, cb as Modal, db as ModalClose, pb as ModalContent, _b as ModalDescription, hb as ModalFooter, mb as ModalHeader, fb as ModalOverlay, ub as ModalPortal, gb as ModalTitle, lb as ModalTrigger, Fr as MultiSelect, ST as OutrosSistemas, W_ as Popover, K_ as PopoverContent, G_ as PopoverTrigger, On as RadioGroup, kn as RadioItem, jb as Segmentado, X_ as Select, TC as SelectMulti, DC as SeletorMes, mT as SideBar, fT as SideBarItem, pT as SideBarSection, Ge as Skeleton, vr as Slider, We as Spinner, Nr as Switch, Au as TagInput, Ze as TextField, vy as Toaster, Lv as Tooltip, zv as TooltipContent, Iv as TooltipProvider, Rv as TooltipTrigger, gT as TopBar, O as Typography, A as badgeVariants, qe as buttonVariants, S as cn, Gw as colunaDoEvento, eT as displayMoeda, Jw as formatBRL, Zw as formatCompacto, Qw as formatData, Yw as formatValor, Xe as inputVariants, $w as parseMoedaDigitada, ty as toast, D as typographyVariants, Ww as useAbrirComboboxNoTab, Bw as useAlturaDisponivel, Uw as useEdicaoInline, uT as useSideBar };
+export { N as Avatar, j as Badge, EC as BotaoMesVigente, Vw as BuscaRapida, Je as Button, q_ as Calendar, jC as CampoData, aT as Card, lT as CardContent, cT as CardDescription, uT as CardFooter, oT as CardHeader, sT as CardTitle, $e as Checkbox, Xc as Combobox, Op as DataTable, J_ as DatePicker, yb as Drawer, Eb as DrawerBody, Sb as DrawerClose, wb as DrawerContent, kb as DrawerDescription, Db as DrawerFooter, Tb as DrawerHeader, Cb as DrawerOverlay, xb as DrawerPortal, Ab as DrawerSeparator, Ob as DrawerTitle, bb as DrawerTrigger, fp as DropdownMenu, Sp as DropdownMenuCheckboxItem, bp as DropdownMenuContent, mp as DropdownMenuGroup, xp as DropdownMenuItem, wp as DropdownMenuLabel, hp as DropdownMenuPortal, _p as DropdownMenuRadioGroup, Cp as DropdownMenuRadioItem, Tp as DropdownMenuSeparator, Ep as DropdownMenuShortcut, gp as DropdownMenuSub, yp as DropdownMenuSubContent, vp as DropdownMenuSubTrigger, pp as DropdownMenuTrigger, Qc as FileUpload, wC as FiltroLista, Ou as HierarchicalCombobox, xT as IndicadorAmbiente, MC as InputDataInline, rT as MESES_CURTOS, yT as MODULOS_AVERE, SC as MarcadorProblemas, cb as Modal, db as ModalClose, pb as ModalContent, _b as ModalDescription, hb as ModalFooter, mb as ModalHeader, fb as ModalOverlay, ub as ModalPortal, gb as ModalTitle, lb as ModalTrigger, Fr as MultiSelect, wT as OutrosSistemas, W_ as Popover, K_ as PopoverContent, G_ as PopoverTrigger, On as RadioGroup, kn as RadioItem, jb as Segmentado, X_ as Select, TC as SelectMulti, DC as SeletorMes, gT as SideBar, mT as SideBarItem, hT as SideBarSection, Ge as Skeleton, vr as Slider, We as Spinner, Nr as Switch, Au as TagInput, Ze as TextField, vy as Toaster, Lv as Tooltip, zv as TooltipContent, Iv as TooltipProvider, Rv as TooltipTrigger, vT as TopBar, O as Typography, A as badgeVariants, qe as buttonVariants, S as cn, qw as colunaDoEvento, nT as displayMoeda, Xw as formatBRL, $w as formatCompacto, eT as formatData, Zw as formatValor, Xe as inputVariants, tT as parseMoedaDigitada, ty as toast, D as typographyVariants, Kw as useAbrirComboboxNoTab, Hw as useAlturaDisponivel, Gw as useEdicaoInline, fT as useSideBar };
