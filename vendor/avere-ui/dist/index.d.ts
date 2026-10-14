@@ -52,6 +52,27 @@ export declare function BotaoMesVigente({ ativo, onClick, rotulo }: {
     rotulo?: string;
 }): JSX.Element;
 
+export declare function BuscaRapida({ grupos, placeholder, textoVazio, mostrarBotao, rotuloBotao, atalho, maxRecentes, chaveRecentes, aberto: abertoExterno, onAbertoChange, }: BuscaRapidaProps): JSX.Element;
+
+export declare interface BuscaRapidaProps {
+    grupos: GrupoBusca[];
+    placeholder?: string;
+    /** Mensagem quando nada casa com o texto digitado. */
+    textoVazio?: (busca: string) => ReactNode;
+    /** Mostra o botão "Buscar… Ctrl K". Sem ele, abre só pelo atalho ou por `aberto`. */
+    mostrarBotao?: boolean;
+    rotuloBotao?: string;
+    /** Liga o atalho Ctrl/Cmd+K em qualquer tela (padrão: sim). */
+    atalho?: boolean;
+    /** Quantos recentes guardar (padrão 6). */
+    maxRecentes?: number;
+    /** Chave no localStorage — cada sistema já tem o seu (origem diferente). */
+    chaveRecentes?: string;
+    /** Controle externo, para abrir por outro caminho. */
+    aberto?: boolean;
+    onAbertoChange?: (aberto: boolean) => void;
+}
+
 export declare const Button: ForwardRefExoticComponent<ButtonProps & RefAttributes<HTMLButtonElement>>;
 
 export declare interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
@@ -341,6 +362,13 @@ export declare function formatData(iso: string): string;
 /** Valor sem "R$" — para colunas densas de tabela (o header nomeia a moeda). */
 export declare function formatValor(v: number): string;
 
+export declare interface GrupoBusca {
+    titulo: string;
+    itens: ItemBusca[];
+    /** Itens escolhidos deste grupo aparecem em "Recentes" ao abrir sem texto. */
+    recentes?: boolean;
+}
+
 export declare function HierarchicalCombobox({ levels, className }: HierarchicalComboboxProps): JSX.Element;
 
 export declare interface HierarchicalComboboxProps {
@@ -370,6 +398,18 @@ export declare const inputVariants: (props?: ({
     hasError?: boolean | null | undefined;
     hasIcon?: boolean | null | undefined;
 } & ClassProp) | undefined) => string;
+
+export declare interface ItemBusca {
+    /** Único dentro do grupo. É o que fica guardado nos recentes. */
+    id: string;
+    rotulo: string;
+    icone?: ElementType;
+    /** Texto à direita (ex.: código Avere). Também entra na busca. */
+    detalhe?: string | number | null;
+    /** Sinônimos que também acham o item ("remover" acha "Excluir"). */
+    palavrasChave?: string[];
+    aoEscolher: () => void;
+}
 
 export declare function MarcadorProblemas({ app, versaoApp, usuario, habilitado, destino, }: MarcadorProblemasProps): ReactPortal | null;
 

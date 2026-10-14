@@ -1,9 +1,8 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, BellRing, ClipboardCheck, LayoutGrid, ListTodo, Search } from 'lucide-react';
-import { CommandPalette } from '../components/shared/CommandPalette';
+import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, BellRing, ClipboardCheck, LayoutGrid, ListTodo, ListChecks } from 'lucide-react';
 import { ErrorBoundary } from '../components/shared/ErrorBoundary';
-import { IndicadorAmbiente, OutrosSistemas, SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, MarcadorProblemas, type ComboboxLevel } from 'avere-ui';
+import { IndicadorAmbiente, OutrosSistemas, SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, MarcadorProblemas, BuscaRapida, type ComboboxLevel, type GrupoBusca } from 'avere-ui';
 
 import { useClient } from '../contexts/ClientContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,7 +25,6 @@ export default function MainLayout() {
   const { perfil, signOut } = useAuth();
 
   const isMaster = perfil?.role === 'MASTER';
-  const [paletteOpen, setPaletteOpen] = useState(false);
   const isConsultor = perfil?.role === 'CONSULTOR_INTERNO';
 
   // 1. Carrega a lista de Consultores (Apenas para Master)
@@ -99,17 +97,6 @@ export default function MainLayout() {
   }, [consultorSelecionado, consultores, isMaster, perfil?.id, setConsultorPerfilId]);
 
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setPaletteOpen(v => !v);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, []);
-
   // Navegação SPA em links reais: clique simples navega client-side;
   // Ctrl/Cmd/Shift/botão-do-meio seguem o comportamento nativo (nova aba).
   const navTo = (to: string) => (e: React.MouseEvent) => {
@@ -141,6 +128,37 @@ export default function MainLayout() {
       setSelectedClient(null);
     }
   };
+
+  // Busca rápida (Ctrl/Cmd+K, avere-ui BuscaRapida): clientes + telas por papel.
+  const telasBusca = [
+    { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+    { label: 'Alertas', to: '/alertas', icon: Bell },
+    { label: 'Tarefas', to: '/tarefas', icon: ListChecks },
+    { label: 'Hub', to: '/hub', icon: LayoutGrid },
+    ...(isMaster ? [
+      { label: 'Pendências', to: '/pendencias', icon: ClipboardCheck },
+      { label: 'Cadastros', to: '/cadastros', icon: Users },
+      { label: 'Inteligência', to: '/inteligencia', icon: Database },
+      { label: 'Operação', to: '/operacao', icon: Wrench },
+    ] : []),
+    ...(isConsultor ? [
+      { label: 'Personalizar Ativos', to: '/personalizar', icon: SlidersHorizontal },
+      { label: 'Meus Envios', to: '/documentos-manuais', icon: FileStack },
+    ] : []),
+  ];
+  const gruposBusca: GrupoBusca[] = [
+    {
+      titulo: 'Clientes', recentes: true,
+      itens: clientes.map(c => ({
+        id: c.id, rotulo: c.nome, icone: User, detalhe: c.codigo_avere,
+        aoEscolher: () => handleSelectCliente(c.id),
+      })),
+    },
+    {
+      titulo: 'Ir para',
+      itens: telasBusca.map(t => ({ id: t.to, rotulo: t.label, icone: t.icon, aoEscolher: () => navigate(t.to) })),
+    },
+  ];
 
   // 3. Configuração dinâmica do Combobox
   const comboboxLevels: ComboboxLevel[] = [
@@ -204,19 +222,10 @@ export default function MainLayout() {
   return (
     <div className={styles.shell}>
       <Toaster position="top-right" richColors />
-      {/* Marcador de problemas (avere-ui): Alt+clique num elemento → print tarjado + relato
-          para a base própria do marcador. Só depois do login; quem relata é o perfil logado. */}
+      {/* Marcador de problemas (avere-ui): botão do inseto + clique num elemento → print tarjado
+          + relato para a base própria do marcador. Só depois do login; quem relata é o perfil logado. */}
       <MarcadorProblemas app="consolidador" versaoApp={__APP_VERSAO__}
         usuario={perfil ? { id: perfil.id, nome: perfil.nome } : undefined} />
-      <CommandPalette
-        open={paletteOpen}
-        onOpenChange={setPaletteOpen}
-        clientes={clientes}
-        onSelectCliente={handleSelectCliente}
-        onNavigate={navigate}
-        isMaster={isMaster}
-        isConsultor={isConsultor}
-      />
       <SideBar
         userName={perfil?.nome || 'Utilizador'}
         userRole={perfil?.role === 'MASTER' ? 'Administrador' : 'Consultor'}
@@ -310,32 +319,11 @@ export default function MainLayout() {
           onToggleMobile={() => { }}
         >
           <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
-            <button
-              onClick={() => setPaletteOpen(true)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '8px 14px', minWidth: '220px',
-                background: 'var(--color-surface-sunken)',
-                border: '1px solid var(--color-border-subtle)',
-                borderRadius: 'var(--radius-md)',
-                color: 'var(--color-text-muted)',
-                fontSize: 'var(--text-sm)', fontFamily: 'inherit',
-                cursor: 'pointer', transition: 'border-color 0.15s, color 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--color-border-strong)'; e.currentTarget.style.color = 'var(--color-text-secondary)'; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border-subtle)'; e.currentTarget.style.color = 'var(--color-text-muted)'; }}
-              aria-label="Busca rápida (Ctrl+K)"
-            >
-              <Search size={15} />
-              <span>Buscar…</span>
-              <kbd style={{
-                marginLeft: 'auto', fontFamily: 'inherit',
-                fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)',
-                background: 'var(--color-surface)',
-                border: '1px solid var(--color-border-default)',
-                borderRadius: 'var(--radius-sm)', padding: '1px 6px',
-              }}>Ctrl K</kbd>
-            </button>
+            <BuscaRapida
+              grupos={gruposBusca}
+              placeholder="Buscar cliente ou ir para uma tela…"
+              textoVazio={q => `Nada encontrado para "${q}". Tente o nome ou o código Avere do cliente.`}
+            />
             <HierarchicalCombobox levels={comboboxLevels} />
           </div>
         </TopBar>

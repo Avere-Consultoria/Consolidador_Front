@@ -21,7 +21,7 @@ export default defineConfig({
           react: ['react', 'react-dom', 'react-router-dom'],
           recharts: ['recharts'],
           supabase: ['@supabase/supabase-js'],
-          ui: ['avere-ui', 'lucide-react', 'cmdk'],
+          ui: ['avere-ui', 'lucide-react'], // cmdk agora vem dentro da avere-ui (BuscaRapida)
         },
       },
     },
