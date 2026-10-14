@@ -97,6 +97,8 @@ export declare interface CheckboxProps extends InputHTMLAttributes<HTMLInputElem
 
 export declare function cn(...inputs: ClassValue[]): string;
 
+export declare type CodigoModulo = 'hub' | 'consolidador' | 'financeiro';
+
 export declare interface ColumnDef<T> {
     header: string;
     accessorKey?: keyof T;
@@ -297,6 +299,12 @@ export declare const DropdownMenuSubTrigger: React_2.ForwardRefExoticComponent<O
 
 export declare const DropdownMenuTrigger: React_2.ForwardRefExoticComponent<DropdownMenuPrimitive.DropdownMenuTriggerProps & React_2.RefAttributes<HTMLButtonElement>>;
 
+export declare interface EntradaModulo {
+    label: string;
+    path: string;
+    icone: LucideIcon;
+}
+
 declare interface ErroConsole {
     em: string;
     mensagem: string;
@@ -338,6 +346,15 @@ export declare function HierarchicalCombobox({ levels, className }: Hierarchical
 export declare interface HierarchicalComboboxProps {
     levels: ComboboxLevel[];
     className?: string;
+}
+
+/** Vai no `logo` da SideBar: "AVERE · <sistema>". Mostra onde o usuário está; não é botão. */
+export declare function IndicadorAmbiente({ atual, compacto }: IndicadorAmbienteProps): JSX.Element | null;
+
+export declare interface IndicadorAmbienteProps {
+    atual: CodigoModulo;
+    /** Barra recolhida: só o ícone. */
+    compacto?: boolean;
 }
 
 /** Variante compacta para células de edição inline (mesma máscara, sem
@@ -399,6 +416,17 @@ export declare const ModalTitle: React_2.ForwardRefExoticComponent<Omit<DialogPr
 
 export declare const ModalTrigger: React_2.ForwardRefExoticComponent<DialogPrimitive.DialogTriggerProps & React_2.RefAttributes<HTMLButtonElement>>;
 
+export declare interface ModuloAvere {
+    codigo: CodigoModulo;
+    nome: string;
+    descricao: string;
+    url: string;
+    icone: LucideIcon;
+    principais: EntradaModulo[];
+}
+
+export declare const MODULOS_AVERE: ModuloAvere[];
+
 export declare const MultiSelect: default_2.ForwardRefExoticComponent<MultiSelectProps & default_2.RefAttributes<HTMLInputElement>>;
 
 export declare interface MultiSelectProps extends Omit<default_2.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
@@ -429,6 +457,17 @@ declare interface Option_2 {
     value: string;
 }
 export { Option_2 as Option }
+
+/** Vai dentro da SideBar, depois do menu do próprio sistema. Cada bloco lembra
+ *  se estava aberto (por navegador). Na barra recolhida vira um ícone por sistema. */
+export declare function OutrosSistemas({ atual, sistemas }: OutrosSistemasProps): JSX.Element | null;
+
+export declare interface OutrosSistemasProps {
+    atual: CodigoModulo;
+    /** Quais outros sistemas mostrar. Padrão: todos. O front decide pelo papel
+     *  do usuário (sem login único, só master circula entre sistemas). */
+    sistemas?: CodigoModulo[];
+}
 
 /** Texto cru digitado → valor decimal em string ('' se vazio). Ex.: 'R$ 1.881,05' → '1881.05' */
 export declare function parseMoedaDigitada(raw: string): string;
@@ -547,7 +586,7 @@ export declare function SeletorMes({ opcoes, valor, mesVigente, onChange, largur
 
 export declare function SideBar({ isCollapsed, onToggle, isOpenMobile, onCloseMobile, logo, children, userName, userRole, userAvatarUrl, onLogout, className, ...props }: SideBarProps): JSX.Element;
 
-export declare function SideBarItem({ icon: Icon, label, active, badge, href, className, ...props }: SideBarItemProps): JSX.Element;
+export declare function SideBarItem({ icon: Icon, label, active, badge, href, externo, className, ...props }: SideBarItemProps): JSX.Element;
 
 export declare interface SideBarItemProps extends HTMLAttributes<HTMLElement> {
     icon: ElementType;
@@ -561,6 +600,8 @@ export declare interface SideBarItemProps extends HTMLAttributes<HTMLElement> {
      *  navegação): Ctrl/Cmd+clique e botão do meio abrem em nova aba.
      *  O app SPA intercepta o clique simples (preventDefault + navigate). */
     href?: string;
+    /** Leva a OUTRO sistema (outro site): mostra a seta ↗ à direita. */
+    externo?: boolean;
 }
 
 export declare interface SideBarProps extends HTMLAttributes<HTMLElement> {
@@ -678,5 +719,10 @@ export declare function useEdicaoInline({ ativo, seletorLinha, coluna }: {
     /** Índice da célula clicada; null = não focar nada. */
     coluna: number | null;
 }): void;
+
+/** Estado da SideBar para quem mora dentro dela (ex.: OutrosSistemas). */
+export declare function useSideBar(): {
+    isCollapsed: boolean;
+};
 
 export { }
