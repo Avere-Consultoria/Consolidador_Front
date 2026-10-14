@@ -225,6 +225,12 @@ declare interface DescricaoElemento {
     testid?: string;
     /** Cadeia de componentes React (do mais próximo para fora). Nomes só são legíveis em dev. */
     componentes: string[];
+    /**
+     * Componentes do avere-ui que contêm o elemento, do mais próximo para fora
+     * (lidos da marca `data-avere-ui`, que sobrevive ao build). Vazio = peça
+     * feita no próprio sistema, candidata a padronização.
+     */
+    avere_ui: string[];
     retangulo: {
         x: number;
         y: number;
