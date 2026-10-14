@@ -13485,7 +13485,7 @@ function SC({ app: e, versaoApp: t, usuario: n, habilitado: r = !0, destino: i =
 		schema_versao: 1,
 		app: e,
 		versao_app: t,
-		versao_avere_ui: "1.5.0",
+		versao_avere_ui: "1.5.1",
 		ambiente: vC(),
 		rota: Pb(window.location.href),
 		titulo_tela: Nb(document.title),
@@ -14710,17 +14710,17 @@ var Dw = {
 	whiteSpace: "nowrap",
 	borderWidth: "0"
 }, Ow = {
-	botao: "_botao_1d508_4",
-	tecla: "_tecla_1d508_30",
-	fundo: "_fundo_1d508_42",
-	janela: "_janela_1d508_50",
-	paleta: "_paleta_1d508_60",
-	campo: "_campo_1d508_69",
-	iconeCampo: "_iconeCampo_1d508_73",
-	rotulo: "_rotulo_1d508_140",
-	detalhe: "_detalhe_1d508_146",
-	rodape: "_rodape_1d508_161",
-	somenteLeitor: "_somenteLeitor_1d508_181"
+	botao: "_botao_ujyjy_4",
+	tecla: "_tecla_ujyjy_32",
+	fundo: "_fundo_ujyjy_44",
+	janela: "_janela_ujyjy_52",
+	paleta: "_paleta_ujyjy_62",
+	campo: "_campo_ujyjy_71",
+	iconeCampo: "_iconeCampo_ujyjy_75",
+	rotulo: "_rotulo_ujyjy_142",
+	detalhe: "_detalhe_ujyjy_148",
+	rodape: "_rodape_ujyjy_163",
+	somenteLeitor: "_somenteLeitor_ujyjy_183"
 }, kw = (e) => e.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(), Aw = "\0", jw = (e, t, n) => {
 	let r = e.split(Aw)[0], i = kw(t).trim().split(/\s+/).filter(Boolean);
 	if (!i.length) return 1;
