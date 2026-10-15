@@ -1,6 +1,7 @@
 import { ButtonHTMLAttributes } from 'react';
 import { ClassProp } from 'class-variance-authority/types';
 import { ClassValue } from 'clsx';
+import { CSSProperties } from 'react';
 import { DateRange } from 'react-day-picker';
 import { DayPicker } from 'react-day-picker';
 import { default as default_2 } from 'react';
@@ -19,12 +20,28 @@ import { ReactNode } from 'react';
 import { ReactPortal } from 'react';
 import { RefAttributes } from 'react';
 import { RefObject } from 'react';
+import { RowData } from '@tanstack/react-table';
 import * as SliderPrimitive from '@radix-ui/react-slider';
 import * as SwitchPrimitives from '@radix-ui/react-switch';
 import { toast } from 'sonner';
 import { Toaster as Toaster_2 } from 'sonner';
 import * as TooltipPrimitive from '@radix-ui/react-tooltip';
 import { VariantProps } from 'class-variance-authority';
+
+export declare interface AgrupamentoTabela<T> {
+    /** Chave do grupo de cada linha. */
+    por: (linha: T) => string;
+    /** Nome mostrado na linha do grupo (padrão: a própria chave). */
+    rotulo?: (chave: string, itens: T[]) => ReactNode;
+    /** Texto apagado ao lado do nome (padrão: "N itens"). */
+    resumo?: (itens: T[]) => ReactNode;
+    /** Ordem dos grupos: pelo total da 1ª coluna somada (padrão), pela chave, ou pela ordem em que aparecem. */
+    ordem?: 'total' | 'chave' | 'entrada';
+    /** Substantivo do resumo padrão: ["ativo", "ativos"]. */
+    nomeItem?: [singular: string, plural: string];
+}
+
+export declare function alternarMenuLateral(): void;
 
 export declare const Avatar: ForwardRefExoticComponent<AvatarProps & RefAttributes<HTMLDivElement>>;
 
@@ -91,6 +108,23 @@ export declare function Calendar({ className, classNames, showOutsideDays, ...pr
 
 declare type CalendarProps = React_2.ComponentProps<typeof DayPicker>;
 
+export declare const CampoBusca: ForwardRefExoticComponent<CampoBuscaProps & RefAttributes<HTMLInputElement>>;
+
+export declare interface CampoBuscaProps {
+    valor: string;
+    /** Recebe o texto direto (não o evento). Com `atraso`, só quando a pessoa para de digitar. */
+    onChange: (texto: string) => void;
+    placeholder?: string;
+    /** Milissegundos de espera depois da última tecla antes de chamar `onChange` (padrão 0). */
+    atraso?: number;
+    /** Nome para leitor de tela; padrão: o placeholder. */
+    rotulo?: string;
+    autoFocus?: boolean;
+    disabled?: boolean;
+    className?: string;
+    style?: CSSProperties;
+}
+
 export declare function CampoData({ label, valor, onChange, placeholder }: {
     label?: string;
     valor: string;
@@ -131,6 +165,34 @@ export declare interface ColumnDef<T> {
 export declare function colunaDoEvento(e: {
     target: EventTarget | null;
 }): number | null;
+
+export declare interface ColunaTabela<T> {
+    /** Identificador estável (ordenação, chave). */
+    id: string;
+    /** Texto do cabeçalho. */
+    titulo: string;
+    tipo: TipoColuna;
+    /** De onde vem o valor da célula. Também é o que ordena e o que soma. */
+    valor: (linha: T) => unknown;
+    /** Só para `cadastro`: a cor do cadastro (hex). */
+    cor?: (linha: T) => string | null | undefined;
+    /** Linha secundária, menor e apagada, embaixo do valor (ex.: emissor embaixo do ativo). */
+    secundario?: (linha: T) => ReactNode;
+    /** Algo depois do valor, na mesma linha (ex.: selo de alerta). */
+    depois?: (linha: T) => ReactNode;
+    /** Texto em destaque (negrito) — a coluna "principal" da tabela. */
+    destaque?: boolean;
+    /** Texto apagado (taxa, prazo, instituição em texto). */
+    apagado?: boolean;
+    /** Largura fixa (px ou %). Sem ela, usa o padrão do tipo; `texto` divide o que sobra. */
+    largura?: number | string;
+    /** Soma esta coluna no total do grupo e no rodapé. Só para tipos numéricos. */
+    somar?: boolean;
+    /** Desliga a ordenação por clique no cabeçalho. */
+    semOrdenar?: boolean;
+    /** Explicação no hover do cabeçalho — para coluna cujo nome não basta. */
+    dica?: string;
+}
 
 export declare function Combobox({ options, value, onChange, label, error, placeholder, className, disabled, side, avoidCollisions, onCriar, rotuloCriar, }: ComboboxProps): JSX.Element;
 
@@ -364,6 +426,12 @@ export declare function formatCompacto(v: number): string;
 
 /** '2026-08-21' → '21/08/2026' (sem risco de fuso: corta a string ISO). */
 export declare function formatData(iso: string): string;
+
+/** Dinheiro com o sinal ANTES do símbolo: `−R$ 1.065,37` (vindo do Financeiro,
+ *  lib/format `moedaSinalada`). O `Intl` do pt-BR produz `R$ -1.065,37`, com o
+ *  menos escondido entre o símbolo e o número — numa coluna densa ele passa
+ *  despercebido. Use onde o valor pode ser negativo. */
+export declare function formatMoedaSinal(v: number | string): string;
 
 /** Valor sem "R$" — para colunas densas de tabela (o header nomeia a moeda). */
 export declare function formatValor(v: number): string;
@@ -689,6 +757,35 @@ export declare interface SwitchProps extends React_2.ComponentPropsWithoutRef<ty
     label?: string;
 }
 
+export declare function TabelaConsulta<T extends RowData>({ dados, colunas, chave, titulo, subtitulo, icone: Icone, acoes, agrupar, aoClicarLinha, rotuloTotal, vazio, alturaFixa, ordenarPor, className, }: TabelaConsultaProps<T>): JSX.Element;
+
+export declare interface TabelaConsultaProps<T> {
+    dados: T[];
+    colunas: ColunaTabela<T>[];
+    /** Chave estável de cada linha. */
+    chave: (linha: T) => string;
+    titulo?: ReactNode;
+    subtitulo?: ReactNode;
+    icone?: LucideIcon;
+    /** Botões/controles no canto direito do topo. */
+    acoes?: ReactNode;
+    agrupar?: AgrupamentoTabela<T>;
+    /** Linha clicável: aparece a seta › no fim e a linha inteira responde ao clique. */
+    aoClicarLinha?: (linha: T) => void;
+    /** Rótulo do rodapé de total (só aparece se alguma coluna `somar`). */
+    rotuloTotal?: string;
+    /** O que mostrar sem dados (padrão: "Nada para mostrar."). Diga o porquê, quando souber. */
+    vazio?: ReactNode;
+    /** Altura limitada ao espaço da tela, com a tabela rolando dentro (padrão true). */
+    alturaFixa?: boolean;
+    /** Ordenação inicial. */
+    ordenarPor?: {
+        coluna: string;
+        decrescente?: boolean;
+    };
+    className?: string;
+}
+
 export declare const TagInput: default_2.ForwardRefExoticComponent<TagInputProps & default_2.RefAttributes<HTMLInputElement>>;
 
 export declare interface TagInputProps extends Omit<default_2.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
@@ -706,6 +803,8 @@ export declare interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInp
     error?: string;
     leftIcon?: LucideIcon;
 }
+
+export declare type TipoColuna = 'texto' | 'moeda' | 'moedaSinal' | 'numero' | 'percentual' | 'data' | 'selo' | 'cadastro';
 
 export declare type TipoRelato = 'erro' | 'estranho' | 'sugestao';
 
@@ -726,7 +825,9 @@ export declare const TooltipTrigger: React_2.ForwardRefExoticComponent<TooltipPr
 export declare function TopBar({ onToggleMobile, className, children, ...props }: TopBarProps): JSX.Element;
 
 export declare interface TopBarProps extends HTMLAttributes<HTMLElement> {
-    onToggleMobile: () => void;
+    /** Opcional desde 14/10/2026: o ☰ já abre a SideBar sozinho (evento). Continua
+     *  sendo chamado, para quem controlava a barra por fora. */
+    onToggleMobile?: () => void;
     children?: ReactNode;
 }
 
@@ -770,5 +871,9 @@ export declare function useEdicaoInline({ ativo, seletorLinha, coluna }: {
 export declare function useSideBar(): {
     isCollapsed: boolean;
 };
+
+/** O vazio tem uma cara só em todas as tabelas: um traço apagado, com "(vazio)"
+ *  no hover (padrão vindo do Financeiro). Zero NÃO é vazio — zero mostra 0. */
+export declare function Vazio(): JSX.Element;
 
 export { }
