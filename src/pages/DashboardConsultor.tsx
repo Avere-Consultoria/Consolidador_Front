@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Card, Spinner, CampoBusca, TabelaConsulta, type ColunaTabela, type FiltrosTabela, type Ordenacao } from 'avere-ui';
+import { Typography, Card, Spinner, CampoBusca, TabelaConsulta, aplicarFiltros, type ColunaTabela, type FiltrosTabela, type Ordenacao } from 'avere-ui';
 import { Users, Wallet, LayoutDashboard } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
@@ -159,6 +159,9 @@ export default function DashboardConsultor() {
         ];
     }, [coresInst, plataformasComDado]);
 
+    // Quantos sobram depois da busca E dos filtros de coluna — mesma regra que a tabela aplica.
+    const visiveis = useMemo(() => aplicarFiltros(dados, colunas, filtros).length, [dados, colunas, filtros]);
+
     const abrirCliente = (c: ClienteRow) => {
         setSelectedClient({
             id: c.cliente_id,
@@ -223,7 +226,7 @@ export default function DashboardConsultor() {
             {/* ── Base de clientes — TabelaConsulta (avere-ui): busca na barra, funil por coluna, filtros lembrados ── */}
             <TabelaConsulta
                 titulo="Base de clientes"
-                subtitulo={busca.trim() ? `${dados.length} de ${clientes.length}` : `${clientes.length} clientes`}
+                subtitulo={visiveis === clientes.length ? `${clientes.length} clientes` : `${visiveis} de ${clientes.length} clientes`}
                 icone={Users}
                 dados={dados}
                 colunas={colunas}
