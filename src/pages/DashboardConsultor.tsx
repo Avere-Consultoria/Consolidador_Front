@@ -103,8 +103,6 @@ export default function DashboardConsultor() {
         return orden;
     }, [clientes, busca, filtroStatus, filtroPlataforma, ordenacao]);
 
-    const top10 = useMemo(() => clientes.filter(c => c.pl_total > 0).slice(0, 10), [clientes]);
-
     const abrirCliente = (c: ClienteRow) => {
         setSelectedClient({
             id: c.cliente_id,
@@ -129,7 +127,7 @@ export default function DashboardConsultor() {
                         <Typography variant="h1">Dashboard</Typography>
                     </div>
                     <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
-                        {isMaster && !pConsultor ? 'Visão da casa toda — selecione um consultor na barra do topo para focar.' : 'Visão global da sua carteira de clientes.'}
+                        Visão global da sua carteira de clientes.
                     </Typography>
                 </div>
             </header>
@@ -247,31 +245,6 @@ export default function DashboardConsultor() {
                     </table>
                 </div>
             </Card>
-
-            {/* ── Top 10 ── */}
-            {top10.length > 0 && (
-                <Card style={{ padding: 0, overflow: 'hidden' }}>
-                    <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--color-surface-sunken)', fontWeight: 700, fontSize: 13 }}>Top 10 clientes por PL</div>
-                    <div style={{ padding: '8px 0' }}>
-                        {top10.map((c, i) => {
-                            const pct = kpis && kpis.pl_total > 0 ? (c.pl_total / kpis.pl_total) * 100 : 0;
-                            return (
-                                <div key={c.cliente_id} onClick={() => abrirCliente(c)}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '11px 16px', cursor: 'pointer', borderTop: i === 0 ? 'none' : '1px solid var(--color-surface-sunken)' }}
-                                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--gray-50)')}
-                                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                                    <span style={{ width: 22, fontSize: 13, fontWeight: 700, color: i < 3 ? 'var(--color-primaria)' : 'var(--color-text-muted)', textAlign: 'right' }}>{i + 1}</span>
-                                    <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nome}</div>
-                                    <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                                        <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{v(c.pl_total)}</div>
-                                        <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{pct.toFixed(1)}% da base</div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </Card>
-            )}
 
         </div>
     );
