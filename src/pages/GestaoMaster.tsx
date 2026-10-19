@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Typography, Button } from 'avere-ui';
+import { Button } from 'avere-ui';
 import { Settings, Building2, PieChart, Landmark, ShieldCheck, SlidersHorizontal, Layers, Timer, Database } from 'lucide-react';
+import { CabecalhoPagina } from '../components/shared/CabecalhoPagina';
 import EmissoresTab from '../components/gestaoMaster/EmissoresTab';
 import ClassesTab from '../components/gestaoMaster/ClassesTab';
 import InstituicoesTab from '../components/gestaoMaster/InstituicoesTab';
@@ -16,12 +17,7 @@ export default function GestaoMaster() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px' }}>
-            <header style={{ borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Settings size={28} color="var(--color-secundaria)" />
-                    <Typography variant="h1">Configurações do Sistema</Typography>
-                </div>
-            </header>
+            <CabecalhoPagina titulo="Configurações do Sistema" icone={Settings} />
 
             <div style={{ display: 'flex', gap: '12px', borderBottom: '1px solid var(--color-border-subtle)', paddingBottom: '12px' }}>
                 <Button variant={activeTab === 'EMISSORES' ? 'solid' : 'ghost'} onClick={() => setActiveTab('EMISSORES')}>

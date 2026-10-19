@@ -327,7 +327,7 @@ export default function MainLayout() {
             <HierarchicalCombobox levels={comboboxLevels} />
           </div>
         </TopBar>
-        <div style={{ padding: '32px', flex: 1, overflowY: 'auto' }}>
+        <div style={{ padding: 'var(--space-6)', flex: 1, overflowY: 'auto' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '40px', maxWidth: '1760px', margin: '0 auto', width: '100%' }}>
             <ErrorBoundary key={location.pathname}>
               <Suspense fallback={<div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>}>

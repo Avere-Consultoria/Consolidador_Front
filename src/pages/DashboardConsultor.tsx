@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Card, Spinner, CampoBusca, TabelaConsulta, aplicarFiltros, type ColunaTabela, type FiltrosTabela, type Ordenacao } from 'avere-ui';
+import { Card, Spinner, CampoBusca, TabelaConsulta, aplicarFiltros, type ColunaTabela, type FiltrosTabela, type Ordenacao } from 'avere-ui';
 import { Users, Wallet, LayoutDashboard } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
+import { CabecalhoPagina } from '../components/shared/CabecalhoPagina';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
 import { fmt } from '../utils/formatters';
@@ -176,18 +177,7 @@ export default function DashboardConsultor() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            {/* ── Cabeçalho ── */}
-            <header style={{ borderBottom: '1px solid var(--color-borda)', paddingBottom: '20px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-                        <LayoutDashboard size={28} color="var(--color-secundaria)" />
-                        <Typography variant="h1">Dashboard</Typography>
-                    </div>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
-                        Visão global da sua carteira de clientes.
-                    </Typography>
-                </div>
-            </header>
+            <CabecalhoPagina titulo="Dashboard" icone={LayoutDashboard} />
 
             {/* ── KPIs — uma fileira só, compacta, para a tabela ter espaço ── */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>

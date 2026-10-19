@@ -3,6 +3,7 @@ import { Typography, Card, Spinner, Button, Combobox, Badge, toast } from 'avere
 import { Plus, Sparkles, Trash2, CalendarPlus, Check, X, RotateCcw } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
+import { CabecalhoPagina } from '../components/shared/CabecalhoPagina';
 import { CheckCircle2, ListChecks } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
@@ -162,24 +163,21 @@ export default function Tarefas() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            <header style={{ borderBottom: '1px solid var(--color-borda)', paddingBottom: 20, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-                <div>
-                    <Typography variant="h1">Tarefas</Typography>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
-                        {selectedClient
-                            ? `Foco no cliente: ${selectedClient.nome}`
-                            : abertasHoje > 0 ? `${abertasHoje} para hoje (incluindo atrasadas).` : 'Nada pendente para hoje.'}
-                    </Typography>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+            <CabecalhoPagina
+                titulo="Tarefas"
+                icone={ListChecks}
+                descricao={selectedClient
+                    ? `Foco no cliente: ${selectedClient.nome}`
+                    : abertasHoje > 0 ? `${abertasHoje} para hoje (incluindo atrasadas).` : 'Nada pendente para hoje.'}
+                acoes={<>
                     <Button variant="outline" onClick={() => setVerConcluidas(v => !v)}>
                         {verConcluidas ? 'Ver abertas' : 'Ver concluídas'}
                     </Button>
                     <Button variant="solid" onClick={() => { setFDono(isMaster ? (consultorPerfilId ?? '') : ''); setModal(true); }}>
                         <Plus size={15} style={{ marginRight: 6 }} /> Nova tarefa
                     </Button>
-                </div>
-            </header>
+                </>}
+            />
 
                         {visiveis.length === 0 && (
                 <Card style={{ padding: 0 }}>

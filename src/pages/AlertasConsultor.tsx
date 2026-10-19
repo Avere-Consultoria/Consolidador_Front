@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Card, Spinner } from 'avere-ui';
-import { CalendarClock, ChevronRight, ShieldAlert, Landmark } from 'lucide-react';
+import { CalendarClock, ChevronRight, ShieldAlert, Landmark, Bell } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
+import { CabecalhoPagina } from '../components/shared/CabecalhoPagina';
 import { CalendarCheck2, ShieldCheck, PieChart as PieIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
@@ -126,12 +127,11 @@ export default function AlertasConsultor() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <header style={{ borderBottom: '1px solid var(--color-borda)', paddingBottom: '20px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-                <div>
-                    <Typography variant="h1">Alertas</Typography>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>{selectedClient ? `Foco no cliente: ${selectedClient.nome}` : 'Vencimentos e riscos consolidados da sua carteira.'}</Typography>
-                </div>
-            </header>
+            <CabecalhoPagina
+                titulo="Alertas"
+                icone={Bell}
+                descricao={selectedClient ? `Foco no cliente: ${selectedClient.nome}` : 'Vencimentos e riscos consolidados da sua carteira.'}
+            />
 
             {/* ── Seção: Vencimentos ── */}
             <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
