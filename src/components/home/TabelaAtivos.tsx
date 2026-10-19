@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Card, Typography, Badge, DataTable } from 'avere-ui';
-import { LayoutGrid, ChevronRight, List } from 'lucide-react';
-import { fmt, fmtDate, padronizarTaxaExibicao } from '../../utils/formatters';
+import { TabelaConsulta, CampoBusca, type ColunaTabela } from 'avere-ui';
+import { List, SearchX } from 'lucide-react';
+import { fmtDate, padronizarTaxaExibicao } from '../../utils/formatters';
 import { rotuloAtivo } from '../../utils/rotuloAtivo';
 import { CORES } from '../../utils/colors';
+import { EstadoVazio } from '../shared/EstadoVazio';
 import type { ConsolidatedAtivo } from '../../hooks/useHomeMetrics';
 import { DrawerDetalheConsolidado } from './modais/DrawerDetalheConsolidado';
 import { DrawerPersonalizarInline, type RascunhoInfo } from './modais/DrawerPersonalizarInline';
@@ -33,30 +34,68 @@ function extrairIdentidade(raw: any): { codigo: string; tipo: string } | null {
     return null;
 }
 
+const COR_BASE: Record<string, string> = { BTG: CORES.btg, XP: CORES.xp, AVENUE: CORES.avenue, AGORA: CORES.agora };
+const corInstituicao = (a: ConsolidatedAtivo) => COR_BASE[(a.instituicaoBase ?? '').toUpperCase()] ?? CORES.outros;
+const siglaInstituicao = (inst: string) => inst.replace(/^BTG Pactual\b/, 'BTG').replace(/^XP Investimentos\b/, 'XP');
+const semAcento = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+const COLUNAS: ColunaTabela<ConsolidatedAtivo>[] = [
+    { id: 'tipo', titulo: 'Tipo', tipo: 'selo', largura: 90, filtro: 'lista', valor: a => a.subTipo },
+    {
+        id: 'ativo', titulo: 'Ativo', tipo: 'texto', destaque: true, valor: a => rotuloAtivo(a),
+        // Emissor = entidade vinculada no canônico (risco/FGC). Sem vínculo, nada — nunca texto cru rotulado de emissor.
+        secundario: a => a.emissorNome,
+        depois: a => (
+            // data-linha: marca da TELA para o link dos e-mails achar a linha (rolar + destacar).
+            <span data-linha={a.rowId}>
+                {a.naoVerificado && (
+                    <span
+                        title="Entrada manual sem identificador único — não vinculada à biblioteca (dado não verificado)"
+                        style={{ fontSize: 'var(--text-2xs)', fontWeight: 600, color: 'var(--color-warning-text)', background: 'var(--color-warning-bg)', padding: '1px 6px', borderRadius: 'var(--radius-sm)', whiteSpace: 'nowrap' }}
+                    >manual · não verif.</span>
+                )}
+            </span>
+        ),
+    },
+    {
+        id: 'taxa', titulo: 'Taxa', tipo: 'texto', apagado: true, largura: 130,
+        valor: a => { const t = padronizarTaxaExibicao(a.taxa || a.benchmark); return t && t !== '-' ? t : null; },
+    },
+    {
+        id: 'inst', titulo: 'Instituição', tipo: 'cadastro', largura: 120, filtro: 'lista',
+        valor: a => siglaInstituicao(a.instituicao), cor: corInstituicao,
+    },
+    {
+        id: 'venc', titulo: 'Venc. / Liquidez', tipo: 'data', largura: 130,
+        dica: 'Data de vencimento; sem ela, o prazo de resgate (D+N).',
+        valor: a => a.vencimento || null,
+        celula: a => {
+            if (a.vencimento) return fmtDate(a.vencimento);
+            if (a.liquidez !== null && a.liquidez !== undefined && a.liquidez !== '') return `D+${a.liquidez}`;
+            return null;
+        },
+    },
+    { id: 'valor', titulo: 'Valor bruto', tipo: 'moeda', largura: 170, somar: true, valor: a => a.valorBruto ?? a.valorLiquido },
+];
+
 export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPersonalizadoTudo }: TabelaAtivosProps) {
-    const [gruposAbertos, setGruposAbertos] = useState<Record<string, boolean>>({});
     const [ativoSelecionado, setAtivoSelecionado] = useState<ConsolidatedAtivo | null>(null);
     const [drawerAberto, setDrawerAberto] = useState(false);
     const [personalizar, setPersonalizar] = useState<{ canonicoId?: string; rascunho?: RascunhoInfo } | null>(null);
+    const [busca, setBusca] = useState('');
 
-    const grupos = useMemo(() => {
-        const map: Record<string, ConsolidatedAtivo[]> = {};
-        for (const a of ativos) {
-            const key = a.tipo || 'Outros';
-            if (!map[key]) map[key] = [];
-            map[key].push(a);
-        }
-        return Object.entries(map)
-            .map(([tipo, itens]) => ({
-                tipo,
-                itens: [...itens].sort((a, b) => b.valorBruto - a.valorBruto),
-                total: itens.reduce((s, a) => s + a.valorBruto, 0)
-            }))
-            .sort((a, b) => b.total - a.total);
-    }, [ativos]);
+    // Busca geral: a tela filtra antes; os filtros de coluna (funil) se aplicam depois, em E.
+    const dados = useMemo(() => {
+        const q = semAcento(busca.trim());
+        if (!q) return ativos;
+        return ativos.filter(a => semAcento([rotuloAtivo(a), a.nome, a.nomeCru, a.emissorNome, a.subTipo, a.instituicao, a.tipo]
+            .filter(Boolean).join(' ')).includes(q));
+    }, [ativos, busca]);
 
     // Deep-link (?canon=<ativo_canonico_id> | ?ativo=<nome>, opcional &venc=YYYY-MM-DD) vindo das
-    // Notificações/Alertas: abre o grupo do ativo e o drawer de detalhe direto nele.
+    // Notificações/Alertas: abre o grupo do ativo, rola até a linha, destaca por 10 s e abre o drawer.
+    // A TabelaConsulta guarda sozinha quais grupos estão abertos; a tela acha o grupo e a linha pelas
+    // próprias marcas (data-grupo no rótulo, data-linha na célula do ativo) e "clica" no grupo.
     const [searchParams, setSearchParams] = useSearchParams();
     const focoCanon = searchParams.get('canon');
     const focoNome = searchParams.get('ativo');
@@ -64,8 +103,7 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
     const focoTratado = React.useRef<string | null>(null);
     useEffect(() => {
         if ((!focoCanon && !focoNome) || ativos.length === 0) return;
-        // O mesmo alvo não pode ser tratado duas vezes (ativos muda de referência antes da
-        // URL limpar): a 2ª rodada capturaria o fundo já destacado como "original".
+        // O mesmo alvo não pode ser tratado duas vezes (ativos muda de referência antes da URL limpar).
         const chave = `${focoCanon}|${focoNome}|${focoVenc}`;
         if (focoTratado.current === chave) return;
         focoTratado.current = chave;
@@ -77,23 +115,27 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
             ?? ativos.find(a => focoNome && norm(a.nome) === norm(focoNome));
         if (alvo) {
             const grupo = alvo.tipo || 'Outros';
-            setGruposAbertos(prev => ({ ...prev, [grupo]: true }));
-            // Rola até a linha do ativo (fica à vista quando o drawer fechar), destaca por
-            // alguns segundos e só então abre o drawer.
-            const nomeAlvo = norm(rotuloAtivo(alvo));   // a linha mostra o rótulo, não o cru
             let tentativas = 0;
+            const abrirDrawer = () => { setAtivoSelecionado(alvo); setDrawerAberto(true); };
             const rolar = () => {
-                const secao = document.querySelector<HTMLElement>(`[data-grupo="${CSS.escape(grupo)}"]`);
-                const linha = secao
-                    ? Array.from(secao.querySelectorAll<HTMLTableRowElement>('tbody tr')).find(tr => norm(tr.textContent).includes(nomeAlvo))
-                    : null;
-                if (!linha) { if (++tentativas < 20) requestAnimationFrame(rolar); return; }
+                if (tentativas === 0) setBusca('');      // a busca não pode esconder o alvo
+                const linhaGrupo = document.querySelector(`[data-grupo="${CSS.escape(grupo)}"]`)?.closest('tr');
+                if (linhaGrupo?.getAttribute('aria-expanded') === 'false') (linhaGrupo as HTMLElement).click();
+                const linha = document.querySelector(`[data-linha="${CSS.escape(alvo.rowId)}"]`)?.closest('tr');
+                if (!linha) {
+                    // Sem achar a linha (ex.: filtro de coluna ativo), ainda abre o detalhe.
+                    if (++tentativas < 60) requestAnimationFrame(rolar); else abrirDrawer();
+                    return;
+                }
                 linha.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                linha.style.transition = 'background 0.4s ease';
-                linha.style.background = 'var(--color-accent-subtle)';
+                const celulas = Array.from(linha.cells);
+                celulas.forEach(td => { td.style.transition = 'background 0.4s ease'; td.style.background = 'var(--color-accent-subtle)'; });
                 // Volta ao estilo da tabela (sem inline) — nunca "restaurar" um fundo capturado.
-                window.setTimeout(() => { linha.style.background = ''; window.setTimeout(() => { linha.style.transition = ''; }, 500); }, 10000);
-                window.setTimeout(() => { setAtivoSelecionado(alvo); setDrawerAberto(true); }, 400);
+                window.setTimeout(() => {
+                    celulas.forEach(td => { td.style.background = ''; });
+                    window.setTimeout(() => celulas.forEach(td => { td.style.transition = ''; }), 500);
+                }, 10000);
+                window.setTimeout(abrirDrawer, 400);
             };
             requestAnimationFrame(rolar);
         }
@@ -101,269 +143,30 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
         setSearchParams(searchParams, { replace: true });
     }, [focoCanon, focoNome, focoVenc, ativos, searchParams, setSearchParams]);
 
-    const COR_INSTITUICAO: Record<string, string> = {
-        'BTG Pactual': CORES.btg,
-        'XP Investimentos': CORES.xp,
-        'Avenue': CORES.avenue,
-        'Ágora': CORES.agora,
-    };
-    const corInstituicao = (inst: string) => COR_INSTITUICAO[inst] ?? CORES.btg;
-
     if (ativos.length === 0) return null;
 
     return (
         <section>
-            {/* GRANDE MOLDURA UNIFICADA */}
-            <Card style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--color-border-subtle)', background: 'var(--color-surface)' }}>
-
-                {/* 1º - HEADER INTEGRADO AO CARD */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '20px 24px',
-                    background: 'var(--color-surface-sunken)',
-                    borderBottom: '1px solid var(--color-border-subtle)'
-                }}>
-                    <div style={{ background: 'var(--color-accent-subtle)', padding: '8px', borderRadius: 'var(--radius-md)', color: 'var(--color-accent)' }}>
-                        <List size={20} />
-                    </div>
-                    <div>
-                        <Typography variant="h2" style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)' as any }}>
-                            Detalhamento da Carteira
-                        </Typography>
-                        <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
-                            Visualização analítica por classe de ativo
-                        </Typography>
-                    </div>
-                    <Badge variant="outline" style={{ marginLeft: 'auto', color: 'var(--color-text-secondary)', fontSize: 'var(--text-xs)' }}>
-                        {ativos.length} Ativos Totais
-                    </Badge>
-                </div>
-
-                {/* GRUPOS DE ATIVOS */}
-                {grupos.map(({ tipo, itens, total }, index) => {
-                    const aberto = gruposAbertos[tipo] ?? false;
-                    const ehUltimo = index === grupos.length - 1;
-
-                    return (
-                        <div key={tipo} data-grupo={tipo} style={{
-                            borderBottom: ehUltimo && !aberto ? 'none' : '1px solid var(--color-border-subtle)',
-                        }}>
-                            {/* LINHA DO GRUPO */}
-                            <div
-                                onClick={() => setGruposAbertos(prev => ({ ...prev, [tipo]: !prev[tipo] }))}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '12px',
-                                    cursor: 'pointer',
-                                    userSelect: 'none',
-                                    padding: '16px 24px',
-                                    transition: 'all 0.15s ease',
-                                    background: aberto ? 'rgba(0,131,203,0.02)' : 'transparent'
-                                }}
-                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,131,203,0.04)')}
-                                onMouseLeave={e => (e.currentTarget.style.background = aberto ? 'rgba(0,131,203,0.02)' : 'transparent')}
-                            >
-                                <ChevronRight
-                                    size={18}
-                                    style={{
-                                        opacity: 0.4,
-                                        transition: 'transform 0.2s ease',
-                                        transform: aberto ? 'rotate(90deg)' : 'rotate(0deg)'
-                                    }}
-                                />
-                                <LayoutGrid size={16} style={{ opacity: 0.3 }} />
-                                <Typography variant="h2" style={{
-                                    textTransform: 'uppercase',
-                                    fontWeight: 'var(--weight-semibold)' as any,
-                                    fontSize: 'var(--text-xs)',
-                                    color: 'var(--color-text-secondary)',
-                                    margin: 0,
-                                    fontFamily: 'var(--font-display)',
-                                    letterSpacing: 'var(--tracking-caps)'
-                                }}>
-                                    {tipo.replace(/_/g, ' ')}
-                                </Typography>
-                                <Badge variant="ghost" style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)' }}>
-                                    {itens.length}
-                                </Badge>
-
-                                <div style={{ marginLeft: 'auto' }}>
-                                    <Typography variant="p" style={{ fontSize: 'var(--text-md)', fontWeight: 'var(--weight-semibold)' as any, fontVariantNumeric: 'tabular-nums' }}>
-                                        {fmt(total)}
-                                    </Typography>
-                                </div>
-                            </div>
-
-                            {/* TABELA EXPANDIDA */}
-                            {aberto && (
-                                <div style={{
-                                    background: 'var(--gray-50)',
-                                    borderTop: '1px solid var(--color-border-subtle)',
-                                    paddingBottom: '8px'
-                                }}>
-                                    <style>{`
-                                        .tabela-carteira td { vertical-align: middle; }
-                                        .tabela-carteira td p { margin: 0; }
-                                        /* Larguras FIXAS por coluna → todas as tabelas de grupo alinham entre si. */
-                                        .tabela-carteira table { table-layout: fixed; width: 100%; }
-                                        .tabela-carteira th:nth-child(1), .tabela-carteira td:nth-child(1) { width: 9%; }
-                                        .tabela-carteira th:nth-child(2), .tabela-carteira td:nth-child(2) { width: 29%; }
-                                        .tabela-carteira th:nth-child(3), .tabela-carteira td:nth-child(3) { width: 12%; }
-                                        .tabela-carteira th:nth-child(4), .tabela-carteira td:nth-child(4) { width: 12%; }
-                                        .tabela-carteira th:nth-child(5), .tabela-carteira td:nth-child(5) { width: 16%; }
-                                        .tabela-carteira th:nth-child(6), .tabela-carteira td:nth-child(6) { width: 16%; }
-                                        .tabela-carteira th:nth-child(7), .tabela-carteira td:nth-child(7) { width: 6%; }
-                                        /* Coluna de valor: número à direita com dígitos tabulares (ficha: financeiro). */
-                                        .tabela-carteira th:nth-child(6), .tabela-carteira td:nth-child(6) { text-align: right; }
-                                        .tabela-carteira td:nth-child(6) { font-variant-numeric: tabular-nums lining-nums; }
-                                    `}</style>
-                                    <div className="tabela-carteira">
-                                    <DataTable
-                                        data={itens}
-                                        columns={[
-                                            {
-                                                header: 'Tipo',
-                                                accessorKey: 'subTipo',
-                                                cell: (item: ConsolidatedAtivo) => (
-                                                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                                                        {item.subTipo
-                                                            ? <Badge intent="primaria" variant="ghost" style={{ fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-semibold)' as any, background: 'var(--color-accent-subtle)' }}>{item.subTipo}</Badge>
-                                                            : <span style={{ color: 'var(--color-text-disabled)' }}>—</span>}
-                                                    </div>
-                                                ),
-                                            },
-                                            {
-                                                header: 'Ativo',
-                                                accessorKey: 'nome',
-                                                cell: (item: ConsolidatedAtivo) => (
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, maxWidth: '300px', minWidth: 0 }}>
-                                                        <div style={{ minWidth: 0 }}>
-                                                            <Typography
-                                                                variant="p"
-                                                                style={{
-                                                                    fontWeight: 'var(--weight-medium)' as any,
-                                                                    fontSize: 'var(--text-sm)',
-                                                                    margin: 0,
-                                                                    whiteSpace: 'nowrap',
-                                                                    overflow: 'hidden',
-                                                                    textOverflow: 'ellipsis'
-                                                                }}
-                                                                title={item.nomeCru && item.nomeCru !== rotuloAtivo(item) ? `${item.instituicao}: ${item.nomeCru}` : item.nome}
-                                                            >
-                                                                {rotuloAtivo(item)}
-                                                            </Typography>
-                                                            {/* Emissor = entidade vinculada no canônico (risco/FGC). Sem vínculo, nada — nunca texto cru rotulado de emissor. */}
-                                                            {item.emissorNome && (
-                                                                <Typography variant="p" style={{ margin: 0, fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                                    {item.emissorNome}
-                                                                </Typography>
-                                                            )}
-                                                        </div>
-                                                        {item.naoVerificado && (
-                                                            <Badge
-                                                                variant="ghost"
-                                                                title="Entrada manual sem identificador único — não vinculada à biblioteca (dado não verificado)"
-                                                                style={{ flexShrink: 0, fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-semibold)' as any, color: 'var(--color-warning-text)', background: 'var(--color-warning-bg)' }}
-                                                            >
-                                                                manual · não verif.
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                ),
-                                            },
-                                            {
-                                                header: 'Taxa',
-                                                accessorKey: 'taxa' as any,
-                                                cell: (item: ConsolidatedAtivo) => {
-                                                    const valor = padronizarTaxaExibicao(item.taxa || item.benchmark);
-                                                    return (
-                                                        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                                                            {(!valor || valor === '-')
-                                                                ? <span style={{ color: 'var(--color-text-disabled)' }}>—</span>
-                                                                : <Typography variant="p" style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-medium)' as any, color: 'var(--color-text-secondary)', whiteSpace: 'nowrap', margin: 0, fontVariantNumeric: 'tabular-nums' }}>{valor}</Typography>
-                                                            }
-                                                        </div>
-                                                    );
-                                                },
-                                            },
-                                            {
-                                                header: 'Instituição',
-                                                accessorKey: 'instituicao',
-                                                cell: (item: ConsolidatedAtivo) => (
-                                                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                                                        <Badge variant="ghost" style={{
-                                                            fontSize: 'var(--text-2xs)', fontWeight: 'var(--weight-semibold)' as any,
-                                                            color: corInstituicao(item.instituicao),
-                                                            borderColor: corInstituicao(item.instituicao),
-                                                            background: `${corInstituicao(item.instituicao)}0A`
-                                                        }}>
-                                                            {item.instituicao === 'BTG Pactual' ? 'BTG' : item.instituicao === 'XP Investimentos' ? 'XP' : item.instituicao}
-                                                        </Badge>
-                                                    </div>
-                                                ),
-                                            },
-                                            {
-                                                header: 'Vencimento/Liquidez',
-                                                accessorKey: 'vencimento',
-                                                cell: (item: ConsolidatedAtivo) => {
-                                                    let conteudo: React.ReactNode = <span style={{ color: 'var(--color-text-disabled)' }}>—</span>;
-                                                    if (item.vencimento) {
-                                                        conteudo = <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', margin: 0, fontVariantNumeric: 'tabular-nums' }}>{fmtDate(item.vencimento)}</Typography>;
-                                                    } else if (item.liquidez !== null && item.liquidez !== undefined && item.liquidez !== '') {
-                                                        conteudo = <Typography variant="p" style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', margin: 0, fontVariantNumeric: 'tabular-nums' }}>D+{item.liquidez}</Typography>;
-                                                    }
-                                                    return <div style={{ display: 'flex', justifyContent: 'flex-start' }}>{conteudo}</div>;
-                                                },
-                                            },
-                                            {
-                                                header: 'Valor Bruto',
-                                                accessorKey: 'valorBruto',
-                                                cell: (item: ConsolidatedAtivo) => (
-                                                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                                        <span style={{ fontWeight: 'var(--weight-semibold)' as any, fontSize: 'var(--text-sm)' }}>{fmt(item.valorBruto ?? item.valorLiquido)}</span>
-                                                    </div>
-                                                ),
-                                            },
-                                            {
-                                                header: '',
-                                                accessorKey: 'rowId',
-                                                cell: (item: ConsolidatedAtivo) => (
-                                                    <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setAtivoSelecionado(item);
-                                                                setDrawerAberto(true);
-                                                            }}
-                                                            style={{
-                                                                background: 'none', border: 'none', cursor: 'pointer',
-                                                                padding: '4px 8px', borderRadius: '6px',
-                                                                display: 'flex', alignItems: 'center',
-                                                                color: 'var(--color-primaria)',
-                                                                opacity: 0.5, transition: 'opacity 0.15s',
-                                                            }}
-                                                            onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                                                            onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}
-                                                        >
-                                                            <ChevronRight size={18} />
-                                                        </button>
-                                                    </div>
-                                                ),
-                                            },
-                                        ]}
-                                        keyExtractor={(item: ConsolidatedAtivo) => item.rowId}
-                                        selectable={false}
-                                    />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </Card>
+            <TabelaConsulta
+                titulo="Detalhamento da Carteira"
+                subtitulo={`${ativos.length.toLocaleString('pt-BR')} ${ativos.length === 1 ? 'ativo' : 'ativos'} · por classe de ativo`}
+                icone={List}
+                acoes={<div style={{ width: 'min(320px, 100%)' }}><CampoBusca valor={busca} onChange={setBusca} placeholder="Buscar ativo, emissor ou tipo…" /></div>}
+                dados={dados}
+                colunas={COLUNAS}
+                chave={a => a.rowId}
+                agrupar={{
+                    por: a => a.tipo || 'Outros',
+                    // data-grupo: marca da TELA (não da lib) para o link dos e-mails achar o grupo.
+                    rotulo: k => <span data-grupo={k}>{k.replace(/_/g, ' ')}</span>,
+                    nomeItem: ['ativo', 'ativos'],
+                    ordem: 'total',
+                }}
+                ordenarPor={{ coluna: 'valor', decrescente: true }}
+                aoClicarLinha={a => { setAtivoSelecionado(a); setDrawerAberto(true); }}
+                rotuloTotal="Total da carteira"
+                vazio={<EstadoVazio compacto icon={SearchX} titulo="Nenhum ativo encontrado" dica="Ajuste a busca ou os filtros das colunas." />}
+            />
 
             {/* DRAWER DE DETALHES */}
             {ativoSelecionado && (() => {
