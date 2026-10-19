@@ -41,7 +41,12 @@ export declare interface AgrupamentoTabela<T> {
     nomeItem?: [singular: string, plural: string];
 }
 
+export declare function algumFiltroAtivo(filtros: FiltrosTabela): boolean;
+
 export declare function alternarMenuLateral(): void;
+
+/** Aplica todos os filtros ativos (E entre colunas). */
+export declare function aplicarFiltros<T>(dados: T[], colunas: ColunaTabela<T>[], filtros: FiltrosTabela): T[];
 
 export declare const Avatar: ForwardRefExoticComponent<AvatarProps & RefAttributes<HTMLDivElement>>;
 
@@ -192,6 +197,16 @@ export declare interface ColunaTabela<T> {
     semOrdenar?: boolean;
     /** Explicação no hover do cabeçalho — para coluna cujo nome não basta. */
     dica?: string;
+    /** Desenho livre da célula. O padrão continua valendo em volta (largura,
+     *  alinhamento do tipo, ordenação e soma por `valor`). Retornar null/undefined
+     *  mostra o "—" de vazio. */
+    celula?: (linha: T) => ReactNode;
+    /** Liga o filtro no cabeçalho (funil): `lista` (marcar valores) ou `faixa`
+     *  (de/até + só com valor/só sem valor, para colunas numéricas). */
+    filtro?: 'lista' | 'faixa';
+    /** Só para filtro `lista`: os valores da linha que contam no filtro (padrão:
+     *  o próprio `valor`). Ex.: cliente com contas em XP e BTG → ['XP', 'BTG']. */
+    valoresFiltro?: (linha: T) => string[];
 }
 
 export declare function Combobox({ options, value, onChange, label, error, placeholder, className, disabled, side, avoidCollisions, onCriar, rotuloCriar, }: ComboboxProps): JSX.Element;
@@ -306,6 +321,22 @@ declare interface DestinoRelatos {
     chave: string;
 }
 
+export declare function DicaDado({ children, cor, titulo, linhas, valor, complemento }: DicaDadoProps): JSX.Element;
+
+export declare interface DicaDadoProps {
+    /** O elemento que recebe o mouse (a fatia). */
+    children: ReactNode;
+    /** Quadradinho na cor da fatia, ao lado do título. */
+    cor?: string;
+    titulo: ReactNode;
+    /** Linhas de detalhe, apagadas, embaixo do título. */
+    linhas?: ReactNode[];
+    /** O valor em destaque. */
+    valor?: ReactNode;
+    /** Texto pequeno ao lado do valor (ex.: "38% do mês"). Opcional. */
+    complemento?: ReactNode;
+}
+
 /** Valor decimal em string → exibição mascarada. Ex.: '1881.05' → 'R$ 1.881,05' */
 export declare function displayMoeda(valor: string): string;
 
@@ -409,6 +440,17 @@ export declare interface FileUploadProps extends Omit<default_2.HTMLAttributes<H
     error?: string;
 }
 
+export declare type FiltroColuna = {
+    tipo: 'lista';
+    valores: string[];
+} | {
+    tipo: 'faixa';
+    de?: string;
+    ate?: string;
+    comValor?: boolean;
+    semValor?: boolean;
+};
+
 export declare function FiltroLista({ opcoes, selecionadas, onChange, focoInicial }: {
     opcoes: Opcao[];
     selecionadas: string[];
@@ -417,6 +459,9 @@ export declare function FiltroLista({ opcoes, selecionadas, onChange, focoInicia
      *  Sem ele, abre no primeiro item marcado. */
     focoInicial?: string;
 }): JSX.Element;
+
+/** Filtros ativos por id de coluna. */
+export declare type FiltrosTabela = Record<string, FiltroColuna>;
 
 export declare function formatBRL(v: number): string;
 
@@ -571,6 +616,11 @@ declare interface Option_2 {
     value: string;
 }
 export { Option_2 as Option }
+
+export declare interface Ordenacao {
+    coluna: string;
+    decrescente?: boolean;
+}
 
 /** Vai dentro da SideBar, depois do menu do próprio sistema. Cada bloco lembra
  *  se estava aberto (por navegador). Na barra recolhida vira um ícone por sistema. */
@@ -757,7 +807,7 @@ export declare interface SwitchProps extends React_2.ComponentPropsWithoutRef<ty
     label?: string;
 }
 
-export declare function TabelaConsulta<T extends RowData>({ dados, colunas, chave, titulo, subtitulo, icone: Icone, acoes, agrupar, aoClicarLinha, rotuloTotal, vazio, alturaFixa, ordenarPor, className, }: TabelaConsultaProps<T>): JSX.Element;
+export declare function TabelaConsulta<T extends RowData>({ dados, colunas, chave, titulo, subtitulo, icone: Icone, acoes, agrupar, aoClicarLinha, rotuloTotal, vazio, alturaFixa, ordenarPor, barra, filtros: filtrosProp, onFiltrosChange, ordenacao: ordenacaoProp, onOrdenacaoChange, className, }: TabelaConsultaProps<T>): JSX.Element;
 
 export declare interface TabelaConsultaProps<T> {
     dados: T[];
@@ -778,11 +828,17 @@ export declare interface TabelaConsultaProps<T> {
     vazio?: ReactNode;
     /** Altura limitada ao espaço da tela, com a tabela rolando dentro (padrão true). */
     alturaFixa?: boolean;
-    /** Ordenação inicial. */
-    ordenarPor?: {
-        coluna: string;
-        decrescente?: boolean;
-    };
+    /** Ordenação inicial (quando a tela não controla a ordenação). */
+    ordenarPor?: Ordenacao;
+    /** Espaço da tela no topo do card, abaixo do título: busca, seletores, botões. */
+    barra?: ReactNode;
+    /** Filtros por coluna controlados pela tela (para lembrar entre visitas, por ex.).
+     *  Sem eles, a tabela guarda os filtros sozinha enquanto a tela estiver aberta. */
+    filtros?: FiltrosTabela;
+    onFiltrosChange?: (f: FiltrosTabela) => void;
+    /** Ordenação controlada pela tela (mesma ideia dos filtros). */
+    ordenacao?: Ordenacao | null;
+    onOrdenacaoChange?: (o: Ordenacao | null) => void;
     className?: string;
 }
 
@@ -875,5 +931,8 @@ export declare function useSideBar(): {
 /** O vazio tem uma cara só em todas as tabelas: um traço apagado, com "(vazio)"
  *  no hover (padrão vindo do Financeiro). Zero NÃO é vazio — zero mostra 0. */
 export declare function Vazio(): JSX.Element;
+
+/** Valor que representa "(vazio)" no filtro de lista — como o "(Vazias)" do Excel. */
+export declare const VAZIO_FILTRO = "__vazio__";
 
 export { }
