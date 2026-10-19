@@ -231,7 +231,7 @@ export default function DashboardConsultor() {
                 dados={dados}
                 colunas={colunas}
                 chave={c => c.cliente_id}
-                acoes={<div style={{ width: 'min(340px, 100%)' }}><CampoBusca valor={busca} onChange={setBusca} placeholder="Buscar por nome ou código…" /></div>}
+                acoes={<div style={{ width: 'min(340px, 100%)' }}><CampoBusca valor={busca} onChange={setBusca} placeholder="Buscar por nome ou número…" /></div>}
                 filtros={filtros}
                 onFiltrosChange={f => { setFiltros(f); gravarPref(perfil?.id, 'filtros', f); }}
                 ordenacao={ordenacao}
