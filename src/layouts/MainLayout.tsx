@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, BellRing, ClipboardCheck, LayoutGrid, ListTodo, ListChecks } from 'lucide-react';
+import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, BellRing, ClipboardCheck, LayoutGrid } from 'lucide-react';
 import { ErrorBoundary } from '../components/shared/ErrorBoundary';
 import { IndicadorAmbiente, OutrosSistemas, SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, MarcadorProblemas, BuscaRapida, type ComboboxLevel, type GrupoBusca } from 'avere-ui';
 
@@ -119,8 +119,8 @@ export default function MainLayout() {
           : (perfil?.id ?? null),
       });
       // Escolher um cliente abre o workspace dele, mantendo a aba atual (se houver).
-      // Exceção: em Alertas e Tarefas o seletor filtra a lista no lugar (não navega).
-      if (!location.pathname.startsWith('/alertas') && !location.pathname.startsWith('/tarefas')) {
+      // Exceção: em Alertas o seletor filtra a lista no lugar (não navega).
+      if (!location.pathname.startsWith('/alertas')) {
         const tab = location.pathname.match(/^\/cliente\/[^/]+\/([^/]+)/)?.[1] ?? 'posicao';
         navigate(`/cliente/${clienteEncontrado.id}/${tab}`);
       }
@@ -133,7 +133,6 @@ export default function MainLayout() {
   const telasBusca = [
     { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
     { label: 'Alertas', to: '/alertas', icon: Bell },
-    { label: 'Tarefas', to: '/tarefas', icon: ListChecks },
     { label: 'Hub', to: '/hub', icon: LayoutGrid },
     ...(isMaster ? [
       { label: 'Pendências', to: '/pendencias', icon: ClipboardCheck },
@@ -250,12 +249,6 @@ export default function MainLayout() {
           <SideBarItem
             icon={Bell} label="Alertas"
             active={location.pathname === '/alertas'} href="/alertas" onClick={navTo('/alertas')}
-          />
-        )}
-        {(isMaster || isConsultor) && (
-          <SideBarItem
-            icon={ListTodo} label="Tarefas"
-            active={location.pathname === '/tarefas'} href="/tarefas" onClick={navTo('/tarefas')}
           />
         )}
         <SideBarItem

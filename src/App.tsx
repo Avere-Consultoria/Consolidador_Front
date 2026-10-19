@@ -35,7 +35,6 @@ const Pendencias = lazy(() => import('./pages/Pendencias'));
 const AlertasConsultor = lazy(() => import('./pages/AlertasConsultor'));
 const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha'));
 const Hub = lazy(() => import('./pages/Hub'));
-const Tarefas = lazy(() => import('./pages/Tarefas'));
 const ConfiguracoesNotificacoes = lazy(() => import('./pages/ConfiguracoesNotificacoes'));
 
 const fallback = (
@@ -98,7 +97,8 @@ export default function App() {
                 <Route element={<MainLayout />}>
                   <Route path="/dashboard" element={<DashboardConsultor />} />
                   <Route path="/alertas" element={<AlertasConsultor />} />
-                  <Route path="/tarefas" element={<Tarefas />} />
+                  {/* Tarefas saiu do sistema (19/10/2026): links antigos caem no Dashboard */}
+                  <Route path="/tarefas" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/documentos-manuais" element={<DocumentosManuais />} />
                   <Route path="/configuracoes/notificacoes" element={<ConfiguracoesNotificacoes />} />
                 </Route>
