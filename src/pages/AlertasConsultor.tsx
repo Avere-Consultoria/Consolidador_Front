@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Card, Spinner, CabecalhoPagina, TabelaConsulta, type ColunaTabela } from 'avere-ui';
+import { Typography, Card, Spinner, CabecalhoPagina, TabelaConsulta, Segmentado, type ColunaTabela } from 'avere-ui';
 import { CalendarClock, ShieldAlert, Landmark, Bell } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
@@ -47,6 +47,20 @@ interface CreditoAlerta {
 const MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 const mesLabel = (ym: string) => { const [a, m] = ym.split('-'); return `${MESES[Number(m) - 1]}/${a}`; };
 
+type Horizonte = '3' | '6' | '12' | '24';
+const HORIZONTES: { value: Horizonte; rotulo: string; mostrarRotulo: true }[] = [
+    { value: '3', rotulo: '3 meses', mostrarRotulo: true },
+    { value: '6', rotulo: '6 meses', mostrarRotulo: true },
+    { value: '12', rotulo: '12 meses', mostrarRotulo: true },
+    { value: '24', rotulo: '24 meses', mostrarRotulo: true },
+];
+function lerHorizonte(chave: string): Horizonte {
+    try {
+        const v = localStorage.getItem(chave);
+        return HORIZONTES.some(h => h.value === v) ? (v as Horizonte) : '12';
+    } catch { return '12'; }
+}
+
 type LinhaVenc = Vencimento & { _k: string };
 const COLUNAS_VENC: ColunaTabela<LinhaVenc>[] = [
     { id: 'cliente', titulo: 'Cliente', tipo: 'texto', destaque: true, largura: '22%', valor: x => x.cliente_nome },
@@ -79,22 +93,48 @@ export default function AlertasConsultor() {
         ? consultorSelecionado
         : null;
 
+    // Horizonte dos vencimentos (meses), lembrado por usuário neste navegador.
+    const chaveHorizonte = `alertas:horizonte:${perfil?.id ?? ''}`;
+    const [meses, setMeses] = useState<Horizonte>(() => lerHorizonte(chaveHorizonte));
+    const [horizonteDe, setHorizonteDe] = useState(chaveHorizonte);
+    if (horizonteDe !== chaveHorizonte) {         // o perfil chegou depois do 1º render
+        setHorizonteDe(chaveHorizonte);
+        setMeses(lerHorizonte(chaveHorizonte));
+    }
+    const mudarHorizonte = (h: Horizonte) => {
+        setMeses(h);
+        try { localStorage.setItem(chaveHorizonte, h); } catch { /* sem storage: só não lembra */ }
+    };
+    const [carregandoVenc, setCarregandoVenc] = useState(false);
+
     useEffect(() => {
         (async () => {
             setLoading(true);
-            const [vRes, fRes, cpRes, cRes] = await Promise.all([
-                supabase.rpc('vencimentos_consultor', { p_consultor_id: pConsultor }),
+            const [fRes, cpRes, cRes] = await Promise.all([
                 supabase.rpc('fgc_consultor', { p_consultor_id: pConsultor }),
                 supabase.rpc('credito_privado_consultor', { p_consultor_id: pConsultor }),
                 supabase.from('clientes').select('id, codigo_avere'),
             ]);
-            setVencs((vRes.data as Vencimento[]) || []);
             setFgc((fRes.data as FgcAlerta[]) || []);
             setCredito((cpRes.data as CreditoAlerta[]) || []);
             setClientesMap(new Map((cRes.data || []).map((c: any) => [c.id, c.codigo_avere])));
             setLoading(false);
         })();
     }, [pConsultor]);
+
+    // Vencimentos à parte: trocar o horizonte busca só eles, do banco, já recortados.
+    useEffect(() => {
+        let vivo = true;
+        (async () => {
+            setCarregandoVenc(true);
+            const { data, error } = await supabase.rpc('vencimentos_consultor', { p_consultor_id: pConsultor, p_meses: Number(meses) });
+            if (!vivo) return;
+            if (error) console.error('Alertas: falha ao carregar vencimentos', error);
+            setVencs((data as Vencimento[]) || []);
+            setCarregandoVenc(false);
+        })();
+        return () => { vivo = false; };
+    }, [pConsultor, meses]);
 
     const v = (valor: number) => fmt(valor);
 
@@ -136,8 +176,9 @@ export default function AlertasConsultor() {
             {/* ── Seção: Vencimentos — TabelaConsulta agrupada por mês (modelo B da avere-ui) ── */}
             <TabelaConsulta
                 titulo="Vencimentos próximos"
-                subtitulo={`${vencsTabela.length.toLocaleString('pt-BR')} ativos`}
+                subtitulo={carregandoVenc ? 'Carregando…' : `${vencsTabela.length.toLocaleString('pt-BR')} ativos nos próximos ${meses} meses`}
                 icone={CalendarClock}
+                acoes={<Segmentado<Horizonte> opcoes={HORIZONTES} valor={meses} onChange={mudarHorizonte} altura={36} />}
                 dados={vencsTabela}
                 colunas={COLUNAS_VENC}
                 chave={x => x._k}
