@@ -57,6 +57,10 @@ function gravarPref(usuario: string | undefined, sufixo: string, valor: unknown)
 }
 const ORDEM_PADRAO: Ordenacao = { coluna: 'pl', decrescente: true };
 
+const rotuloKpi: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-text-secondary)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' };
+const valorKpi: React.CSSProperties = { fontSize: 17, fontWeight: 700, marginTop: 6, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' };
+const notaKpi: React.CSSProperties = { fontSize: 11, color: 'var(--color-text-muted)', marginTop: 1, whiteSpace: 'nowrap' };
+
 export default function DashboardConsultor() {
     const navigate = useNavigate();
     const { perfil } = useAuth();
@@ -109,17 +113,24 @@ export default function DashboardConsultor() {
         return q ? clientes.filter(c => `${c.codigo_avere ?? ''} ${c.nome}`.toLowerCase().includes(q)) : clientes;
     }, [clientes, busca]);
 
+    // Coluna de instituição só aparece se algum cliente da lista tem posição nela (Manual, hoje, quase nunca).
+    const plataformasComDado = useMemo(
+        () => PLATAFORMAS.filter(p => p.key !== 'pl_manual' || clientes.some(c => (c.pl_manual ?? 0) > 0)),
+        [clientes],
+    );
+
     const colunas = useMemo<ColunaTabela<ClienteRow>[]>(() => {
         // Um selo por conta: cliente com duas contas no BTG mostra "BTG" "BTG".
         const contasDoCliente = (c: ClienteRow) => PLATAFORMAS.flatMap(p => {
             const n = (c[p.contasKey] ?? 0) || ((c[p.key] ?? 0) > 0 ? 1 : 0);
             return Array.from({ length: n }, () => p);
         });
+        // Larguras pensadas para o maior valor real caber inteiro (R$ 416.935.189,35 no total do BTG).
         return [
             { id: 'codigo', titulo: 'Código', tipo: 'texto', apagado: true, largura: 90, valor: c => c.codigo_avere },
             { id: 'nome', titulo: 'Cliente', tipo: 'texto', destaque: true, valor: c => c.nome },
             {
-                id: 'inst', titulo: 'Instituições', tipo: 'cadastro', largura: 200, semOrdenar: true,
+                id: 'inst', titulo: 'Instituições', tipo: 'cadastro', largura: 170, semOrdenar: true,
                 valor: c => contasDoCliente(c).map(p => p.label).join(' '),
                 filtro: 'lista', valoresFiltro: c => [...new Set(contasDoCliente(c).map(p => p.label))],
                 celula: c => {
@@ -140,13 +151,13 @@ export default function DashboardConsultor() {
                     );
                 },
             },
-            ...PLATAFORMAS.map((p): ColunaTabela<ClienteRow> => ({
-                id: p.key, titulo: p.label, tipo: 'moeda', largura: 140, filtro: 'faixa', somar: true,
+            ...plataformasComDado.map((p): ColunaTabela<ClienteRow> => ({
+                id: p.key, titulo: p.label, tipo: 'moeda', largura: 175, filtro: 'faixa', somar: true,
                 valor: c => ((c[p.key] ?? 0) > 0 ? c[p.key] : null),   // sem posição na instituição → "—"
             })),
-            { id: 'pl', titulo: 'PL Total', tipo: 'moeda', largura: 160, filtro: 'faixa', somar: true, valor: c => c.pl_total },
+            { id: 'pl', titulo: 'PL Total', tipo: 'moeda', largura: 185, filtro: 'faixa', somar: true, valor: c => c.pl_total },
         ];
-    }, [coresInst]);
+    }, [coresInst, plataformasComDado]);
 
     const abrirCliente = (c: ClienteRow) => {
         setSelectedClient({
@@ -175,34 +186,35 @@ export default function DashboardConsultor() {
                 </div>
             </header>
 
-            {/* ── KPIs ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
-                <Card style={{ padding: 20, borderTop: '3px solid var(--color-secundaria)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-text-secondary)', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        <Wallet size={16} color="var(--color-secundaria)" /> Patrimônio Consolidado
+            {/* ── KPIs — uma fileira só, compacta, para a tabela ter espaço ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                <Card style={{ padding: '14px 16px', borderTop: '3px solid var(--color-secundaria)' }}>
+                    <div style={rotuloKpi}>
+                        <Wallet size={14} color="var(--color-secundaria)" /> Patrimônio
                     </div>
-                    <div style={{ fontSize: 20, fontWeight: 700, marginTop: 10, color: 'var(--color-primaria)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{kpis ? v(kpis.pl_total) : '—'}</div>
+                    <div style={{ ...valorKpi, color: 'var(--color-primaria)' }}>{kpis ? v(kpis.pl_total) : '—'}</div>
+                    <div style={notaKpi}>consolidado</div>
                 </Card>
-                <Card style={{ padding: 20 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-text-secondary)', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        <Users size={16} /> Clientes
+                <Card style={{ padding: '14px 16px' }}>
+                    <div style={rotuloKpi}>
+                        <Users size={14} /> Clientes
                     </div>
-                    <div style={{ fontSize: 26, fontWeight: 700, marginTop: 10 }}>
+                    <div style={valorKpi}>
                         {kpis?.num_clientes_com_pl ?? 0}
-                        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-muted)' }}> de {kpis?.num_clientes ?? 0}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)' }}> de {kpis?.num_clientes ?? 0}</span>
                     </div>
-                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>com posição / cadastrados</div>
+                    <div style={notaKpi}>com posição / cadastrados</div>
                 </Card>
                 {PLATAFORMAS.filter(p => ((kpis?.[p.key] as number) ?? 0) > 0).map(p => {
                     const val = (kpis?.[p.key] as number) ?? 0;
                     const pct = kpis && kpis.pl_total > 0 ? (val / kpis.pl_total) * 100 : 0;
                     return (
-                        <Card key={p.key} style={{ padding: 20 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-text-secondary)', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                <span style={{ width: 10, height: 10, borderRadius: 3, background: corPlat(p.label, p.cor) }} /> PL {p.label}
+                        <Card key={p.key} style={{ padding: '14px 16px' }}>
+                            <div style={rotuloKpi}>
+                                <span style={{ width: 9, height: 9, borderRadius: 3, background: corPlat(p.label, p.cor) }} /> PL {p.label}
                             </div>
-                            <div style={{ fontSize: 18, fontWeight: 700, marginTop: 10, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{v(val)}</div>
-                            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 2 }}>{pct.toFixed(1)}% do total</div>
+                            <div style={valorKpi}>{v(val)}</div>
+                            <div style={notaKpi}>{pct.toFixed(1)}% do total</div>
                         </Card>
                     );
                 })}
@@ -216,7 +228,7 @@ export default function DashboardConsultor() {
                 dados={dados}
                 colunas={colunas}
                 chave={c => c.cliente_id}
-                barra={<div style={{ width: 'min(360px, 100%)' }}><CampoBusca valor={busca} onChange={setBusca} placeholder="Buscar por nome ou código…" /></div>}
+                acoes={<div style={{ width: 'min(340px, 100%)' }}><CampoBusca valor={busca} onChange={setBusca} placeholder="Buscar por nome ou código…" /></div>}
                 filtros={filtros}
                 onFiltrosChange={f => { setFiltros(f); gravarPref(perfil?.id, 'filtros', f); }}
                 ordenacao={ordenacao}
