@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Card, Spinner, CabecalhoPagina } from 'avere-ui';
-import { CalendarClock, ChevronRight, ShieldAlert, Landmark, Bell } from 'lucide-react';
+import { Typography, Card, Spinner, CabecalhoPagina, TabelaConsulta, type ColunaTabela } from 'avere-ui';
+import { CalendarClock, ShieldAlert, Landmark, Bell } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
 import { CalendarCheck2, ShieldCheck, PieChart as PieIcon } from 'lucide-react';
@@ -46,6 +46,17 @@ interface CreditoAlerta {
 
 const MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 const mesLabel = (ym: string) => { const [a, m] = ym.split('-'); return `${MESES[Number(m) - 1]}/${a}`; };
+
+type LinhaVenc = Vencimento & { _k: string };
+const COLUNAS_VENC: ColunaTabela<LinhaVenc>[] = [
+    { id: 'cliente', titulo: 'Cliente', tipo: 'texto', destaque: true, largura: '22%', valor: x => x.cliente_nome },
+    { id: 'tipo', titulo: 'Tipo', tipo: 'selo', valor: x => x.sub_tipo },
+    { id: 'ativo', titulo: 'Ativo', tipo: 'texto', valor: x => x.nome },
+    { id: 'inst', titulo: 'Inst.', tipo: 'texto', apagado: true, largura: 80, valor: x => x.instituicao },
+    { id: 'venc', titulo: 'Venc.', tipo: 'data', valor: x => x.data_vencimento },
+    // Larga o bastante para o total do mês e o do horizonte (R$ 851 mi) caberem inteiros.
+    { id: 'valor', titulo: 'Valor', tipo: 'moeda', somar: true, largura: 190, valor: x => x.valor },
+];
 
 const th: React.CSSProperties = { padding: '9px 12px', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', textAlign: 'left', whiteSpace: 'nowrap' };
 const thNum: React.CSSProperties = { ...th, textAlign: 'right' };
@@ -94,23 +105,13 @@ export default function AlertasConsultor() {
     const fgcF = useMemo(() => (alvo ? fgc.filter(x => x.cliente_id === alvo) : fgc), [fgc, alvo]);
     const creditoF = useMemo(() => (alvo ? credito.filter(x => x.cliente_id === alvo) : credito), [credito, alvo]);
 
-    // Agrupa por mês (a lista já vem ordenada por data).
-    const porMes = useMemo(() => {
-        const grupos: { ym: string; itens: Vencimento[]; total: number; clientes: number }[] = [];
-        const idx = new Map<string, number>();
-        for (const it of vencsF) {
-            const ym = (it.data_vencimento || '').slice(0, 7);
-            if (!idx.has(ym)) { idx.set(ym, grupos.length); grupos.push({ ym, itens: [], total: 0, clientes: 0 }); }
-            grupos[idx.get(ym)!].itens.push(it);
-        }
-        grupos.forEach(g => {
-            g.total = g.itens.reduce((s, i) => s + (i.valor || 0), 0);
-            g.clientes = new Set(g.itens.map(i => i.cliente_id)).size;
-        });
-        return grupos;
-    }, [vencsF]);
-
-    const totalGeral = useMemo(() => vencsF.reduce((s, i) => s + (i.valor || 0), 0), [vencsF]);
+    // Linhas da tabela: chave estável por posição (o mesmo papel pode repetir entre contas) e sem a
+    // data 9999-12-31, que é o "sem data" das corretoras — não é vencimento.
+    const vencsTabela = useMemo(
+        () => vencsF.filter(x => x.data_vencimento && !x.data_vencimento.startsWith('9999'))
+            .map((x, i) => ({ ...x, _k: `${i}|${x.cliente_id}|${x.data_vencimento}` })),
+        [vencsF],
+    );
 
     const abrirCliente = (clienteId: string, nome: string) => {
         setSelectedClient({
@@ -132,68 +133,27 @@ export default function AlertasConsultor() {
                 descricao={selectedClient ? `Foco no cliente: ${selectedClient.nome}` : 'Vencimentos e riscos consolidados da sua carteira.'}
             />
 
-            {/* ── Seção: Vencimentos ── */}
-            <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <CalendarClock size={20} color="var(--color-secundaria)" />
-                    <Typography variant="p" style={{ fontWeight: 700, fontSize: 16 }}>Vencimentos próximos</Typography>
-                    <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>{vencsF.length} ativos · {v(totalGeral)}</span>
-                </div>
-
-                {porMes.length === 0 && (
-                    <Card style={{ padding: 0 }}><EstadoVazio compacto icon={CalendarCheck2} titulo="Nenhum vencimento no radar" dica="Não há títulos vencendo no horizonte monitorado." /></Card>
-                )}
-
-                {porMes.map(g => (
-                    <Card key={g.ym} style={{ padding: 0, overflow: 'hidden' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: 'var(--gray-50)', borderBottom: '1px solid var(--color-surface-sunken)' }}>
-                            <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--color-primaria)' }}>{mesLabel(g.ym)}</span>
-                            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{g.clientes} cliente{g.clientes === 1 ? '' : 's'} · {g.itens.length} ativo{g.itens.length === 1 ? '' : 's'}</span>
-                            <div style={{ flex: 1 }} />
-                            <span style={{ fontWeight: 700, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>{v(g.total)}</span>
-                        </div>
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 680, tableLayout: 'fixed' }}>
-                                <colgroup>
-                                    <col style={{ width: '22%' }} />
-                                    <col style={{ width: '9%' }} />
-                                    <col style={{ width: '29%' }} />
-                                    <col style={{ width: '9%' }} />
-                                    <col style={{ width: '12%' }} />
-                                    <col style={{ width: '15%' }} />
-                                    <col style={{ width: '4%' }} />
-                                </colgroup>
-                                <thead>
-                                    <tr>
-                                        <th style={th}>Cliente</th>
-                                        <th style={th}>Tipo</th>
-                                        <th style={th}>Ativo</th>
-                                        <th style={th}>Inst.</th>
-                                        <th style={thNum}>Venc.</th>
-                                        <th style={thNum}>Valor</th>
-                                        <th style={th}></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {g.itens.map((it, i) => (
-                                        <tr key={i} onClick={() => abrirCliente(it.cliente_id, it.cliente_nome)} style={{ cursor: 'pointer' }}
-                                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-accent-subtle)')}
-                                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                                            <td style={{ ...td, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.cliente_nome}</td>
-                                            <td style={td}>{it.sub_tipo ? <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-secundaria)', background: 'var(--color-accent-subtle)', padding: '2px 6px', borderRadius: 4 }}>{it.sub_tipo}</span> : '—'}</td>
-                                            <td style={{ ...td, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.nome}</td>
-                                            <td style={td}><span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>{it.instituicao}</span></td>
-                                            <td style={tdNum}>{fmtDate(it.data_vencimento)}</td>
-                                            <td style={{ ...tdNum, fontWeight: 700, color: 'var(--color-text-primary)' }}>{v(it.valor)}</td>
-                                            <td style={{ ...td, textAlign: 'right' }}><ChevronRight size={15} color="var(--color-border-default)" /></td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </Card>
-                ))}
-            </section>
+            {/* ── Seção: Vencimentos — TabelaConsulta agrupada por mês (modelo B da avere-ui) ── */}
+            <TabelaConsulta
+                titulo="Vencimentos próximos"
+                subtitulo={`${vencsTabela.length.toLocaleString('pt-BR')} ativos`}
+                icone={CalendarClock}
+                dados={vencsTabela}
+                colunas={COLUNAS_VENC}
+                chave={x => x._k}
+                agrupar={{
+                    por: x => x.data_vencimento.slice(0, 7),
+                    rotulo: ym => mesLabel(ym),
+                    resumo: itens => {
+                        const n = new Set(itens.map(i => i.cliente_id)).size;
+                        return `${n} cliente${n === 1 ? '' : 's'} · ${itens.length} ativo${itens.length === 1 ? '' : 's'}`;
+                    },
+                    ordem: 'chave',
+                }}
+                aoClicarLinha={x => abrirCliente(x.cliente_id, x.cliente_nome)}
+                rotuloTotal="Total no horizonte"
+                vazio={<EstadoVazio compacto icon={CalendarCheck2} titulo="Nenhum vencimento no radar" dica="Não há títulos vencendo no horizonte monitorado." />}
+            />
 
             {/* ── Seção: Limite FGC ── */}
             <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
