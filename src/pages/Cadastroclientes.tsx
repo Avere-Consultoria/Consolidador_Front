@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Typography, Card, TextField, Spinner } from 'avere-ui';
+import { Card, TextField, Spinner, CabecalhoPagina } from 'avere-ui';
 import { Search, ExternalLink, Users as UsersIcon2 } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -107,12 +107,10 @@ export default function CadastroClientes() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px', gap: '16px', flexWrap: 'wrap' }}>
-                <div>
-                    <Typography variant="h1" style={{ fontWeight: 700 }}>Base de Clientes</Typography>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>Vínculos e contas por instituição, vindos do HUB Avere.</Typography>
-                </div>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <CabecalhoPagina
+                titulo="Base de Clientes"
+                descricao="Vínculos e contas por instituição, vindos do HUB Avere."
+                acoes={<div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <TextField leftIcon={Search} placeholder="Pesquisar por nome ou cód. Avere..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '280px' }} />
                     <select value={filtroConsultor} onChange={e => setFiltroConsultor(e.target.value)}
                         style={{ ...selectFiltro, minWidth: '200px', color: filtroConsultor ? 'var(--color-secundaria)' : 'var(--color-text-muted)' }}>
@@ -130,8 +128,8 @@ export default function CadastroClientes() {
                             Mostrar inativos ({inativos})
                         </label>
                     )}
-                </div>
-            </header>
+                </div>}
+            />
 
             <AvisoCadastroHub caminhoHub="/clientes" />
 

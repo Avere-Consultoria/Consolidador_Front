@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Typography, Card, Badge, Button, DataTable, Spinner } from 'avere-ui';
+import { Typography, Card, Badge, Button, DataTable, Spinner, CabecalhoPagina } from 'avere-ui';
 import { History, Eye, AlertCircle } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 import { supabase } from '../services/supabase';
@@ -196,19 +196,11 @@ export default function HistoricoMensal() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <div style={{ background: 'var(--color-accent-subtle)', padding: '8px', borderRadius: '8px' }}>
-                            <History size={24} color="var(--color-primaria)" />
-                        </div>
-                        <Typography variant="h1" style={{ fontWeight: 700, fontSize: '24px' }}>Histórico Mensal</Typography>
-                    </div>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-md)' }}>
-                        Posição materializada de meses fechados. Cliente: <strong>{selectedClient.nome}</strong>
-                    </Typography>
-                </div>
-            </header>
+            <CabecalhoPagina
+                titulo="Histórico Mensal"
+                icone={History}
+                descricao={<>Posição materializada de meses fechados. Cliente: <strong>{selectedClient.nome}</strong></>}
+            />
 
             {mesesUnicos.length === 0 ? (
                 <Card style={{ padding: 0 }}>

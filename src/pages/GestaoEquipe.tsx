@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-    Typography, Card, Button, DataTable, Spinner, Badge, toast,
-    Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, TextField
-} from 'avere-ui';
+import { Typography, Card, Button, DataTable, Spinner, Badge, toast, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, TextField, CabecalhoPagina } from 'avere-ui';
 import { Users, Search, Mail, Loader2, KeyRound } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { AvisoCadastroHub } from '../components/shared/AvisoCadastroHub';
@@ -69,24 +66,11 @@ export default function GestaoEquipe() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <Users size={28} color="var(--color-secundaria)" />
-                        <Typography variant="h1">Gestão de Equipe</Typography>
-                    </div>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>Administração de Consultores e Vínculos de Acesso</Typography>
-                </div>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <TextField
-                        leftIcon={Search}
-                        placeholder="Pesquisar consultor..."
-                        value={busca}
-                        onChange={e => setBusca(e.target.value)}
-                        style={{ width: '240px' }}
-                    />
-                </div>
-            </header>
+            <CabecalhoPagina
+                titulo="Gestão de Equipe"
+                icone={Users}
+                acoes={<TextField leftIcon={Search} placeholder="Pesquisar consultor..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '240px' }} />}
+            />
 
             <AvisoCadastroHub caminhoHub="/equipe" />
 

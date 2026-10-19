@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { Typography, Card, Button, Select, Badge, Spinner, toast } from 'avere-ui';
+import { Typography, Card, Button, Select, Badge, Spinner, toast, CabecalhoPagina } from 'avere-ui';
 import { RefreshCw, Play, Square, CheckCircle2, AlertCircle, Clock, Search } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
@@ -211,20 +211,14 @@ export default function SincronizacaoMassa() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '16px' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <div style={{ background: 'rgba(0,131,203,0.1)', padding: '8px', borderRadius: '8px' }}><RefreshCw size={24} color="var(--color-primaria)" /></div>
-                        <Typography variant="h1" style={{ fontWeight: 700, fontSize: '24px' }}>Central de Sincronização</Typography>
-                    </div>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-                        Estado e disparo da sincronização por conta. Mantenha a aba aberta durante execuções em massa.
-                    </Typography>
-                </div>
-                <div style={{ width: 220 }}>
+            <CabecalhoPagina
+                titulo="Central de Sincronização"
+                icone={RefreshCw}
+                descricao="Estado e disparo da sincronização por conta. Mantenha a aba aberta durante execuções em massa."
+                acoes={<div style={{ width: 220 }}>
                     <Select label="Instituição" value={inst} onChange={setInst} options={OPCOES_INST} />
-                </div>
-            </header>
+                </div>}
+            />
 
             {/* ── SINCRONIZAÇÃO AUTOMÁTICA ──────────────────────────────────── */}
             {cfg && (

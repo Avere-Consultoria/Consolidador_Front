@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Typography, Card, Button, Badge, Spinner } from 'avere-ui';
+import { Typography, Card, Button, Badge, Spinner, CabecalhoPagina } from 'avere-ui';
 import { Calendar, CheckCircle2, AlertCircle, Lock, GitCompareArrows } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../services/supabase';
@@ -190,19 +190,11 @@ export default function FechamentoMes() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <div style={{ background: 'var(--color-accent-subtle)', padding: '8px', borderRadius: '8px' }}>
-                            <Calendar size={24} color="var(--color-primaria)" />
-                        </div>
-                        <Typography variant="h1" style={{ fontWeight: 700, fontSize: '24px' }}>Fechamento de Mês</Typography>
-                    </div>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-md)' }}>
-                        Materializa a posição do final de cada mês de forma imutável, por conta. Cliente: <strong>{selectedClient.nome}</strong>
-                    </Typography>
-                </div>
-            </header>
+            <CabecalhoPagina
+                titulo="Fechamento de Mês"
+                icone={Calendar}
+                descricao={<>Materializa a posição do final de cada mês de forma imutável, por conta. Cliente: <strong>{selectedClient.nome}</strong></>}
+            />
 
             {fechamentoQ.fetchStatus === 'paused' && fechamentoQ.isPending ? (
                 <EstadoErro compacto offline titulo="Sem conexão" dica="Aguardando a rede voltar." />

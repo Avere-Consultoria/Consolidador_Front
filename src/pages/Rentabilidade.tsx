@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Typography, Card, Select, Spinner, Badge, Button, toast } from 'avere-ui';
+import { Typography, Card, Select, Spinner, Badge, Button, toast, CabecalhoPagina } from 'avere-ui';
 import { Sparkles, PenLine, AlertTriangle, X, Trash2 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
@@ -405,17 +405,13 @@ export default function Rentabilidade() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap', borderBottom: '1px solid var(--color-border-subtle)', paddingBottom: 20 }}>
-                <div>
-                    <Typography variant="h1">Rentabilidade</Typography>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
-                        O número de cada conta é o que a própria instituição acusa — igual ao app dela.
-                    </Typography>
-                </div>
-                <div style={{ width: 220, flexShrink: 0 }}>
+            <CabecalhoPagina
+                titulo="Rentabilidade"
+                descricao="O número de cada conta é o que a própria instituição acusa — igual ao app dela."
+                acoes={<div style={{ width: 220 }}>
                     <Select label="Mês de referência" value={mesRef} onChange={(v: string) => setMesRef(v)} options={opcoesMes} />
-                </div>
-            </header>
+                </div>}
+            />
 
             {/* Avisos de cobertura — nunca fingir 100% quando há conta sem dados */}
             {avisosBloco.length > 0 && (

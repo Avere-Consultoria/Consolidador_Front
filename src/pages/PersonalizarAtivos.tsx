@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Typography, Card, Button, Spinner, Badge, TextField, toast } from 'avere-ui';
+import { Typography, Card, Button, Spinner, Badge, TextField, toast, CabecalhoPagina } from 'avere-ui';
 import { SlidersHorizontal, Plus, Search } from 'lucide-react';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
 import { supabase } from '../services/supabase';
@@ -272,33 +272,17 @@ export default function PersonalizarAtivos() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <div style={{ background: 'var(--color-accent-subtle)', padding: '8px', borderRadius: '8px' }}>
-                            <SlidersHorizontal size={24} color="var(--color-primaria)" />
-                        </div>
-                        <Typography variant="h1" style={{ fontWeight: 700, fontSize: '24px' }}>Personalizar Ativos</Typography>
-                    </div>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-                        Crie exceções de nomenclatura e classificação para carteiras específicas ou globais.
-                    </Typography>
-                </div>
-                {aba === 'REGRAS' && (
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        <TextField
-                            leftIcon={Search}
-                            placeholder="Buscar ativo, apelido ou cliente..."
-                            value={busca}
-                            onChange={e => setBusca(e.target.value)}
-                            style={{ width: 280 }}
-                        />
-                        <Button variant="solid" onClick={openNewModal} disabled={!consultorContextoId}>
-                            <Plus size={16} style={{ marginRight: '8px' }} /> Nova Regra
-                        </Button>
-                    </div>
-                )}
-            </header>
+            <CabecalhoPagina
+                titulo="Personalizar Ativos"
+                icone={SlidersHorizontal}
+                descricao="Crie exceções de nomenclatura e classificação para carteiras específicas ou globais."
+                acoes={aba === 'REGRAS' && <>
+                    <TextField leftIcon={Search} placeholder="Buscar ativo, apelido ou cliente..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: 280 }} />
+                    <Button variant="solid" onClick={openNewModal} disabled={!consultorContextoId}>
+                        <Plus size={16} style={{ marginRight: '8px' }} /> Nova Regra
+                    </Button>
+                </>}
+            />
 
             {!consultorContextoId && (
                 <Card style={{ padding: '16px', background: 'var(--color-warning-bg)', border: '1px solid var(--color-warning-border)' }}>

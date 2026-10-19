@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Button } from 'avere-ui';
+import { Button, CabecalhoPagina } from 'avere-ui';
 import { Settings, Building2, PieChart, Landmark, ShieldCheck, SlidersHorizontal, Layers, Timer, Database } from 'lucide-react';
-import { CabecalhoPagina } from '../components/shared/CabecalhoPagina';
 import EmissoresTab from '../components/gestaoMaster/EmissoresTab';
 import ClassesTab from '../components/gestaoMaster/ClassesTab';
 import InstituicoesTab from '../components/gestaoMaster/InstituicoesTab';

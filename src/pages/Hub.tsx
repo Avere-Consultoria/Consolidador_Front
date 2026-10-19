@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Typography } from 'avere-ui';
+import { Typography, CabecalhoPagina } from 'avere-ui';
 import {
     UserPlus, FileSpreadsheet, ClipboardList, FileSignature, Users, LineChart,
     Calculator, UserRound, Receipt, FolderUp, ShieldAlert, CalendarClock,
@@ -118,12 +118,7 @@ export default function Hub() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
             <style>{`.hub-card:hover{border-color:var(--color-primaria)!important;box-shadow:0 4px 12px var(--color-border-subtle);transform:translateY(-1px);}`}</style>
 
-            <header>
-                <Typography variant="h1" style={{ margin: 0 }}>Hub Avere</Typography>
-                <Typography variant="p" style={{ margin: '6px 0 0', color: 'var(--color-text-secondary)', fontSize: 14 }}>
-                    Atalhos e links úteis da casa, reunidos num lugar só.
-                </Typography>
-            </header>
+            <CabecalhoPagina titulo="Hub Avere" descricao="Atalhos e links úteis da casa, reunidos num lugar só." />
 
             {HUB_CATEGORIAS.map(cat => (
                 <section key={cat.nome} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

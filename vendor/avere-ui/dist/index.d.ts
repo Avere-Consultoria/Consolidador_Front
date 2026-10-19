@@ -109,6 +109,21 @@ export declare const buttonVariants: (props?: ({
     size?: "sm" | "md" | "lg" | null | undefined;
 } & ClassProp) | undefined) => string;
 
+export declare function CabecalhoPagina({ titulo, icone: Icone, selo, descricao, acoes, className }: CabecalhoPaginaProps): JSX.Element;
+
+export declare interface CabecalhoPaginaProps {
+    titulo: ReactNode;
+    /** Ícone ao lado do título (20 px, cor secundária). */
+    icone?: LucideIcon;
+    /** Colado ao título — ex.: um contador. */
+    selo?: ReactNode;
+    /** Frase de apoio — só quando acrescenta (regra 3). */
+    descricao?: ReactNode;
+    /** Ações da página, à direita. */
+    acoes?: ReactNode;
+    className?: string;
+}
+
 export declare function Calendar({ className, classNames, showOutsideDays, ...props }: CalendarProps): JSX.Element;
 
 declare type CalendarProps = React_2.ComponentProps<typeof DayPicker>;

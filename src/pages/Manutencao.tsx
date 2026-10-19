@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Typography, Card, Button, Badge, Spinner, toast } from 'avere-ui';
+import { Typography, Card, Button, Badge, Spinner, toast, CabecalhoPagina } from 'avere-ui';
 import { Wrench, Lock, Trash2, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import { supabase } from '../services/supabase';
 
@@ -107,22 +107,14 @@ export default function Manutencao() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <div style={{ background: 'var(--color-accent-subtle)', padding: '8px', borderRadius: '8px' }}>
-                            <Wrench size={24} color="var(--color-primaria)" />
-                        </div>
-                        <Typography variant="h1" style={{ fontWeight: 700, fontSize: '24px' }}>Manutenção</Typography>
-                    </div>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)', fontSize: '14px' }}>
-                        Auto-fechamento de meses passados + poda de snapshots diários
-                    </Typography>
-                </div>
-                <Typography variant="p" style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+            <CabecalhoPagina
+                titulo="Manutenção"
+                icone={Wrench}
+                descricao="Auto-fechamento de meses passados + poda de snapshots diários"
+                acoes={<span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>
                     Mês corrente: <strong>{formatarMes(status.mes_corrente)}</strong> · Buffer: <strong>{status.dias_buffer} dias</strong>
-                </Typography>
-            </header>
+                </span>}
+            />
 
             {/* ── Card 1: Elegíveis para auto-fechamento ── */}
             <Card style={{ padding: '20px', border: status.elegiveis_auto_fechamento.length > 0 ? '1px solid rgba(220, 38, 38, 0.2)' : undefined }}>

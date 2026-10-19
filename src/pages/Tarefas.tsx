@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Typography, Card, Spinner, Button, Combobox, Badge, toast } from 'avere-ui';
+import { Typography, Card, Spinner, Button, Combobox, Badge, toast, CabecalhoPagina } from 'avere-ui';
 import { Plus, Sparkles, Trash2, CalendarPlus, Check, X, RotateCcw } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
-import { CabecalhoPagina } from '../components/shared/CabecalhoPagina';
 import { CheckCircle2, ListChecks } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';

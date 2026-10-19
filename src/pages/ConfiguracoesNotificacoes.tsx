@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Typography, Card, Badge, Button, Spinner, Switch, Combobox, toast } from 'avere-ui';
+import { Typography, Card, Badge, Button, Spinner, Switch, Combobox, toast, CabecalhoPagina } from 'avere-ui';
 import { BellRing, RotateCcw, Eye, History, Send, CalendarCheck2, Users, UserX, Cake, AlarmClock, Mail, RefreshCw, Plus, Check, Undo2, ChevronRight } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -477,12 +477,7 @@ export default function ConfiguracoesNotificacoes() {
     if (!isMaster && !meuConsultor) {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <header style={{ borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <BellRing size={28} color="var(--color-secundaria)" />
-                        <Typography variant="h1">Notificações</Typography>
-                    </div>
-                </header>
+                <CabecalhoPagina titulo="Notificações" icone={BellRing} />
                 <Card style={{ padding: 0 }}>
                     <EstadoVazio icon={UserX} titulo="Seu login ainda não está vinculado a um consultor" dica="Peça ao master para ajustar o vínculo em Cadastros → Equipe. Depois disso as preferências aparecem aqui." />
                 </Card>
@@ -505,30 +500,24 @@ export default function ConfiguracoesNotificacoes() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px', flexWrap: 'wrap', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                        <BellRing size={28} color="var(--color-secundaria)" />
-                        <Typography variant="h1">Notificações</Typography>
-                        {isMaster && (
-                            <div style={{ display: 'flex', gap: 6 }}>
-                                <Badge intent={casaAniv ? 'primaria' : 'neutro'} variant="solid" style={{ fontSize: 11 }}>Aniversários {casaAniv ? 'ligados' : 'desligados'}</Badge>
-                                <Badge intent={casaVenc ? 'primaria' : 'neutro'} variant="solid" style={{ fontSize: 11 }}>Vencimentos {casaVenc ? 'ligados' : 'desligados'}</Badge>
-                            </div>
-                        )}
+            <CabecalhoPagina
+                titulo="Notificações"
+                icone={BellRing}
+                selo={isMaster && (
+                    <div style={{ display: 'flex', gap: 6 }}>
+                        <Badge intent={casaAniv ? 'primaria' : 'neutro'} variant="solid" style={{ fontSize: 11 }}>Aniversários {casaAniv ? 'ligados' : 'desligados'}</Badge>
+                        <Badge intent={casaVenc ? 'primaria' : 'neutro'} variant="solid" style={{ fontSize: 11 }}>Vencimentos {casaVenc ? 'ligados' : 'desligados'}</Badge>
                     </div>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
-                        {isMaster
-                            ? 'Resumo diário por e-mail com aniversários de clientes e vencimentos. O padrão Avere vale para todos; cada consultor pode personalizar o que quiser.'
-                            : 'Resumo diário por e-mail com os aniversários dos seus clientes e os vencimentos da sua carteira. O que você não personalizar segue o padrão Avere.'}
-                    </Typography>
-                </div>
-                {isMaster && (
-                    <div style={{ width: 300, flexShrink: 0 }}>
+                )}
+                descricao={isMaster
+                    ? 'Resumo diário por e-mail com aniversários de clientes e vencimentos. O padrão Avere vale para todos; cada consultor pode personalizar o que quiser.'
+                    : 'Resumo diário por e-mail com os aniversários dos seus clientes e os vencimentos da sua carteira. O que você não personalizar segue o padrão Avere.'}
+                acoes={isMaster && (
+                    <div style={{ width: 300 }}>
                         <Combobox options={opcoesAlvo} value={alvo ?? PADRAO} onChange={v => setAlvo(v)} placeholder="Configurar..." />
                     </div>
                 )}
-            </header>
+            />
 
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 2fr)', gap: '24px', alignItems: 'stretch' }}>
                 {/* ── Preferências ── */}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Typography, Card, Spinner, Badge, Button, TextField, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, toast } from 'avere-ui';
+import { Typography, Card, Spinner, Badge, Button, TextField, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, toast, CabecalhoPagina } from 'avere-ui';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
 import { FileText, Search, FileStack, ArrowDownRight, Pencil, ArrowUp, Fingerprint, Link2, ChevronDown, AlertTriangle, Trash2, Loader2, RotateCcw, Ban } from 'lucide-react';
 import { supabase } from '../services/supabase';
@@ -400,22 +400,14 @@ export default function DocumentosManuais() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px', flexWrap: 'wrap', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <FileStack size={28} color="var(--color-secundaria)" />
-                        <Typography variant="h1">{isMaster ? 'Documentos Manuais' : 'Meus Envios'}</Typography>
-                    </div>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
-                        {isMaster
-                            ? 'Histórico dos envios processados sem API — auditar, corrigir o que a IA extraiu e promover ao global.'
-                            : 'Acompanhe seus envios manuais: veja se já foram processados e corrija o que a IA extraiu.'}
-                    </Typography>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-                    <TextField leftIcon={Search} placeholder="Buscar por cliente, instituição ou arquivo..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '320px' }} />
-                </div>
-            </header>
+            <CabecalhoPagina
+                titulo={isMaster ? 'Documentos Manuais' : 'Meus Envios'}
+                icone={FileStack}
+                descricao={isMaster
+                    ? 'Histórico dos envios processados sem API — auditar, corrigir o que a IA extraiu e promover ao global.'
+                    : 'Acompanhe seus envios manuais: veja se já foram processados e corrija o que a IA extraiu.'}
+                acoes={<TextField leftIcon={Search} placeholder="Buscar por cliente, instituição ou arquivo..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '320px' }} />}
+            />
 
             {/* ── Nível 1 — Histórico de documentos (filtro de status em abas) ── */}
             <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--color-borda)', flexWrap: 'wrap' }}>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Typography, Card, Badge, Button, Spinner, TextField, toast } from 'avere-ui';
+import { Typography, Card, Badge, Button, Spinner, TextField, toast, CabecalhoPagina } from 'avere-ui';
 import { Wand2, Search } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
@@ -276,32 +276,17 @@ export default function MasterAtivos() {
                 .master-row:hover { background: var(--color-accent-subtle); }
             `}</style>
 
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '24px' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <Typography variant="h1" style={{ fontWeight: 700 }}>Master de Ativos</Typography>
-                        <Badge intent={pendentesCount > 0 ? 'primaria' : 'secundaria'} variant="solid">
-                            {pendentesCount} a classificar
-                        </Badge>
-                    </div>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)' }}>
-                        Dicionário Universal de Classificação e Risco da Avere
-                    </Typography>
-                </div>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <TextField
-                        leftIcon={Search}
-                        placeholder="Buscar ativo, código ou risco..."
-                        value={busca}
-                        onChange={e => setBusca(e.target.value)}
-                        style={{ width: 260 }}
-                    />
+            <CabecalhoPagina
+                titulo="Master de Ativos"
+                selo={<Badge intent={pendentesCount > 0 ? 'primaria' : 'secundaria'} variant="solid">{pendentesCount} a classificar</Badge>}
+                acoes={<>
+                    <TextField leftIcon={Search} placeholder="Buscar ativo, código ou risco..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: 260 }} />
                     <Button variant="solid" onClick={handleAutoClassificar} disabled={classificando}>
                         {classificando ? <Spinner size="sm" /> : <Wand2 size={16} style={{ marginRight: '8px' }} />}
                         {classificando ? 'Classificando...' : 'Auto-classificar'}
                     </Button>
-                </div>
-            </header>
+                </>}
+            />
 
             {/* ── Abas: Classificar (sem classe) + uma por Classe Avere ── */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>

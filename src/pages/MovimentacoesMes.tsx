@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Typography, Button, Spinner, toast } from 'avere-ui';
+import { Typography, Button, Spinner, toast, CabecalhoPagina } from 'avere-ui';
 import { ArrowLeft, GitCompareArrows, AlertCircle, Lock, RefreshCw } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useClient } from '../contexts/ClientContext';
@@ -85,21 +85,11 @@ export default function MovimentacoesMes() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid var(--color-borda)', paddingBottom: '16px' }}>
-                <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                        <div style={{ background: 'var(--color-accent-subtle)', padding: '8px', borderRadius: '8px' }}>
-                            <GitCompareArrows size={24} color="var(--color-primaria)" />
-                        </div>
-                        <Typography variant="h1" style={{ fontWeight: 700, fontSize: '24px' }}>
-                            Movimentações — {formatarMesReferencia(mes)}
-                        </Typography>
-                    </div>
-                    <Typography variant="p" style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-md)' }}>
-                        O que mudou na carteira ao longo do mês. Cliente: <strong>{selectedClient.nome}</strong>
-                    </Typography>
-                </div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <CabecalhoPagina
+                titulo={`Movimentações — ${formatarMesReferencia(mes)}`}
+                icone={GitCompareArrows}
+                descricao={<>O que mudou na carteira ao longo do mês. Cliente: <strong>{selectedClient.nome}</strong></>}
+                acoes={<>
                     <Button variant="outline" onClick={() => navigate(`/cliente/${clienteId}/fechamento`)}>
                         <ArrowLeft size={16} style={{ marginRight: 6 }} /> Voltar
                     </Button>
@@ -107,8 +97,8 @@ export default function MovimentacoesMes() {
                         {fechando ? <Spinner size="sm" /> : fechado ? <RefreshCw size={16} style={{ marginRight: 6 }} /> : <Lock size={16} style={{ marginRight: 6 }} />}
                         {fechado ? 'Refazer fechamento' : 'Fechar mês'}
                     </Button>
-                </div>
-            </header>
+                </>}
+            />
 
             <MatrizMovimentacoes
                 clienteId={selectedClient.id}

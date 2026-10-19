@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Spinner, CampoBusca, TabelaConsulta, aplicarFiltros, type ColunaTabela, type FiltrosTabela, type Ordenacao } from 'avere-ui';
+import { Card, Spinner, CampoBusca, TabelaConsulta, aplicarFiltros, type ColunaTabela, type FiltrosTabela, type Ordenacao, CabecalhoPagina } from 'avere-ui';
 import { Users, Wallet, LayoutDashboard } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
-import { CabecalhoPagina } from '../components/shared/CabecalhoPagina';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
 import { fmt } from '../utils/formatters';

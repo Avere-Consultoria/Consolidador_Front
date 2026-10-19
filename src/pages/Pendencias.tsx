@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Card, Badge, Button, Spinner } from 'avere-ui';
-import { ClipboardCheck, ArrowRight, Inbox } from 'lucide-react';
+import { Typography, Card, Badge, Button, Spinner, CabecalhoPagina } from 'avere-ui';
+import { ClipboardCheck, ArrowRight, Inbox, Tags } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import CercaPosicao from '../components/pendencias/CercaPosicao';
 import FilaEmails from '../components/pendencias/FilaEmails';
@@ -87,23 +87,30 @@ export default function Pendencias() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+            <CabecalhoPagina
+                titulo="Pendências"
+                icone={ClipboardCheck}
+                descricao="O que precisa de ação: e-mails parados, contas que não fecham com a corretora e ativos para classificar."
+            />
+
             <FilaEmails />
             <CercaPosicao />
 
-            <header style={{ borderBottom: '1px solid var(--color-borda)', paddingBottom: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <ClipboardCheck size={22} style={{ color: 'var(--color-primaria)' }} />
-                    <Typography variant="h1" style={{ margin: 0 }}>Pendências</Typography>
+            {/* ── Seção: ativos para classificar (curadoria) ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <Tags size={20} style={{ color: 'var(--color-primaria)' }} />
+                    <Typography variant="h2" style={{ margin: 0 }}>Ativos para classificar</Typography>
                     {pendencias.length > 0 && (
                         <Badge intent="alerta" variant="solid" style={{ fontSize: '12px' }}>{pendencias.length}</Badge>
                     )}
                 </div>
-                <Typography variant="p" style={{ color: 'var(--color-text-secondary)', marginTop: '6px', maxWidth: 720 }}>
+                <Typography variant="p" style={{ margin: 0, color: 'var(--color-text-secondary)', maxWidth: 760, fontSize: 'var(--text-sm)' }}>
                     Ativos <strong>sem classificação oficial</strong> que um consultor já classificou (rascunho ou
-                    exceção). Clique em <strong>Curar</strong> para abrir na Master Ativos e definir a classificação
+                    exceção). Clique em <strong>Classificar</strong> para abrir na Master Ativos e definir a classificação
                     canônica — aí o item sai desta lista.
                 </Typography>
-            </header>
+            </div>
 
             {pendencias.length === 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 24px', gap: '14px', border: '2px dashed var(--color-border-default)', borderRadius: 'var(--radius-lg)', color: 'var(--color-text-secondary)' }}>

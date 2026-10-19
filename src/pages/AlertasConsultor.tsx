@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Typography, Card, Spinner } from 'avere-ui';
+import { Typography, Card, Spinner, CabecalhoPagina } from 'avere-ui';
 import { CalendarClock, ChevronRight, ShieldAlert, Landmark, Bell } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
-import { CabecalhoPagina } from '../components/shared/CabecalhoPagina';
 import { CalendarCheck2, ShieldCheck, PieChart as PieIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
