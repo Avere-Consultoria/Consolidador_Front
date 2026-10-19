@@ -12,6 +12,7 @@ import { fmt, fmtDate } from '../utils/formatters';
 interface Vencimento {
     cliente_id: string;
     cliente_nome: string;
+    codigo_avere: string | null;
     instituicao: string;
     nome: string;
     sub_tipo: string | null;
@@ -87,7 +88,6 @@ export default function AlertasConsultor() {
     const [vencs, setVencs] = useState<Vencimento[]>([]);
     const [fgc, setFgc] = useState<FgcAlerta[]>([]);
     const [credito, setCredito] = useState<CreditoAlerta[]>([]);
-    const [clientesMap, setClientesMap] = useState<Map<string, string>>(new Map());
 
     const pConsultor = isMaster && consultorSelecionado && consultorSelecionado !== 'todos' && consultorSelecionado !== 'meus'
         ? consultorSelecionado
@@ -110,53 +110,61 @@ export default function AlertasConsultor() {
     useEffect(() => {
         (async () => {
             setLoading(true);
-            const [fRes, cpRes, cRes] = await Promise.all([
+            const [fRes, cpRes] = await Promise.all([
                 supabase.rpc('fgc_consultor', { p_consultor_id: pConsultor }),
                 supabase.rpc('credito_privado_consultor', { p_consultor_id: pConsultor }),
-                supabase.from('clientes').select('id, codigo_avere'),
             ]);
             setFgc((fRes.data as FgcAlerta[]) || []);
             setCredito((cpRes.data as CreditoAlerta[]) || []);
-            setClientesMap(new Map((cRes.data || []).map((c: any) => [c.id, c.codigo_avere])));
             setLoading(false);
         })();
     }, [pConsultor]);
 
-    // Vencimentos à parte: trocar o horizonte busca só eles, do banco, já recortados.
+    // Foco em 1 cliente via o seletor "Cliente Final" do topo (na página de Alertas
+    // ele filtra em vez de navegar). Sem cliente = todos do escopo (consultor/casa).
+    const alvo = selectedClient?.id ?? null;
+
+    // Vencimentos à parte: horizonte e cliente escolhido vão para o banco, que devolve já recortado.
     useEffect(() => {
         let vivo = true;
         (async () => {
             setCarregandoVenc(true);
-            const { data, error } = await supabase.rpc('vencimentos_consultor', { p_consultor_id: pConsultor, p_meses: meses === 'todos' ? 0 : Number(meses) });
+            const { data, error } = await supabase.rpc('vencimentos_consultor', {
+                p_consultor_id: pConsultor,
+                p_meses: meses === 'todos' ? 0 : Number(meses),
+                p_cliente_id: alvo,
+            });
             if (!vivo) return;
             if (error) console.error('Alertas: falha ao carregar vencimentos', error);
             setVencs((data as Vencimento[]) || []);
             setCarregandoVenc(false);
         })();
         return () => { vivo = false; };
-    }, [pConsultor, meses]);
+    }, [pConsultor, meses, alvo]);
 
     const v = (valor: number) => fmt(valor);
 
-    // Foco em 1 cliente via o seletor "Cliente Final" do topo (na página de Alertas
-    // ele filtra em vez de navegar). Sem cliente = todos do escopo (consultor/casa).
-    const alvo = selectedClient?.id ?? null;
-    const vencsF = useMemo(() => (alvo ? vencs.filter(x => x.cliente_id === alvo) : vencs), [vencs, alvo]);
     const fgcF = useMemo(() => (alvo ? fgc.filter(x => x.cliente_id === alvo) : fgc), [fgc, alvo]);
     const creditoF = useMemo(() => (alvo ? credito.filter(x => x.cliente_id === alvo) : credito), [credito, alvo]);
 
     // Linhas da tabela: chave estável por posição (o mesmo papel pode repetir entre contas) e sem a
     // data 9999-12-31, que é o "sem data" das corretoras — não é vencimento.
     const vencsTabela = useMemo(
-        () => vencsF.filter(x => x.data_vencimento && !x.data_vencimento.startsWith('9999'))
+        () => vencs.filter(x => x.data_vencimento && !x.data_vencimento.startsWith('9999'))
             .map((x, i) => ({ ...x, _k: `${i}|${x.cliente_id}|${x.data_vencimento}` })),
-        [vencsF],
+        [vencs],
     );
 
-    const abrirCliente = (clienteId: string, nome: string) => {
+    // Vencimentos já trazem o código; FGC e crédito não — aí busca só o do cliente clicado.
+    const abrirCliente = async (clienteId: string, nome: string, codigo?: string | null) => {
+        let codigoAvere = codigo ?? '';
+        if (!codigoAvere) {
+            const { data } = await supabase.from('clientes').select('codigo_avere').eq('id', clienteId).maybeSingle();
+            codigoAvere = data?.codigo_avere ?? '';
+        }
         setSelectedClient({
             id: clienteId,
-            codigoAvere: clientesMap.get(clienteId) || '',
+            codigoAvere,
             nome,
             consultorId: isMaster ? consultorPerfilId : (perfil?.id ?? null),
         });
@@ -191,7 +199,7 @@ export default function AlertasConsultor() {
                     },
                     ordem: 'chave',
                 }}
-                aoClicarLinha={x => abrirCliente(x.cliente_id, x.cliente_nome)}
+                aoClicarLinha={x => abrirCliente(x.cliente_id, x.cliente_nome, x.codigo_avere)}
                 rotuloTotal="Total no horizonte"
                 vazio={<EstadoVazio compacto icon={CalendarCheck2} titulo="Nenhum vencimento no radar" dica="Não há títulos vencendo no horizonte monitorado." />}
             />
