@@ -47,12 +47,12 @@ interface CreditoAlerta {
 const MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 const mesLabel = (ym: string) => { const [a, m] = ym.split('-'); return `${MESES[Number(m) - 1]}/${a}`; };
 
-type Horizonte = '3' | '6' | '12' | '24';
+type Horizonte = '3' | '6' | '12' | 'todos';
 const HORIZONTES: { value: Horizonte; rotulo: string; mostrarRotulo: true }[] = [
     { value: '3', rotulo: '3 meses', mostrarRotulo: true },
     { value: '6', rotulo: '6 meses', mostrarRotulo: true },
     { value: '12', rotulo: '12 meses', mostrarRotulo: true },
-    { value: '24', rotulo: '24 meses', mostrarRotulo: true },
+    { value: 'todos', rotulo: 'Todos', mostrarRotulo: true },
 ];
 function lerHorizonte(chave: string): Horizonte {
     try {
@@ -127,7 +127,7 @@ export default function AlertasConsultor() {
         let vivo = true;
         (async () => {
             setCarregandoVenc(true);
-            const { data, error } = await supabase.rpc('vencimentos_consultor', { p_consultor_id: pConsultor, p_meses: Number(meses) });
+            const { data, error } = await supabase.rpc('vencimentos_consultor', { p_consultor_id: pConsultor, p_meses: meses === 'todos' ? 0 : Number(meses) });
             if (!vivo) return;
             if (error) console.error('Alertas: falha ao carregar vencimentos', error);
             setVencs((data as Vencimento[]) || []);
@@ -176,7 +176,7 @@ export default function AlertasConsultor() {
             {/* ── Seção: Vencimentos — TabelaConsulta agrupada por mês (modelo B da avere-ui) ── */}
             <TabelaConsulta
                 titulo="Vencimentos próximos"
-                subtitulo={carregandoVenc ? 'Carregando…' : `${vencsTabela.length.toLocaleString('pt-BR')} ativos nos próximos ${meses} meses`}
+                subtitulo={carregandoVenc ? 'Carregando…' : `${vencsTabela.length.toLocaleString('pt-BR')} ativos ${meses === 'todos' ? 'a vencer' : `nos próximos ${meses} meses`}`}
                 icone={CalendarClock}
                 acoes={<Segmentado<Horizonte> opcoes={HORIZONTES} valor={meses} onChange={mudarHorizonte} altura={36} />}
                 dados={vencsTabela}
