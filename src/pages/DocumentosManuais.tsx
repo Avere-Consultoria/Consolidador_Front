@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Typography, Card, Spinner, Badge, Button, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, toast, CampoBusca } from 'avere-ui';
+import { Typography, Card, Spinner, Badge, Button, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, toast, CampoBusca, Skeleton } from 'avere-ui';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
 import { FileText, FileStack, ArrowDownRight, Pencil, ArrowUp, Fingerprint, Link2, ChevronDown, AlertTriangle, Trash2, Loader2, RotateCcw, Ban } from 'lucide-react';
 import { supabase } from '../services/supabase';
@@ -88,6 +88,14 @@ function identidade(a: ManualAtivo): { label: string; ok: boolean } {
 }
 
 const th: React.CSSProperties = { padding: '10px 12px', fontSize: 'var(--text-2xs)' as any, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', textAlign: 'left', whiteSpace: 'nowrap' };
+// Larguras das barras do esqueleto por coluna (Enviado, Cliente, Instituição, Arquivo, Ref., Status), variando por linha.
+const ESQUELETO = [
+    ['70%', '80%', '50%', '85%', '60%', 76],
+    ['65%', '60%', '45%', '70%', '60%', 88],
+    ['70%', '75%', '55%', '60%', '60%', 70],
+    ['60%', '55%', '40%', '80%', '60%', 82],
+    ['70%', '70%', '50%', '65%', '60%', 76],
+];
 const td: React.CSSProperties = { padding: '11px 12px', fontSize: 13, color: 'var(--color-text-primary)', borderTop: '1px solid var(--color-surface-sunken)' };
 const lbl: React.CSSProperties = { display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.03em' };
 const ctrl: React.CSSProperties = { width: '100%', height: 38, boxSizing: 'border-box', padding: '0 10px', borderRadius: 8, border: '1px solid var(--color-border-default)', fontSize: 13, outline: 'none', background: 'var(--color-white)' };
@@ -401,8 +409,6 @@ export default function DocumentosManuais() {
         return remetentesMap.get(uid) || (uid === perfil?.id ? (perfil?.nome ?? 'Master') : 'Master');
     };
 
-    if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
-
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* Sem cabeçalho de página: a tela vive dentro de uma aba (Clientes › Posição Externa, do
@@ -426,7 +432,7 @@ export default function DocumentosManuais() {
             </div>
 
             <Card style={{ padding: 0, overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }} aria-busy={loading}>
                     <thead>
                         <tr style={{ background: 'var(--gray-50)', borderBottom: '1px solid var(--color-border-subtle)' }}>
                             <th style={th}>Enviado</th>
@@ -438,6 +444,15 @@ export default function DocumentosManuais() {
                         </tr>
                     </thead>
                     <tbody>
+                        {/* Esqueleto enquanto busca (mesma ideia do "carregando" da TabelaConsulta): cabeçalho real,
+                            linhas no formato das colunas, sem o falso "nenhum envio". Some quando a tela migrar. */}
+                        {loading && ESQUELETO.map((larguras, i) => (
+                            <tr key={`esq-${i}`} aria-hidden>
+                                {larguras.map((w, j) => (
+                                    <td key={j} style={td}><Skeleton style={{ width: w, height: j === 5 ? 18 : 12, borderRadius: j === 5 ? 'var(--radius-full)' : undefined }} /></td>
+                                ))}
+                            </tr>
+                        ))}
                         {enviosFiltrados.map(e => {
                             const sel = selecionado?.id === e.id;
                             const st = statusDe(e);
@@ -486,7 +501,7 @@ export default function DocumentosManuais() {
                                 </tr>
                             );
                         })}
-                        {enviosFiltrados.length === 0 && (
+                        {!loading && enviosFiltrados.length === 0 && (
                             <tr><td colSpan={6} style={{ borderTop: '1px solid var(--color-surface-sunken)' }}>
                                 <EstadoVazio
                                     compacto

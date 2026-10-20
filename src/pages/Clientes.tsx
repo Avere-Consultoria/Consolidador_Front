@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Spinner, CampoBusca, TabelaConsulta, aplicarFiltros, type ColunaTabela, type FiltrosTabela, type Ordenacao } from 'avere-ui';
+import { CampoBusca, TabelaConsulta, aplicarFiltros, type ColunaTabela, type FiltrosTabela, type Ordenacao } from 'avere-ui';
 import { Users } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
@@ -161,13 +161,13 @@ export default function Clientes() {
         navigate(`/cliente/${c.cliente_id}/posicao`);
     };
 
-    if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div>;
-
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* ── Base de clientes — TabelaConsulta (avere-ui): busca na barra, funil por coluna, filtros lembrados ── */}
             <TabelaConsulta
-                subtitulo={visiveis === clientes.length ? `${clientes.length} clientes` : `${visiveis} de ${clientes.length} clientes`}
+                subtitulo={loading ? 'Carregando…' : visiveis === clientes.length ? `${clientes.length} clientes` : `${visiveis} de ${clientes.length} clientes`}
+                // Esqueleto da tabela enquanto busca (avere-ui 1.15.0): sem spinner e sem falso "nenhum cliente".
+                carregando={loading}
                 dados={dados}
                 colunas={colunas}
                 chave={c => c.cliente_id}

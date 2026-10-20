@@ -114,6 +114,8 @@ export default function Vencimentos() {
                 subtitulo={carregando ? 'Carregando…' : `${vencs.length.toLocaleString('pt-BR')} ativos ${meses === 'todos' ? 'a vencer' : `nos próximos ${meses} meses`}`}
                 acoes={<Segmentado<Horizonte> opcoes={HORIZONTES} valor={meses} onChange={mudarHorizonte} altura={36} />}
                 dados={vencs}
+                // Esqueleto enquanto busca (avere-ui 1.15.0) — antes a tabela mostrava "Nenhum vencimento" no meio da busca.
+                carregando={carregando}
                 colunas={COLUNAS_VENC}
                 chave={x => x._k}
                 agrupar={{
