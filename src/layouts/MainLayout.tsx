@@ -202,7 +202,11 @@ export default function MainLayout() {
       value: selectedClient?.id ?? '__todos__',
       // Se não houver clientes, mostramos a opção informativa sem a prop 'disabled'
       options: clientes.length > 0
-        ? [{ value: "__todos__", label: "Todos os clientes" }, ...clientes.map(c => ({ value: c.id, label: c.nome }))]
+        ? [{ value: "__todos__", label: "Todos os clientes" }, ...clientes.map(c => {
+            // Código do cliente: entra na busca (achar pelo número, como no Ctrl+K) e aparece apagado ao lado do nome.
+            const codigo = c.codigo_avere != null ? String(c.codigo_avere) : undefined;
+            return { value: c.id, label: c.nome, busca: codigo, detalhe: codigo };
+          })]
         : [{ value: "vazio", label: "⚠️ Nenhum cliente vinculado" }],
       onChange: (value: any) => {
         // Bloqueamos a lógica de seleção nos valores-sentinela ('vazio'/'__todos__')
