@@ -39,10 +39,12 @@ const corInstituicao = (a: ConsolidatedAtivo) => COR_BASE[(a.instituicaoBase ?? 
 const siglaInstituicao = (inst: string) => inst.replace(/^BTG Pactual\b/, 'BTG').replace(/^XP Investimentos\b/, 'XP');
 const semAcento = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
+// Larguras em proporção (somam 97%; o resto é a seta ›). A 1ª coluna leva o recuo de 37px sob o
+// nome do grupo, então Tipo precisa caber recuo + selo (o maior hoje: "COMPROMISSADA").
 const COLUNAS: ColunaTabela<ConsolidatedAtivo>[] = [
-    { id: 'tipo', titulo: 'Tipo', tipo: 'selo', largura: 90, filtro: 'lista', valor: a => a.subTipo },
+    { id: 'tipo', titulo: 'Tipo', tipo: 'selo', largura: '11%', filtro: 'lista', valor: a => a.subTipo },
     {
-        id: 'ativo', titulo: 'Ativo', tipo: 'texto', destaque: true, valor: a => rotuloAtivo(a),
+        id: 'ativo', titulo: 'Ativo', tipo: 'texto', destaque: true, largura: '32%', valor: a => rotuloAtivo(a),
         // Emissor = entidade vinculada no canônico (risco/FGC). Sem vínculo, nada — nunca texto cru rotulado de emissor.
         secundario: a => a.emissorNome,
         depois: a => (
@@ -58,15 +60,15 @@ const COLUNAS: ColunaTabela<ConsolidatedAtivo>[] = [
         ),
     },
     {
-        id: 'taxa', titulo: 'Taxa', tipo: 'texto', apagado: true, largura: 130,
+        id: 'taxa', titulo: 'Taxa', tipo: 'texto', apagado: true, largura: '13%',
         valor: a => { const t = padronizarTaxaExibicao(a.taxa || a.benchmark); return t && t !== '-' ? t : null; },
     },
     {
-        id: 'inst', titulo: 'Instituição', tipo: 'cadastro', largura: 120, filtro: 'lista',
+        id: 'inst', titulo: 'Instituição', tipo: 'cadastro', largura: '12%', filtro: 'lista',
         valor: a => siglaInstituicao(a.instituicao), cor: corInstituicao,
     },
     {
-        id: 'venc', titulo: 'Venc. / Liquidez', tipo: 'data', largura: 130,
+        id: 'venc', titulo: 'Venc. / Liquidez', tipo: 'data', largura: '14%',
         dica: 'Data de vencimento; sem ela, o prazo de resgate (D+N).',
         valor: a => a.vencimento || null,
         celula: a => {
@@ -75,7 +77,7 @@ const COLUNAS: ColunaTabela<ConsolidatedAtivo>[] = [
             return null;
         },
     },
-    { id: 'valor', titulo: 'Valor bruto', tipo: 'moeda', largura: 170, somar: true, valor: a => a.valorBruto ?? a.valorLiquido },
+    { id: 'valor', titulo: 'Valor bruto', tipo: 'moeda', largura: '15%', somar: true, valor: a => a.valorBruto ?? a.valorLiquido },
 ];
 
 export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPersonalizadoTudo }: TabelaAtivosProps) {
@@ -147,7 +149,12 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
 
     return (
         <section>
+            {/* Colunas curtas (3 Taxa, 4 Instituição, 5 Venc./Liquidez): título E itens no centro, alinhados.
+                Tipo/Ativo ficam à esquerda e Valor à direita (padrão da lib). Seletor dobrado para vencer
+                o alinhamento à direita que a lib dá à coluna de data. Se a ordem das colunas mudar, rever. */}
+            <style>{`.tabela-carteira.tabela-carteira table :is(th, td):is(:nth-child(3), :nth-child(4), :nth-child(5)) { text-align: center; }`}</style>
             <TabelaConsulta
+                className="tabela-carteira"
                 titulo="Detalhamento da Carteira"
                 subtitulo={`${ativos.length.toLocaleString('pt-BR')} ${ativos.length === 1 ? 'ativo' : 'ativos'} · por classe de ativo`}
                 icone={List}
