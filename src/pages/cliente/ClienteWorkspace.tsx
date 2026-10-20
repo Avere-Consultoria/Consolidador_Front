@@ -100,10 +100,10 @@ export function PousoInicial() {
 }
 
 // ── /documentos-manuais (endereço antigo do Meus Envios) ──────────────────────
-// O Meus Envios do consultor passou para dentro de Clientes; o master tem os documentos em Operação.
+// O Meus Envios do consultor virou a aba Posição Externa de Clientes; o master tem os documentos em Operação.
 export function RedirecionarEnvios() {
     const { perfil } = useAuth();
-    return <Navigate to={perfil?.role === 'MASTER' ? '/operacao/documentos' : '/clientes'} replace />;
+    return <Navigate to={perfil?.role === 'MASTER' ? '/operacao/documentos' : '/clientes/posicao-externa'} replace />;
 }
 
 // ── /cliente sem id: master/consultor vão para Clientes; os demais perfis, como antes ──

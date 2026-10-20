@@ -1,10 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Spinner, CampoBusca, TabelaConsulta, aplicarFiltros, type ColunaTabela, type FiltrosTabela, type Ordenacao, CabecalhoPagina } from 'avere-ui';
+import { Spinner, CampoBusca, TabelaConsulta, aplicarFiltros, type ColunaTabela, type FiltrosTabela, type Ordenacao } from 'avere-ui';
 import { Users } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
-import DocumentosManuais from './DocumentosManuais';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
 import { CORES } from '../utils/colors';
@@ -55,13 +54,12 @@ function gravarPref(usuario: string | undefined, sufixo: string, valor: unknown)
 const ORDEM_PADRAO: Ordenacao = { coluna: 'pl', decrescente: true };
 
 
-// Página Clientes (/clientes): a Base de clientes do escopo (master: todos ou o consultor do topo; consultor: os dele).
+// Aba Base de clientes (/clientes/base): a Base de clientes do escopo (master: todos ou o consultor do topo; consultor: os dele).
 // Substituiu o Dashboard em 20/10/2026. Clicar num cliente abre o detalhe dele (/cliente/<id>/posicao).
 export default function Clientes() {
     const navigate = useNavigate();
     const { perfil } = useAuth();
     const isMaster = perfil?.role === 'MASTER';
-    const isConsultor = perfil?.role === 'CONSULTOR_INTERNO';
     const { consultorSelecionado, consultorPerfilId, setSelectedClient } = useClient();
 
     const [loading, setLoading] = useState(true);
@@ -167,8 +165,6 @@ export default function Clientes() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <CabecalhoPagina titulo="Clientes" icone={Users} />
-
             {/* ── Base de clientes — TabelaConsulta (avere-ui): busca na barra, funil por coluna, filtros lembrados ── */}
             <TabelaConsulta
                 subtitulo={visiveis === clientes.length ? `${clientes.length} clientes` : `${visiveis} de ${clientes.length} clientes`}
@@ -184,10 +180,6 @@ export default function Clientes() {
                 rotuloTotal="Total da base"
                 vazio={<EstadoVazio compacto icon={Users} titulo="Nenhum cliente encontrado" dica="Ajuste a busca, os filtros das colunas ou o consultor no topo." />}
             />
-
-            {/* Meus Envios do consultor (envios manuais de PDF), como era a página própria — 20/10/2026.
-                O master tem a versão de auditoria em Operação › Documentos Manuais. */}
-            {isConsultor && <DocumentosManuais />}
         </div>
     );
 }

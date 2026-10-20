@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, Bell, BellRing, ClipboardCheck, LayoutGrid } from 'lucide-react';
+import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, BellRing, ClipboardCheck, LayoutGrid, CalendarClock } from 'lucide-react';
 import { ErrorBoundary } from '../components/shared/ErrorBoundary';
 import { IndicadorAmbiente, OutrosSistemas, SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, MarcadorProblemas, BuscaRapida, type ComboboxLevel, type GrupoBusca } from 'avere-ui';
 
@@ -118,12 +118,9 @@ export default function MainLayout() {
           ? (consultores.find(c => c.id === clienteEncontrado.consultor_id)?.perfil_id ?? null)
           : (perfil?.id ?? null),
       });
-      // Escolher um cliente abre o workspace dele, mantendo a aba atual (se houver).
-      // Exceção: em Alertas o seletor filtra a lista no lugar (não navega).
-      if (!location.pathname.startsWith('/alertas')) {
-        const tab = location.pathname.match(/^\/cliente\/[^/]+\/([^/]+)/)?.[1] ?? 'posicao';
-        navigate(`/cliente/${clienteEncontrado.id}/${tab}`);
-      }
+      // Escolher um cliente SEMPRE abre o cliente (regra única desde 20/10/2026), mantendo a aba atual se houver.
+      const tab = location.pathname.match(/^\/cliente\/[^/]+\/([^/]+)/)?.[1] ?? 'posicao';
+      navigate(`/cliente/${clienteEncontrado.id}/${tab}`);
     } else {
       setSelectedClient(null);
     }
@@ -131,8 +128,10 @@ export default function MainLayout() {
 
   // Busca rápida (Ctrl/Cmd+K, avere-ui BuscaRapida): clientes + telas por papel.
   const telasBusca = [
-    ...(isMaster || isConsultor ? [{ label: 'Clientes', to: '/clientes', icon: Users }] : []),
-    { label: 'Alertas', to: '/alertas', icon: Bell },
+    ...(isMaster || isConsultor ? [
+      { label: 'Clientes', to: '/clientes', icon: Users },
+      { label: 'Vencimentos', to: '/clientes/vencimentos', icon: CalendarClock },
+    ] : []),
     { label: 'Hub', to: '/hub', icon: LayoutGrid },
     ...(isMaster ? [
       { label: 'Pendências', to: '/pendencias', icon: ClipboardCheck },
@@ -250,12 +249,6 @@ export default function MainLayout() {
           href={isMaster || isConsultor ? '/clientes' : '/cliente'}
           onClick={navTo(isMaster || isConsultor ? '/clientes' : '/cliente')}
         />
-        {(isMaster || isConsultor) && (
-          <SideBarItem
-            icon={Bell} label="Alertas"
-            active={location.pathname === '/alertas'} href="/alertas" onClick={navTo('/alertas')}
-          />
-        )}
         <SideBarItem
           icon={LayoutGrid} label="Hub"
           active={location.pathname === '/hub'} href="/hub" onClick={navTo('/hub')}

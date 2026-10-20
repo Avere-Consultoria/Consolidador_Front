@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Typography, Card, Spinner, Badge, Button, TextField, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, toast, CabecalhoPagina } from 'avere-ui';
+import { Typography, Card, Spinner, Badge, Button, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, toast, CampoBusca } from 'avere-ui';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
-import { FileText, Search, FileStack, ArrowDownRight, Pencil, ArrowUp, Fingerprint, Link2, ChevronDown, AlertTriangle, Trash2, Loader2, RotateCcw, Ban } from 'lucide-react';
+import { FileText, FileStack, ArrowDownRight, Pencil, ArrowUp, Fingerprint, Link2, ChevronDown, AlertTriangle, Trash2, Loader2, RotateCcw, Ban } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt, fmtDate } from '../utils/formatters';
@@ -405,17 +405,11 @@ export default function DocumentosManuais() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <CabecalhoPagina
-                titulo={isMaster ? 'Documentos Manuais' : 'Meus Envios'}
-                icone={FileStack}
-                descricao={isMaster
-                    ? 'Histórico dos envios processados sem API — auditar, corrigir o que a IA extraiu e promover ao global.'
-                    : 'Acompanhe seus envios manuais: veja se já foram processados e corrija o que a IA extraiu.'}
-                acoes={<TextField leftIcon={Search} placeholder="Buscar por cliente, instituição ou arquivo..." value={busca} onChange={e => setBusca(e.target.value)} style={{ width: '320px' }} />}
-            />
+            {/* Sem cabeçalho de página: a tela vive dentro de uma aba (Clientes › Posição Externa, do
+                consultor; Operação › Documentos Manuais, do master) e a aba já diz o que ela é. */}
 
-            {/* ── Nível 1 — Histórico de documentos (filtro de status em abas) ── */}
-            <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--color-borda)', flexWrap: 'wrap' }}>
+            {/* ── Nível 1 — Histórico de documentos (filtro de status em abas + busca à direita) ── */}
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center', borderBottom: '1px solid var(--color-borda)', flexWrap: 'wrap' }}>
                 {(['todos', 'quarentena', 'processando', 'processado', 'descartado', 'erro'] as const).map(s => (
                     <button key={s} onClick={() => setFiltroStatus(s)} style={{
                         padding: '10px 16px', fontSize: 14, fontWeight: 600, border: 'none', background: 'transparent', cursor: 'pointer',
@@ -426,6 +420,9 @@ export default function DocumentosManuais() {
                         {({ todos: 'Todos', quarentena: 'Quarentena', processando: 'Processando', processado: 'Processados', descartado: 'Descartados', erro: 'Com erro' } as const)[s]}
                     </button>
                 ))}
+                <div style={{ marginLeft: 'auto', width: 'min(320px, 100%)', paddingBottom: 6 }}>
+                    <CampoBusca valor={busca} onChange={setBusca} placeholder="Buscar por cliente, instituição ou arquivo…" />
+                </div>
             </div>
 
             <Card style={{ padding: 0, overflow: 'hidden' }}>

@@ -31,8 +31,11 @@ const HistoricoMensal = lazy(() => import('./pages/HistoricoMensal'));
 const Manutencao = lazy(() => import('./pages/Manutencao'));
 const DocumentosManuais = lazy(() => import('./pages/DocumentosManuais'));
 const Clientes = lazy(() => import('./pages/Clientes'));
+const ClientesAbas = lazy(() => import('./pages/clientes/ClientesAbas'));
+const Vencimentos = lazy(() => import('./pages/clientes/Vencimentos'));
+const AbaFgc = lazy(() => import('./pages/clientes/EmPreparacao').then(m => ({ default: m.AbaFgc })));
+const AbaCreditoPrivado = lazy(() => import('./pages/clientes/EmPreparacao').then(m => ({ default: m.AbaCreditoPrivado })));
 const Pendencias = lazy(() => import('./pages/Pendencias'));
-const AlertasConsultor = lazy(() => import('./pages/AlertasConsultor'));
 const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha'));
 const Hub = lazy(() => import('./pages/Hub'));
 const ConfiguracoesNotificacoes = lazy(() => import('./pages/ConfiguracoesNotificacoes'));
@@ -95,13 +98,22 @@ export default function App() {
               {/* ROTAS MASTER + CONSULTOR INTERNO */}
               <Route element={<ProtectedRoute allowedRoles={['MASTER', 'CONSULTOR_INTERNO']} />}>
                 <Route element={<MainLayout />}>
-                  <Route path="/clientes" element={<Clientes />} />
+                  {/* Clientes: o escopo inteiro em abas (um cliente só = /cliente/<id>/…) */}
+                  <Route path="/clientes" element={<ClientesAbas />}>
+                    <Route index element={<Navigate to="base" replace />} />
+                    <Route path="base" element={<Clientes />} />
+                    <Route path="vencimentos" element={<Vencimentos />} />
+                    <Route path="fgc" element={<AbaFgc />} />
+                    <Route path="credito-privado" element={<AbaCreditoPrivado />} />
+                    <Route path="posicao-externa" element={<DocumentosManuais />} />
+                  </Route>
                   {/* Dashboard saiu do sistema (20/10/2026): a Base de clientes virou a página Clientes */}
                   <Route path="/dashboard" element={<Navigate to="/clientes" replace />} />
-                  <Route path="/alertas" element={<AlertasConsultor />} />
+                  {/* Alertas saiu do sistema (20/10/2026): os vencimentos viraram aba de Clientes */}
+                  <Route path="/alertas" element={<Navigate to="/clientes/vencimentos" replace />} />
                   {/* Tarefas saiu do sistema (19/10/2026): links antigos caem em Clientes */}
                   <Route path="/tarefas" element={<Navigate to="/clientes" replace />} />
-                  {/* Meus Envios virou parte de Clientes (20/10/2026) */}
+                  {/* Meus Envios virou a aba Posição Externa de Clientes (20/10/2026) */}
                   <Route path="/documentos-manuais" element={<RedirecionarEnvios />} />
                   <Route path="/configuracoes/notificacoes" element={<ConfiguracoesNotificacoes />} />
                 </Route>
