@@ -127,7 +127,7 @@ export default function DashboardConsultor() {
         });
         // Larguras pensadas para o maior valor real caber inteiro (R$ 416.935.189,35 no total do BTG).
         return [
-            { id: 'codigo', titulo: 'Código', tipo: 'texto', apagado: true, largura: 90, valor: c => c.codigo_avere },
+            { id: 'codigo', titulo: 'Código', tipo: 'texto', apagado: true, largura: 110, valor: c => c.codigo_avere },
             { id: 'nome', titulo: 'Cliente', tipo: 'texto', destaque: true, valor: c => c.nome },
             {
                 id: 'inst', titulo: 'Instituições', tipo: 'cadastro', largura: 170, semOrdenar: true,
