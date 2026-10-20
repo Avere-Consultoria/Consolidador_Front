@@ -163,6 +163,9 @@ export function TabelaAtivos({ ativos, patrimonioTotal, onPersonalizado, onPerso
                     ordem: 'total',
                 }}
                 ordenarPor={{ coluna: 'valor', decrescente: true }}
+                // Fica no fim da página do cliente: com altura limitada à tela sobravam ~2 grupos
+                // visíveis. Aqui a tabela cresce com o conteúdo e quem rola é a página.
+                alturaFixa={false}
                 aoClicarLinha={a => { setAtivoSelecionado(a); setDrawerAberto(true); }}
                 rotuloTotal="Total da carteira"
                 vazio={<EstadoVazio compacto icon={SearchX} titulo="Nenhum ativo encontrado" dica="Ajuste a busca ou os filtros das colunas." />}
