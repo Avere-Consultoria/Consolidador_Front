@@ -738,6 +738,10 @@ export declare function SelectMulti({ opcoes, valores, onChange, largura, rotulo
 export declare interface SelectOption {
     value: string;
     label: string;
+    /** Texto extra que entra na busca mas não aparece (ex.: código do cliente "230081"). */
+    busca?: string;
+    /** Texto apagado à direita do nome, na lista com busca (ex.: o código). */
+    detalhe?: string;
 }
 
 export declare interface SelectProps {
