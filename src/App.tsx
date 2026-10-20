@@ -11,7 +11,7 @@ import { ClientProvider } from './contexts/ClientContext';
 import MainLayout from './layouts/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
-import ClienteWorkspace, { ClienteIndex, LegacyClienteRedirect } from './pages/cliente/ClienteWorkspace';
+import ClienteWorkspace, { ClienteIndex, LegacyClienteRedirect, PousoInicial, RedirecionarEnvios } from './pages/cliente/ClienteWorkspace';
 import AbasWorkspace from './pages/admin/AbasWorkspace';
 
 // Páginas — lazy (só baixam quando a rota é aberta).
@@ -30,7 +30,7 @@ const SincronizacaoMassa = lazy(() => import('./pages/SincronizacaoMassa'));
 const HistoricoMensal = lazy(() => import('./pages/HistoricoMensal'));
 const Manutencao = lazy(() => import('./pages/Manutencao'));
 const DocumentosManuais = lazy(() => import('./pages/DocumentosManuais'));
-const DashboardConsultor = lazy(() => import('./pages/DashboardConsultor'));
+const Clientes = lazy(() => import('./pages/Clientes'));
 const Pendencias = lazy(() => import('./pages/Pendencias'));
 const AlertasConsultor = lazy(() => import('./pages/AlertasConsultor'));
 const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha'));
@@ -66,8 +66,8 @@ export default function App() {
               {/* ROTAS PRIVADAS (Exigem Login Básico) */}
               <Route element={<ProtectedRoute />}>
                 <Route element={<MainLayout />}>
-                  {/* Pouso: Dashboard (visão do consultor) */}
-                  <Route index element={<Navigate to="/dashboard" replace />} />
+                  {/* Pouso: Clientes (master e consultor interno); demais perfis, o /cliente de antes */}
+                  <Route index element={<PousoInicial />} />
 
                   {/* Workspace do cliente — abas de um cliente selecionado */}
                   <Route path="cliente" element={<ClienteIndex />} />
@@ -92,14 +92,17 @@ export default function App() {
                 </Route>
               </Route>
 
-              {/* ROTA MASTER + CONSULTOR — Documentos Manuais (master) / Meus Envios (consultor) */}
+              {/* ROTAS MASTER + CONSULTOR INTERNO */}
               <Route element={<ProtectedRoute allowedRoles={['MASTER', 'CONSULTOR_INTERNO']} />}>
                 <Route element={<MainLayout />}>
-                  <Route path="/dashboard" element={<DashboardConsultor />} />
+                  <Route path="/clientes" element={<Clientes />} />
+                  {/* Dashboard saiu do sistema (20/10/2026): a Base de clientes virou a página Clientes */}
+                  <Route path="/dashboard" element={<Navigate to="/clientes" replace />} />
                   <Route path="/alertas" element={<AlertasConsultor />} />
-                  {/* Tarefas saiu do sistema (19/10/2026): links antigos caem no Dashboard */}
-                  <Route path="/tarefas" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/documentos-manuais" element={<DocumentosManuais />} />
+                  {/* Tarefas saiu do sistema (19/10/2026): links antigos caem em Clientes */}
+                  <Route path="/tarefas" element={<Navigate to="/clientes" replace />} />
+                  {/* Meus Envios virou parte de Clientes (20/10/2026) */}
+                  <Route path="/documentos-manuais" element={<RedirecionarEnvios />} />
                   <Route path="/configuracoes/notificacoes" element={<ConfiguracoesNotificacoes />} />
                 </Route>
               </Route>

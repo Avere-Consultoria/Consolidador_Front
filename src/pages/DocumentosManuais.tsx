@@ -191,11 +191,6 @@ export default function DocumentosManuais() {
         setSnapKeys(new Set((snapsRes.data || []).map((s: any) => chaveNeg(s.cliente_id, s.conta_id, s.instituicao, s.data_referencia))));
     };
 
-    // Auto-refresh: o worker muda o status no banco; a tela reflete sozinha (~15s).
-    useEffect(() => {
-        const id = setInterval(() => { carregarEnvios(); }, 15000);
-        return () => clearInterval(id);
-    }, []);
 
     useEffect(() => {
         (async () => {
@@ -263,6 +258,16 @@ export default function DocumentosManuais() {
         if (e.enviado_em && (Date.now() - new Date(e.enviado_em).getTime()) / 3_600_000 > HORAS_TRAVADO) return 'travado';
         return 'fila';
     };
+
+    // Auto-refresh (~15s) só enquanto houver envio na fila ou processando: o worker muda o status no
+    // banco e a tela reflete sozinha. Parado o resto do tempo — a tela agora fica aberta o dia todo
+    // dentro de Clientes (pouso do consultor) e não pode consultar o banco à toa.
+    const emAndamento = envios.some(e => { const st = statusDe(e); return st === 'fila' || st === 'processando'; });
+    useEffect(() => {
+        if (!emAndamento) return;
+        const id = setInterval(() => { carregarEnvios(); }, 15000);
+        return () => clearInterval(id);
+    }, [emAndamento]);
 
     const enviosFiltrados = useMemo(() => {
         const q = busca.trim().toLowerCase();

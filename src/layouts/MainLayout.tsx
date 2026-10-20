@@ -1,6 +1,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, FileStack, LayoutDashboard, Bell, BellRing, ClipboardCheck, LayoutGrid } from 'lucide-react';
+import { Database, SlidersHorizontal, Users, User, Building2, UsersRound, Wrench, Bell, BellRing, ClipboardCheck, LayoutGrid } from 'lucide-react';
 import { ErrorBoundary } from '../components/shared/ErrorBoundary';
 import { IndicadorAmbiente, OutrosSistemas, SideBar, SideBarItem, SideBarSection, TopBar, HierarchicalCombobox, Toaster, Spinner, MarcadorProblemas, BuscaRapida, type ComboboxLevel, type GrupoBusca } from 'avere-ui';
 
@@ -131,7 +131,7 @@ export default function MainLayout() {
 
   // Busca rápida (Ctrl/Cmd+K, avere-ui BuscaRapida): clientes + telas por papel.
   const telasBusca = [
-    { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
+    ...(isMaster || isConsultor ? [{ label: 'Clientes', to: '/clientes', icon: Users }] : []),
     { label: 'Alertas', to: '/alertas', icon: Bell },
     { label: 'Hub', to: '/hub', icon: LayoutGrid },
     ...(isMaster ? [
@@ -142,7 +142,6 @@ export default function MainLayout() {
     ] : []),
     ...(isConsultor ? [
       { label: 'Personalizar Ativos', to: '/personalizar', icon: SlidersHorizontal },
-      { label: 'Meus Envios', to: '/documentos-manuais', icon: FileStack },
     ] : []),
   ];
   const gruposBusca: GrupoBusca[] = [
@@ -213,10 +212,10 @@ export default function MainLayout() {
         if (value && value !== "vazio" && value !== "__todos__") {
           handleSelectCliente(value);
         } else {
-          // "Todos os clientes": limpa o foco. Se estiver DENTRO do workspace, sai
-          // pro Dashboard (senão a casca re-busca o cliente da URL e "volta").
+          // "Todos os clientes": limpa o foco. Se estiver DENTRO do cliente, volta para
+          // Clientes (senão a casca re-busca o cliente da URL e "volta").
           setSelectedClient(null);
-          if (location.pathname.startsWith('/cliente')) navigate('/dashboard');
+          if (location.pathname.startsWith('/cliente/')) navigate('/clientes');
         }
       }
     },
@@ -243,22 +242,20 @@ export default function MainLayout() {
         isOpenMobile={false}
         onCloseMobile={() => { }}
       >
-        {(isMaster || isConsultor) && (
-          <SideBarItem
-            icon={LayoutDashboard} label="Dashboard"
-            active={location.pathname === '/dashboard'} href="/dashboard" onClick={navTo('/dashboard')}
-          />
-        )}
+        {/* Clientes (/clientes) é a casa; o detalhe de um cliente (/cliente/<id>/…) acende o mesmo item.
+            Perfis sem a página Clientes continuam no /cliente de antes. */}
+        <SideBarItem
+          icon={Users} label={isMaster || isConsultor ? 'Clientes' : 'Cliente'}
+          active={location.pathname.startsWith('/cliente')}
+          href={isMaster || isConsultor ? '/clientes' : '/cliente'}
+          onClick={navTo(isMaster || isConsultor ? '/clientes' : '/cliente')}
+        />
         {(isMaster || isConsultor) && (
           <SideBarItem
             icon={Bell} label="Alertas"
             active={location.pathname === '/alertas'} href="/alertas" onClick={navTo('/alertas')}
           />
         )}
-        <SideBarItem
-          icon={User} label="Cliente"
-          active={location.pathname.startsWith('/cliente')} href="/cliente" onClick={navTo('/cliente')}
-        />
         <SideBarItem
           icon={LayoutGrid} label="Hub"
           active={location.pathname === '/hub'} href="/hub" onClick={navTo('/hub')}
@@ -270,12 +267,6 @@ export default function MainLayout() {
           />
         )}
 
-        {isConsultor && (
-          <SideBarItem
-            icon={FileStack} label="Meus Envios"
-            active={location.pathname === '/documentos-manuais'} href="/documentos-manuais" onClick={navTo('/documentos-manuais')}
-          />
-        )}
         {(isMaster || isConsultor) && (
           <SideBarItem
             icon={BellRing} label="Notificações"

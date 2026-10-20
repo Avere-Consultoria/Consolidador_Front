@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Spinner, CampoBusca, TabelaConsulta, aplicarFiltros, type ColunaTabela, type FiltrosTabela, type Ordenacao, CabecalhoPagina } from 'avere-ui';
-import { Users, Wallet, LayoutDashboard } from 'lucide-react';
+import { Spinner, CampoBusca, TabelaConsulta, aplicarFiltros, type ColunaTabela, type FiltrosTabela, type Ordenacao, CabecalhoPagina } from 'avere-ui';
+import { Users } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
+import DocumentosManuais from './DocumentosManuais';
 import { useAuth } from '../contexts/AuthContext';
 import { useClient } from '../contexts/ClientContext';
-import { fmt } from '../utils/formatters';
 import { CORES } from '../utils/colors';
 
 interface ClienteRow {
@@ -25,10 +25,6 @@ interface ClienteRow {
     contas_agora?: number;
     contas_manual?: number;
 }
-interface Kpis {
-    pl_total: number; pl_btg: number; pl_xp: number; pl_avenue: number; pl_agora: number; pl_manual: number;
-    num_clientes: number; num_clientes_com_pl: number;
-}
 
 type ChavePl = 'pl_xp' | 'pl_btg' | 'pl_avenue' | 'pl_agora' | 'pl_manual';
 type ChaveContas = 'contas_xp' | 'contas_btg' | 'contas_avenue' | 'contas_agora' | 'contas_manual';
@@ -43,6 +39,7 @@ const PLATAFORMAS: { key: ChavePl; contasKey: ChaveContas; label: string; cor: s
 ];
 
 // Filtros e ordenação da Base de clientes ficam lembrados POR USUÁRIO neste navegador.
+// A chave ainda diz "dashboard" de propósito: a tabela veio de lá (20/10/2026) e assim as preferências já salvas continuam valendo.
 const CHAVE_PREF = 'dashboard:base-clientes';
 function lerPref<T>(usuario: string | undefined, sufixo: string, padrao: T): T {
     if (!usuario) return padrao;
@@ -57,18 +54,17 @@ function gravarPref(usuario: string | undefined, sufixo: string, valor: unknown)
 }
 const ORDEM_PADRAO: Ordenacao = { coluna: 'pl', decrescente: true };
 
-const rotuloKpi: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-text-secondary)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' };
-const valorKpi: React.CSSProperties = { fontSize: 17, fontWeight: 700, marginTop: 6, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' };
-const notaKpi: React.CSSProperties = { fontSize: 11, color: 'var(--color-text-muted)', marginTop: 1, whiteSpace: 'nowrap' };
 
-export default function DashboardConsultor() {
+// Página Clientes (/clientes): a Base de clientes do escopo (master: todos ou o consultor do topo; consultor: os dele).
+// Substituiu o Dashboard em 20/10/2026. Clicar num cliente abre o detalhe dele (/cliente/<id>/posicao).
+export default function Clientes() {
     const navigate = useNavigate();
     const { perfil } = useAuth();
     const isMaster = perfil?.role === 'MASTER';
+    const isConsultor = perfil?.role === 'CONSULTOR_INTERNO';
     const { consultorSelecionado, consultorPerfilId, setSelectedClient } = useClient();
 
     const [loading, setLoading] = useState(true);
-    const [kpis, setKpis] = useState<Kpis | null>(null);
     const [clientes, setClientes] = useState<ClienteRow[]>([]);
     const [busca, setBusca] = useState('');
     const [filtros, setFiltros] = useState<FiltrosTabela>(() => lerPref(perfil?.id, 'filtros', {}));
@@ -95,17 +91,12 @@ export default function DashboardConsultor() {
                 supabase.rpc('dashboard_consultor', { p_consultor_id: pConsultor }),
                 supabase.from('instituicoes').select('nome, cor_primaria'),
             ]);
-            const d = rpcRes.data as { kpis?: Kpis; clientes?: ClienteRow[] } | null;
-            setKpis(d?.kpis ?? null);
+            const d = rpcRes.data as { clientes?: ClienteRow[] } | null;
             setClientes(d?.clientes ?? []);
             setCoresInst(new Map((instRes.data || []).map((i: { nome: string; cor_primaria: string }) => [String(i.nome).toUpperCase(), i.cor_primaria])));
             setLoading(false);
         })();
     }, [pConsultor]);
-
-    const v = (valor: number) => fmt(valor);
-    // Cor oficial da plataforma = cor_primaria da instituição (Gestão Master); fallback = colors.ts.
-    const corPlat = (label: string, fallback: string) => coresInst.get(label.toUpperCase()) || fallback;
 
     // Busca geral: a tela filtra antes; os filtros de coluna (funil) se aplicam depois, em E.
     const dados = useMemo(() => {
@@ -176,47 +167,11 @@ export default function DashboardConsultor() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <CabecalhoPagina titulo="Dashboard" icone={LayoutDashboard} />
-
-            {/* ── KPIs — uma fileira só, compacta, para a tabela ter espaço ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-                <Card style={{ padding: '14px 16px', borderTop: '3px solid var(--color-secundaria)' }}>
-                    <div style={rotuloKpi}>
-                        <Wallet size={14} color="var(--color-secundaria)" /> Patrimônio
-                    </div>
-                    <div style={{ ...valorKpi, color: 'var(--color-primaria)' }}>{kpis ? v(kpis.pl_total) : '—'}</div>
-                    <div style={notaKpi}>consolidado</div>
-                </Card>
-                <Card style={{ padding: '14px 16px' }}>
-                    <div style={rotuloKpi}>
-                        <Users size={14} /> Clientes
-                    </div>
-                    <div style={valorKpi}>
-                        {kpis?.num_clientes_com_pl ?? 0}
-                        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)' }}> de {kpis?.num_clientes ?? 0}</span>
-                    </div>
-                    <div style={notaKpi}>com posição / cadastrados</div>
-                </Card>
-                {PLATAFORMAS.filter(p => ((kpis?.[p.key] as number) ?? 0) > 0).map(p => {
-                    const val = (kpis?.[p.key] as number) ?? 0;
-                    const pct = kpis && kpis.pl_total > 0 ? (val / kpis.pl_total) * 100 : 0;
-                    return (
-                        <Card key={p.key} style={{ padding: '14px 16px' }}>
-                            <div style={rotuloKpi}>
-                                <span style={{ width: 9, height: 9, borderRadius: 3, background: corPlat(p.label, p.cor) }} /> PL {p.label}
-                            </div>
-                            <div style={valorKpi}>{v(val)}</div>
-                            <div style={notaKpi}>{pct.toFixed(1)}% do total</div>
-                        </Card>
-                    );
-                })}
-            </div>
+            <CabecalhoPagina titulo="Clientes" icone={Users} />
 
             {/* ── Base de clientes — TabelaConsulta (avere-ui): busca na barra, funil por coluna, filtros lembrados ── */}
             <TabelaConsulta
-                titulo="Base de clientes"
                 subtitulo={visiveis === clientes.length ? `${clientes.length} clientes` : `${visiveis} de ${clientes.length} clientes`}
-                icone={Users}
                 dados={dados}
                 colunas={colunas}
                 chave={c => c.cliente_id}
@@ -229,6 +184,10 @@ export default function DashboardConsultor() {
                 rotuloTotal="Total da base"
                 vazio={<EstadoVazio compacto icon={Users} titulo="Nenhum cliente encontrado" dica="Ajuste a busca, os filtros das colunas ou o consultor no topo." />}
             />
+
+            {/* Meus Envios do consultor (envios manuais de PDF), como era a página própria — 20/10/2026.
+                O master tem a versão de auditoria em Operação › Documentos Manuais. */}
+            {isConsultor && <DocumentosManuais />}
         </div>
     );
 }

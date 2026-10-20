@@ -44,7 +44,7 @@ export default function ClienteWorkspace() {
                     .eq('id', clienteId)
                     .maybeSingle();
                 if (!ativo) return;
-                if (!cli) { navigate('/dashboard', { replace: true }); return; }  // RLS negou / inexistente
+                if (!cli) { navigate('/clientes', { replace: true }); return; }  // RLS negou / inexistente
                 // consultorId = perfil_id (auth) do dono — chave usada em excecoes.consultor_id.
                 let ownerPerfil: string | null = perfil?.id ?? null;
                 if (isMaster && cli.consultor_id) {
@@ -88,9 +88,29 @@ export default function ClienteWorkspace() {
     );
 }
 
-// ── /cliente sem id: vai pro cliente do contexto ou pede pra selecionar ──────
+// Quem tem a página Clientes (a Base de clientes): master e consultor interno.
+const TEM_PAGINA_CLIENTES = ['MASTER', 'CONSULTOR_INTERNO'];
+
+// ── Pouso depois do login (/) ─────────────────────────────────────────────────
+// Por perfil: quem não tem a página Clientes não pode ser mandado para lá — a rota
+// barrada devolve para "/" e o vaivém nunca acaba.
+export function PousoInicial() {
+    const { perfil } = useAuth();
+    return <Navigate to={perfil && TEM_PAGINA_CLIENTES.includes(perfil.role) ? '/clientes' : '/cliente'} replace />;
+}
+
+// ── /documentos-manuais (endereço antigo do Meus Envios) ──────────────────────
+// O Meus Envios do consultor passou para dentro de Clientes; o master tem os documentos em Operação.
+export function RedirecionarEnvios() {
+    const { perfil } = useAuth();
+    return <Navigate to={perfil?.role === 'MASTER' ? '/operacao/documentos' : '/clientes'} replace />;
+}
+
+// ── /cliente sem id: master/consultor vão para Clientes; os demais perfis, como antes ──
 export function ClienteIndex() {
     const { selectedClient } = useClient();
+    const { perfil } = useAuth();
+    if (perfil && TEM_PAGINA_CLIENTES.includes(perfil.role)) return <Navigate to="/clientes" replace />;
     if (selectedClient?.id) return <Navigate to={`/cliente/${selectedClient.id}/posicao`} replace />;
     return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
@@ -106,5 +126,5 @@ export function ClienteIndex() {
 export function LegacyClienteRedirect({ tab }: { tab: string }) {
     const { selectedClient } = useClient();
     if (selectedClient?.id) return <Navigate to={`/cliente/${selectedClient.id}/${tab}`} replace />;
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/clientes" replace />;
 }
