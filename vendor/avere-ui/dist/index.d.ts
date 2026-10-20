@@ -826,7 +826,7 @@ export declare interface SwitchProps extends React_2.ComponentPropsWithoutRef<ty
     label?: string;
 }
 
-export declare function TabelaConsulta<T extends RowData>({ dados, colunas, chave, titulo, subtitulo, icone: Icone, acoes, agrupar, aoClicarLinha, rotuloTotal, vazio, alturaFixa, ordenarPor, barra, filtros: filtrosProp, onFiltrosChange, ordenacao: ordenacaoProp, onOrdenacaoChange, className, }: TabelaConsultaProps<T>): JSX.Element;
+export declare function TabelaConsulta<T extends RowData>({ dados, colunas, chave, titulo, subtitulo, icone: Icone, acoes, agrupar, aoClicarLinha, rotuloTotal, vazio, alturaFixa, ordenarPor, barra, filtros: filtrosProp, onFiltrosChange, ordenacao: ordenacaoProp, onOrdenacaoChange, carregando, linhasEsqueleto, className, }: TabelaConsultaProps<T>): JSX.Element;
 
 export declare interface TabelaConsultaProps<T> {
     dados: T[];
@@ -858,6 +858,11 @@ export declare interface TabelaConsultaProps<T> {
     /** Ordenação controlada pela tela (mesma ideia dos filtros). */
     ordenacao?: Ordenacao | null;
     onOrdenacaoChange?: (o: Ordenacao | null) => void;
+    /** Dados a caminho: corpo em esqueleto (nunca o "vazio" — senão é falso vazio),
+     *  cabeçalho e larguras reais, ordenação e filtros sem clique. */
+    carregando?: boolean;
+    /** Quantas linhas de esqueleto (padrão 8). */
+    linhasEsqueleto?: number;
     className?: string;
 }
 
