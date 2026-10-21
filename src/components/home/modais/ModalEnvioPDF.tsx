@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, Button, Spinner, toast } from 'avere-ui';
 import { Upload, X } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../services/supabase';
+import { chaveEnviosEmAndamento } from '../../../hooks/useEnviosEmAndamento';
 
 // Tipos aceitos: PDF, imagem (jpeg/png) e Excel (xlsx/xls). Valida por mime OU
 // extensão (o browser às vezes não manda o mime certo de .xls).
@@ -27,6 +29,7 @@ export function ModalEnvioPDF({ aberto, onClose, cliente }: Props) {
     const [files, setFiles] = useState<File[]>([]);
     const [carregando, setCarregando] = useState(false);
     const [enviando, setEnviando] = useState(false);
+    const queryClient = useQueryClient();
 
     useEffect(() => {
         if (!aberto || !cliente?.id) return;
@@ -85,7 +88,9 @@ export function ModalEnvioPDF({ aberto, onClose, cliente }: Props) {
                 body: { clienteId: cliente.id, contaId, dataReferencia, arquivos },
             });
             if (error) throw error;
-            toast.success('Arquivos enviados para processamento.');
+            // Liga o acompanhamento da Posição: avisa e recarrega quando o worker terminar.
+            queryClient.invalidateQueries({ queryKey: chaveEnviosEmAndamento(cliente.id) });
+            toast.success('Arquivos enviados. A posição atualiza sozinha quando o processamento terminar.');
             onClose();
         } catch (err: any) {
             toast.error(`Falha no envio: ${err.message ?? err}`);

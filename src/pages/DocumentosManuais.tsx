@@ -248,7 +248,8 @@ export default function DocumentosManuais() {
         // O loop de auditoria (envio → snapshot_id) só fecha se a IA ecoa o envio_id.
         // Quando não fecha, casamos pelo negócio: cliente + instituição + data ref (+ conta).
         let snapId = e.snapshot_id;
-        if (!snapId) {
+        // Só envio dado como processado casa pela chave: um envio com erro não mostra os ativos de outro.
+        if (!snapId && statusDe(e) === 'processado') {
             let q = supabase.from('posicao_manual_snapshots').select('id')
                 .eq('cliente_id', e.cliente_id)
                 .eq('instituicao', e.instituicao)
@@ -269,13 +270,17 @@ export default function DocumentosManuais() {
 
     const statusDe = (e: Envio): StatusTipo => {
         const s = (e.status || '').toLowerCase();
-        // processado vence (posição existe, via loop ou casamento por chave de negócio).
-        if (s === 'processado' || e.snapshot_id || snapKeys.has(chaveNeg(e.cliente_id, e.conta_id, e.instituicao, e.data_referencia))) return 'processado';
+        if (s === 'processado' || e.snapshot_id) return 'processado';
         if (s === 'descartado') return 'descartado';
         if (s === 'quarentena') return 'quarentena';
         if (s === 'erro' || s === 'falha') return 'erro';
         if (s === 'processando') return 'processando';
-        if (e.enviado_em && (Date.now() - new Date(e.enviado_em).getTime()) / 3_600_000 > HORAS_TRAVADO) return 'travado';
+        // Envio antigo (fluxo Zapier) não ecoava o envio_id: casa pela chave de negócio. Só para
+        // o envio parado há muito — o recente segue "na fila" mesmo que exista posição do mesmo mês
+        // (reenvio), e o status do próprio envio nunca é mascarado pela posição de OUTRO envio.
+        const velho = !!e.enviado_em && (Date.now() - new Date(e.enviado_em).getTime()) / 3_600_000 > HORAS_TRAVADO;
+        if (velho && snapKeys.has(chaveNeg(e.cliente_id, e.conta_id, e.instituicao, e.data_referencia))) return 'processado';
+        if (velho) return 'travado';
         return 'fila';
     };
 

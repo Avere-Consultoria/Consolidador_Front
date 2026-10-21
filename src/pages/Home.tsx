@@ -4,6 +4,7 @@ import { EstadoErro } from '../components/shared/EstadoErro';
 import { PieChart as PieIcon } from 'lucide-react';
 
 import { useHomeMetrics } from '../hooks/useHomeMetrics';
+import { useEnviosEmAndamento } from '../hooks/useEnviosEmAndamento';
 import { HomeHeader } from '../components/home/HomeHeader';
 import { ResumoCards } from '../components/home/graficos/ResumoCards';
 import { TabelaAtivos } from '../components/home/TabelaAtivos';
@@ -31,6 +32,7 @@ export default function Home() {
     periodo, setPeriodo, mesesFechados,
     recarregar, recarregarTudo,
   } = useHomeMetrics();
+  useEnviosEmAndamento(selectedClient?.id ?? null);
 
   // <-- 1. NOVO ESTADO: Se não houver cliente, mostra o Empty State amigável -->
   if (!selectedClient) {
