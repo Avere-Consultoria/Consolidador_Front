@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Typography, Card, Spinner, Badge, Button, Modal, ModalContent, ModalHeader, ModalTitle, ModalDescription, ModalFooter, toast, CampoBusca, Skeleton } from 'avere-ui';
 import { EstadoVazio } from '../components/shared/EstadoVazio';
 import { FileText, FileStack, ArrowDownRight, Pencil, ArrowUp, Fingerprint, Link2, ChevronDown, AlertTriangle, Trash2, Loader2, RotateCcw, Ban } from 'lucide-react';
@@ -152,6 +153,12 @@ function Combo({ value, onChange, options, placeholder }: { value: string; onCha
 }
 
 export default function DocumentosManuais() {
+    const queryClient = useQueryClient();
+    // A página do cliente guarda a posição em cache (TanStack, chaves ['home', …]). Tudo aqui que muda
+    // posição (excluir, descartar, reprocessar, editar, promover, envio recém-processado) avisa esse
+    // cache — senão a Posição seguia mostrando dado já apagado até um F5 (bug de 20/10/2026).
+    const atualizarPosicoes = () => queryClient.invalidateQueries({ queryKey: ['home'] });
+    const processadosAntes = useRef<Set<string> | null>(null);
     const [loading, setLoading] = useState(true);
     const [envios, setEnvios] = useState<Envio[]>([]);
     const [clientesMap, setClientesMap] = useState<Map<string, string>>(new Map());
@@ -195,7 +202,12 @@ export default function DocumentosManuais() {
             supabase.from('envio_pdf_manual').select('*').order('enviado_em', { ascending: false }).limit(500),
             supabase.from('posicao_manual_snapshots').select('cliente_id, conta_id, instituicao, data_referencia'),
         ]);
-        setEnvios((enviosRes.data as Envio[]) || []);
+        const lista = (enviosRes.data as Envio[]) || [];
+        // Envio que virou "processado" desde a última busca = posição nova no banco.
+        const processados = new Set(lista.filter(e => (e.status || '').toLowerCase() === 'processado').map(e => e.id));
+        if (processadosAntes.current && [...processados].some(id => !processadosAntes.current!.has(id))) atualizarPosicoes();
+        processadosAntes.current = processados;
+        setEnvios(lista);
         setSnapKeys(new Set((snapsRes.data || []).map((s: any) => chaveNeg(s.cliente_id, s.conta_id, s.instituicao, s.data_referencia))));
     };
 
@@ -316,6 +328,7 @@ export default function DocumentosManuais() {
         if (error) { toast.error(`Falha ao salvar: ${error.message}`); return; }
         toast.success((data as any)?.vinculado ? 'Salvo e vinculado a um canônico existente.' : 'Correção salva (fica local até promover).');
         setEditar(null);
+        atualizarPosicoes();
         if (selecionado) abrirDoc(selecionado);
     };
 
@@ -344,6 +357,7 @@ export default function DocumentosManuais() {
         if (error) { toast.error(`Falha ao promover: ${error.message}`); return; }
         toast.success((data as any)?.novo ? 'Ativo promovido ao global.' : 'Vinculado a um canônico existente.');
         setPromover(null);
+        atualizarPosicoes();
         if (selecionado) abrirDoc(selecionado);
     };
 
@@ -369,6 +383,7 @@ export default function DocumentosManuais() {
         const r = data as any;
         toast.success(r?.posicao_removida ? `Envio e posição (${r.ativos_removidos} ativos) excluídos.` : 'Envio excluído do histórico.');
         setEnvios(prev => prev.filter(x => x.id !== excluir.id));
+        if (r?.posicao_removida) atualizarPosicoes();
         if (selecionado?.id === excluir.id) { setSelecionado(null); setAtivos([]); }
         setExcluir(null);
     };
@@ -389,6 +404,7 @@ export default function DocumentosManuais() {
         if (error) { toast.error(`Falha: ${error.message}`); return; }
         toast.success('Envio corrigido e reenfileirado — o worker vai reprocessar.');
         setCorrigir(null);
+        atualizarPosicoes();
         carregarEnvios();
     };
     const confirmarDescartar = async () => {
@@ -399,6 +415,7 @@ export default function DocumentosManuais() {
         if (error) { toast.error(`Falha: ${error.message}`); return; }
         toast.success('Envio descartado.');
         setDescartarEnvio(null);
+        atualizarPosicoes();
         carregarEnvios();
     };
 
