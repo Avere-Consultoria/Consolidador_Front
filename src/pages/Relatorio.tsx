@@ -177,7 +177,7 @@ export default function Relatorio() {
     const creditoBancario = [...((metrics.creditoBancarioData || []) as any[])].sort((a, b) => b.value - a.value);
     const creditoPrivado = [...((metrics.creditoPrivadoData || []) as any[])].sort((a, b) => b.value - a.value);
     const setorial = ((metrics.setorialData || []) as any[]).map((s, i) => ({ ...s, fill: s.cor ?? PALETA_SETOR[i % PALETA_SETOR.length] }));
-    const acimaTeto = creditoBancario.filter(d => !d.semConglomerado && d.value > TETO_FGC);
+    const acimaTeto = creditoBancario.filter(d => !d.semConglomerado && d.situacao !== 'em_liquidacao' && d.value > TETO_FGC);
     const comVencimento = [...((metrics.todosAtivos || []) as any[])].filter(a => a.vencimento).sort((a, b) => new Date(a.vencimento!).getTime() - new Date(b.vencimento!).getTime());
 
     // Dados prontos p/ as barras horizontais (top N + cor).

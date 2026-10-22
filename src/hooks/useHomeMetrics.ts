@@ -50,12 +50,18 @@ interface ConglomeradoDb {
     id: string;
     nome_lider: string;
     porte: string | null;
+    representante_id?: string | null;              // grupo real (NULL = é o representante)
+    fundo_garantidor?: 'FGC' | 'FGCOOP' | null;
+    situacao?: 'ativa' | 'em_liquidacao' | null;
 }
 
 // Sub-tipos cobertos pelo FGC (crédito bancário) vs crédito privado (corporate).
 // A resolução de risco (emissor/conglomerado) é feita e PERSISTIDA pelo Master
 // (classificar-riscos). A Home apenas LÊ o que está no canônico — fonte única.
 const SUBTIPOS_BANCARIO_FGC = new Set(['CDB', 'LCI', 'LCA', 'LF', 'LIG', 'RDB', 'LH', 'LC', 'LCD', 'DPGE', 'RDC']);
+// Instrumentos com garantia (Regulamento do FGC, art. 2º; RDC = FGCoop). LF, LIG e DPGE não têm:
+// contam como risco do grupo, fora do teto de R$ 250 mil (mesma regra de fgc_instrumento_coberto no banco).
+const SUBTIPOS_COM_GARANTIA = new Set(['CDB', 'RDB', 'LC', 'LH', 'LCI', 'LCA', 'LCD', 'RDC']);
 const SUBTIPOS_CREDITO_PRIVADO = new Set(['DEB', 'CRA', 'CRI', 'FIDC', 'NP', 'NC', 'CCB', 'CCI']);
 
 interface ClasseMaster {
@@ -109,24 +115,31 @@ function buildCreditoBancario(
     patrimonioTotal: number,
 ) {
     const SEM = '__SEM__';
-    const raw: Record<string, { name: string; porte: string | null; value: number }> = {};
+    type Grupo = { name: string; porte: string | null; value: number; semGarantia: number; fundo: 'FGC' | 'FGCOOP'; situacao: 'ativa' | 'em_liquidacao' };
+    const raw: Record<string, Grupo> = {};
     const semNomes = new Map<string, number>();
     ativos.forEach(a => {
         const st = (a.subTipo ?? '').toUpperCase().trim();
         if (!SUBTIPOS_BANCARIO_FGC.has(st)) return;
 
         let key = SEM, nome = 'Sem conglomerado FGC', porte: string | null = null;
+        let fundo: Grupo['fundo'] = 'FGC', situacao: Grupo['situacao'] = 'ativa';
         if (a.conglomeradoId && conglomeradoMap.has(a.conglomeradoId)) {
-            const c = conglomeradoMap.get(a.conglomeradoId)!;
-            key = a.conglomeradoId;
+            // Soma pelo GRUPO real: cadastro duplicado aponta para o representante.
+            const c0 = conglomeradoMap.get(a.conglomeradoId)!;
+            const c = (c0.representante_id && conglomeradoMap.get(c0.representante_id)) || c0;
+            key = c.id;
             nome = c.nome_lider;
             porte = c.porte;
+            fundo = c.fundo_garantidor ?? 'FGC';
+            situacao = c.situacao ?? 'ativa';
         } else {
             const bruto = (a.rawData?.emissor ?? a.nome ?? '—').toString().trim() || '—';
             semNomes.set(bruto, (semNomes.get(bruto) ?? 0) + a.valorBruto);
         }
-        if (!raw[key]) raw[key] = { name: nome, porte, value: 0 };
-        raw[key].value += a.valorBruto;
+        if (!raw[key]) raw[key] = { name: nome, porte, value: 0, semGarantia: 0, fundo, situacao };
+        if (SUBTIPOS_COM_GARANTIA.has(st)) raw[key].value += a.valorBruto;
+        else raw[key].semGarantia += a.valorBruto;
     });
     const detalhesSem = Array.from(semNomes.entries())
         .map(([nome, valor]) => ({ nome, valor }))
@@ -506,7 +519,7 @@ export function useHomeMetrics() {
                 supabase.from('dicionario_emissores').select('id, nome_fantasia, cnpj_raiz, setor_id, setores(nome, cor_hex)').range(0, 4999),
                 supabase.from('dicionario_classes').select('*').order('ordem_exibicao'),
                 supabase.from('instituicoes').select('*'),
-                supabase.from('dicionario_conglomerados').select('id, nome_lider, porte').range(0, 4999),
+                supabase.from('dicionario_conglomerados').select('id, nome_lider, porte, representante_id, fundo_garantidor, situacao').range(0, 4999),
             ]);
             const erro = em.error ?? cl.error ?? inst.error ?? cg.error;
             if (erro) throw erro;

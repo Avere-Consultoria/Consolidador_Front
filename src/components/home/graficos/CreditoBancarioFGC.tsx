@@ -13,7 +13,14 @@ interface CreditoBancarioItem {
     pct: number;
     semConglomerado: boolean;
     detalhes?: { nome: string; valor: number }[];
+    semGarantia?: number;                         // LF, LIG, DPGE: risco do grupo, fora do teto
+    fundo?: 'FGC' | 'FGCOOP';
+    situacao?: 'ativa' | 'em_liquidacao';
 }
+
+// Acima do teto só faz sentido para grupo identificado e em atividade.
+const acimaDoTetoFGC = (d: CreditoBancarioItem) => !d.semConglomerado && d.situacao !== 'em_liquidacao' && d.value > TETO_FGC;
+const rotuloFundo = (d: CreditoBancarioItem) => (d.fundo === 'FGCOOP' ? 'FGCoop' : 'FGC');
 
 interface Props {
     dados: CreditoBancarioItem[];
@@ -45,7 +52,7 @@ const tdStyle: React.CSSProperties = {
 function TooltipBar({ active, payload }: any) {
     if (!active || !payload || !payload.length) return null;
     const p = payload[0].payload;
-    const acima = p.value > TETO_FGC && !p.semConglomerado;
+    const acima = acimaDoTetoFGC(p);
     return (
         <div style={{
             background: 'var(--color-surface)', border: '1px solid var(--color-border-subtle)', borderRadius: 'var(--radius-md)',
@@ -58,10 +65,20 @@ function TooltipBar({ active, payload }: any) {
                 </div>
             )}
             <div style={{ fontSize: 15, fontWeight: 700, color: corPorte(p.porte) }}>{fmt(p.value)}</div>
-            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>{p.pct.toFixed(1)}% do patrimônio</div>
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)' }}>{p.pct.toFixed(1)}% do patrimônio · garantia {rotuloFundo(p)}</div>
+            {p.semGarantia > 0 && (
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-text-secondary)', marginTop: 4 }}>
+                    + {fmt(p.semGarantia)} sem garantia (LF/LIG)
+                </div>
+            )}
+            {p.situacao === 'em_liquidacao' && (
+                <div style={{ fontSize: 11, color: 'var(--color-warning-text)', marginTop: 6, fontWeight: 600 }}>
+                    Em liquidação extrajudicial — FGC pagando a garantia
+                </div>
+            )}
             {acima && (
                 <div style={{ fontSize: 11, color: 'var(--color-danger-solid)', marginTop: 6, fontWeight: 600 }}>
-                    ⚠ Acima do teto FGC ({fmt(TETO_FGC)})
+                    ⚠ Acima do teto {rotuloFundo(p)} ({fmt(TETO_FGC)})
                 </div>
             )}
         </div>
@@ -82,9 +99,11 @@ export function CreditoBancarioFGC({ dados }: Props) {
     }, [ordenados, viewMode]);
 
     const acimaDoTeto = useMemo(
-        () => ordenados.filter(d => !d.semConglomerado && d.value > TETO_FGC),
+        () => ordenados.filter(acimaDoTetoFGC),
         [ordenados],
     );
+    const emLiquidacao = useMemo(() => ordenados.filter(d => d.situacao === 'em_liquidacao'), [ordenados]);
+    const temSemGarantia = useMemo(() => ordenados.some(d => (d.semGarantia ?? 0) > 0), [ordenados]);
 
     const opcoesVisualizacao = [
         { label: 'Top 5', value: '5' },
@@ -138,18 +157,20 @@ export function CreditoBancarioFGC({ dados }: Props) {
                             </span>
                         </th>
                         <th style={{ ...thStyle, textAlign: 'right' }}>Exposição</th>
-                        <th style={{ ...thStyle, textAlign: 'center' }}>FGC</th>
+                        {temSemGarantia && <th style={{ ...thStyle, textAlign: 'right' }} title="LF, LIG e DPGE não têm garantia do FGC: risco do grupo, fora do teto">Sem garantia</th>}
+                        <th style={{ ...thStyle, textAlign: 'center' }}>Garantia</th>
                     </tr>
                 </thead>
                 <tbody>
                     {dadosFiltrados.map((d, i) => {
-                        const acima = !d.semConglomerado && d.value > TETO_FGC;
+                        const acima = acimaDoTetoFGC(d);
                         return (
                             <tr key={i}>
                                 <td style={tdStyle}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <div style={{ width: 8, height: 8, borderRadius: 2, background: d.semConglomerado ? '#D1D5DB' : corPorte(d.porte), flexShrink: 0 }} />
                                         {d.name}
+                                        {d.fundo === 'FGCOOP' && <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--color-info-text)', background: 'var(--color-info-bg)', padding: '1px 5px', borderRadius: 4 }}>FGCoop</span>}
                                     </div>
                                 </td>
                                 <td style={{ ...tdStyle, textAlign: 'center' }}>
@@ -158,9 +179,16 @@ export function CreditoBancarioFGC({ dados }: Props) {
                                         : <span style={{ color: 'var(--color-text-disabled)' }}>—</span>}
                                 </td>
                                 <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 700 }}>{fmt(d.value)}</td>
+                                {temSemGarantia && (
+                                    <td style={{ ...tdStyle, textAlign: 'right', color: 'var(--color-text-secondary)' }}>
+                                        {(d.semGarantia ?? 0) > 0 ? fmt(d.semGarantia!) : '—'}
+                                    </td>
+                                )}
                                 <td style={{ ...tdStyle, textAlign: 'center' }}>
                                     {d.semConglomerado
                                         ? <Badge variant="ghost" style={{ fontSize: 9 }}>n/d</Badge>
+                                        : d.situacao === 'em_liquidacao'
+                                            ? <Badge variant="ghost" style={{ fontSize: 9, background: 'var(--color-warning-bg)', color: 'var(--color-warning-text)' }}>em liquidação</Badge>
                                         : acima
                                             ? <Badge variant="ghost" style={{ fontSize: 9, background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger-solid)' }}>acima</Badge>
                                             : <Badge variant="ghost" style={{ fontSize: 9, background: 'var(--color-success-bg)', color: 'var(--color-success-text)' }}>coberto</Badge>}
@@ -223,7 +251,7 @@ export function CreditoBancarioFGC({ dados }: Props) {
                             Nenhum ativo bancário (FGC)
                         </Typography>
                         <Typography variant="p" style={{ fontSize: 11, fontFamily: 'Inter Variable, system-ui, sans-serif', textAlign: 'center', lineHeight: 1.5 }}>
-                            CDB, LCI, LCA, LF e afins aparecem aqui, agrupados pelo conglomerado do emissor.
+                            CDB, LCI, LCA, LF e afins aparecem aqui, agrupados pelo conglomerado do emissor. LF, LIG e DPGE não têm garantia e ficam fora do teto.
                         </Typography>
                     </div>
                 ) : isWide ? (
@@ -233,6 +261,16 @@ export function CreditoBancarioFGC({ dados }: Props) {
                     </div>
                 ) : (
                     modoTabela ? renderTabela() : renderChart()
+                )}
+
+                {emLiquidacao.length > 0 && (
+                    <div style={{ marginTop: 20, padding: 12, background: 'var(--color-warning-bg)', borderRadius: 'var(--radius-md)', display: 'flex', gap: 8, color: 'var(--color-warning-text)', border: '1px solid var(--color-warning-border)' }}>
+                        <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+                        <Typography variant="p" style={{ fontSize: 12, lineHeight: 1.4, fontFamily: 'Inter Variable, system-ui, sans-serif' }}>
+                            <strong>Em liquidação extrajudicial: {emLiquidacao.map(c => c.name).join(', ')}.</strong>{' '}
+                            O FGC paga até {fmt(TETO_FGC)} por CPF pelo app do FGC — confira se o cliente já pediu a garantia.
+                        </Typography>
+                    </div>
                 )}
 
                 {acimaDoTeto.length > 0 && (
@@ -262,7 +300,7 @@ export function CreditoBancarioFGC({ dados }: Props) {
                                 ))}
                             </div>
                             <Typography variant="p" style={{ fontSize: 'var(--text-2xs)', color: 'var(--color-text-muted)', fontFamily: 'Inter Variable, system-ui, sans-serif', marginTop: 8, lineHeight: 1.4 }}>
-                                Esses nomes (emissor bruto que a corretora envia) não casaram com a lista do FGC. Pode ser grafia divergente — me envie a lista para calibrar o match.
+                                Esses emissores (nome como a corretora envia) ainda não foram ligados a um conglomerado do FGC — a curadoria fica em Master Ativos, fila "Bancário sem FGC".
                             </Typography>
                         </div>
                     );
